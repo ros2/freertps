@@ -2,17 +2,19 @@
 #include "freertps/udp.h"
 #include <stdint.h>
 
-void freertps_hal_udp_init()
+void freertps_udp_init()
 {
-  FREERTPS_INFO("HAL UDP init()\n");
+  FREERTPS_INFO("udp init()\n");
+  freertps_sdp_init();
 }
 
-void freertps_hal_udp_fini()
+void freertps_udp_fini()
 {
-  FREERTPS_INFO("HAL UDP fini()\n");
+  FREERTPS_INFO("udp fini()\n");
+  freertps_sdp_fini();
 }
 
-void freertps_hal_udp_add_mcast_rx_port(uint16_t port)
+void freertps_udp_add_mcast_rx_port(uint16_t port)
 {
   FREERTPS_INFO("add mcast rx port %d\n", port);
 }

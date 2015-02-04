@@ -14,10 +14,7 @@ typedef struct
 void freertps_udp_init();
 void freertps_udp_fini();
 
-// move these to a private header someday
-void freertps_hal_udp_init();
-void freertps_hal_udp_fini();
-void freertps_hal_udp_add_mcast_rx_port(uint16_t port);
+void freertps_udp_add_mcast_rx_port(uint16_t port);
 
 #endif
 
