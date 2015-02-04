@@ -5,7 +5,7 @@ void freertps_perish_if(bool b, const char *msg)
 {
   if (b)
   {
-    printf("%s\n", msg);
+    FREERTPS_FATAL("%s\n", msg);
     exit(1);
   }
 }
