@@ -167,16 +167,18 @@ bool freertps_udp_listen(const uint32_t max_usec)
   static uint8_t s_freertps_udp_listen_buf[FREERTPS_UDP_RX_BUFSIZE];
   fd_set rdset;
   FD_ZERO(&rdset);
-  //FD_SET(rx_sock_, &rdset);
+  int max_fd = 0;
   for (int i = 0; i < g_freertps_udp_rx_socks_used; i++)
-    FD_SET(g_freertps_udp_rx_socks[i].sock, &rdset);
+  {
+    const int s = g_freertps_udp_rx_socks[i].sock;
+    FD_SET(s, &rdset);
+    if (s > max_fd)
+      max_fd = s;
+  }
   struct timeval timeout;
   timeout.tv_sec = max_usec / 1000000;
   timeout.tv_usec = max_usec - timeout.tv_sec * 1000000;
-  int max_fd = 0;
-  if (g_freertps_udp_rx_socks_used)
-    max_fd = g_freertps_udp_rx_socks[g_freertps_udp_rx_socks_used-1].sock;
-  int rv = select(max_fd, &rdset, NULL, NULL, &timeout);
+  int rv = select(max_fd+1, &rdset, NULL, NULL, &timeout);
   if (rv < 0)
     return false; // badness
   else if (rv == 0)
@@ -193,7 +195,6 @@ bool freertps_udp_listen(const uint32_t max_usec)
                             sizeof(s_freertps_udp_listen_buf),
                             0, 
                             &src_addr, &addrlen);
-      printf("nbytes %d\n", nbytes);
       if (g_freertps_udp_rx_socks[i].cb)
         g_freertps_udp_rx_socks[i].cb(src_addr.sin_addr.s_addr,
                                       src_addr.sin_port,
