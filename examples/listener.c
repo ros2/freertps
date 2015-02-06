@@ -10,14 +10,14 @@ void sigint_handler(int signum)
 
 int main(int argc, char **argv)
 {
-  freertps_udp_init();
+  fu_init();
   signal(SIGINT, sigint_handler);
   while (!g_done)
   {
-    if (!freertps_udp_listen(1000))
+    if (!fu_listen(1000))
       break;
   }
-  freertps_udp_fini();
+  fu_fini();
   return 0;
 }
 

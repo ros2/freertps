@@ -6,7 +6,7 @@ LIB    = $(BIN)/lib$(LIBNAME).a
 CFLAGS = -Iinclude --std=c99 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE
 LFLAGS = 
 
-SRCS = freertps.c sdp.c udp.c udp_posix.c
+SRCS = freertps.c spdp.c udp.c udp_posix.c
 OBJS = $(addprefix $(BIN)/,$(SRCS:.c=.o))
 
 EXAMPLE_NAMES = listener

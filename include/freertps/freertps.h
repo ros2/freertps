@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 // maybe make this smarter someday
 #define FREERTPS_INFO(...) \
