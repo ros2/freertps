@@ -2,6 +2,9 @@
 #include <limits.h>
 #include <string.h>
 
+static frudp_subscription_t g_frudp_subs[FRUDP_MAX_SUBSCRIPTIONS];
+static unsigned g_frudp_subs_used = 0;
+
 static bool fu_rx_submsg(fu_receiver_state_t *rcvr, const fu_submsg_t *submsg);
 
 #define RX_MSG_ARGS fu_receiver_state_t *rcvr, const fu_submsg_t *submsg
@@ -18,6 +21,10 @@ static bool fu_rx_nack_frag     (RX_MSG_ARGS);
 static bool fu_rx_heartbeat_frag(RX_MSG_ARGS);
 static bool fu_rx_data          (RX_MSG_ARGS);
 static bool fu_rx_data_frag     (RX_MSG_ARGS);
+
+static bool frudp_rx_data_pl(fu_receiver_state_t *rcvr, 
+                             const fu_submsg_t *submsg,
+                             const uint8_t *payload);
 
 const char *fu_vendor(const fu_vid_t vid)
 {
@@ -194,6 +201,7 @@ static bool fu_rx_data(RX_MSG_ARGS)
   uint8_t *inline_qos_start = (uint8_t *)(&contents->octets_to_inline_qos) + 
                               sizeof(contents->octets_to_inline_qos) + 
                               contents->octets_to_inline_qos;
+  uint8_t *data_start = inline_qos_start;
   if (q)
   {
     // first parse out the QoS parameters
@@ -208,15 +216,46 @@ static bool fu_rx_data(RX_MSG_ARGS)
       if (pid == FU_PID_SENTINEL)
         break; // adios
     }
+    data_start = (uint8_t *)item; // after a PID_SENTINEL, this is correct
   }
-  uint8_t *payload = inline_qos_start;
-  // see if someone is interested in this writer_id
-  // ... which implies that we have a list of them and RX fptrs stored somewhere
+  const uint16_t scheme = ntohs(*((uint16_t *)data_start));
+  uint8_t *data = data_start + 4;
+  // spin through subscriptions and see if anyone is listening
+  for (unsigned i = 0; i < g_frudp_subs_used; i++)
+  {
+    if (g_frudp_subs[i].writer_id.u == contents->writer_id.u &&
+        g_frudp_subs[i].reader_id.u == contents->reader_id.u)
+      g_frudp_subs[i].cb(rcvr, submsg, scheme, data);
+  }
+  //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
   return true;
 }
 
+static bool frudp_rx_data_pl(fu_receiver_state_t *rcvr, 
+                             const fu_submsg_t *submsg,
+                             const uint8_t *payload)
+{
+  FREERTPS_INFO("  rx data pl\n");
+  return true;
+}
+
+
 static bool fu_rx_data_frag(RX_MSG_ARGS)
 {
+  return true;
+}
+
+bool frudp_subscribe(const frudp_entityid_t reader_id,
+                     const frudp_entityid_t writer_id,
+                     const frudp_rx_cb_t cb)
+{
+  if (g_frudp_subs_used >= FRUDP_MAX_SUBSCRIPTIONS)
+    return false;
+  frudp_subscription_t *sub = &g_frudp_subs[g_frudp_subs_used];
+  sub->reader_id = reader_id;
+  sub->writer_id = writer_id;
+  sub->cb = cb;
+  g_frudp_subs_used++;
   return true;
 }
 

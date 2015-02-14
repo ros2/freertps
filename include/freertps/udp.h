@@ -88,7 +88,7 @@ typedef union
     uint8_t kind;
   } s;
   uint32_t u;
-} fu_entityid_t;
+} frudp_entityid_t;
 
 #define ENTITYID_UNKNOWN 0
 
@@ -102,8 +102,8 @@ typedef struct
 {
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
-  fu_entityid_t reader_id;
-  fu_entityid_t writer_id;
+  frudp_entityid_t reader_id;
+  frudp_entityid_t writer_id;
   fu_sequencenumber_t writer_sn;
 } fu_submsg_contents_data_t;
 
@@ -117,19 +117,30 @@ typedef struct
 
 #define FU_PID_SENTINEL 1
 
+#define FRUDP_DATA_ENCAP_SCHEME_PL_CDR_LE 0x0003
+
+typedef void (*frudp_rx_cb_t)(fu_receiver_state_t *rcvr,
+                              const fu_submsg_t *submsg,
+                              const uint16_t scheme,
+                              const uint8_t *data);
+
+typedef struct
+{
+  frudp_entityid_t reader_id;
+  frudp_entityid_t writer_id;
+  frudp_rx_cb_t cb;
+} frudp_subscription_t;
+
+#ifndef FRUDP_MAX_SUBSCRIPTIONS
+#  define FRUDP_MAX_SUBSCRIPTIONS 10
+#endif
+
 /////////////////////////////////////////////////////////////////////
 // FUNCTIONS 
 /////////////////////////////////////////////////////////////////////
 
 bool fu_init();
 void fu_fini();
-
-/*
-typedef void (*freertps_udp_rx_callback_t)(const in_addr_t src_addr,
-                                           const in_port_t src_port,
-                                           const uint8_t *rx_data, 
-                                           const uint16_t rx_len);
-*/
 
 bool fu_add_mcast_rx(const in_addr_t group, 
                      const uint16_t port); //,
@@ -142,6 +153,9 @@ bool fu_rx(const in_addr_t src_addr,
            const uint8_t *rx_data,
            const uint16_t rx_len);
 
+bool frudp_subscribe(const frudp_entityid_t reader_id,
+                     const frudp_entityid_t writer_id,
+                     const frudp_rx_cb_t cb);
 
 #endif
 
