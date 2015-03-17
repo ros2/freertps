@@ -26,7 +26,7 @@ static bool frudp_rx_data_pl(fu_receiver_state_t *rcvr,
                              const fu_submsg_t *submsg,
                              const uint8_t *payload);
 
-const char *fu_vendor(const fu_vid_t vid)
+const char *frudp_vendor(const frudp_vid_t vid)
 {
   switch (vid)
   {
@@ -67,7 +67,7 @@ bool fu_rx(const in_addr_t src_addr,
     return false; // we aren't cool enough to be oldschool
   FREERTPS_INFO("rx vendor 0x%04x = %s\n", 
                 (unsigned)ntohs(msg->header.vid), 
-                fu_vendor(ntohs(msg->header.vid)));
+                frudp_vendor(ntohs(msg->header.vid)));
   //fu_guidprefix_t *guidp = (fu_guidprefix_t *)(rx_data + 8);
   /*
   for (int i = 0; i < 12; i++)
@@ -77,7 +77,7 @@ bool fu_rx(const in_addr_t src_addr,
   fu_receiver_state_t rcvr;
   rcvr.src_pver = msg->header.pver;
   rcvr.src_vid = msg->header.vid;
-  memcpy(rcvr.src_guidprefix, msg->header.guidprefix, FU_GUIDPREFIX_LEN);
+  memcpy(rcvr.src_guid_prefix, msg->header.guid_prefix, FRUDP_GUIDPREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages
   for (const uint8_t *submsg_start = msg->submsgs;

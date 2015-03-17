@@ -1,6 +1,6 @@
 #include "freertps/freertps.h"
 #include "freertps/udp.h"
-#include "freertps/spdp.h"
+#include "freertps/discovery.h"
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -94,7 +94,7 @@ bool fu_init()
     FREERTPS_FATAL("couldn't disable outbound tx multicast loopback\n");
     return false;
   }
-  freertps_spdp_init();
+  frudp_discovery_init();
 
   // todo: make this parameterizable and put it in a generic udp init function,
   // since this isn't particular to POSIX (though... i suppose the way that we
@@ -105,8 +105,8 @@ bool fu_init()
 
 void fu_fini()
 {
-  freertps_spdp_fini();
-  FREERTPS_INFO("udp fini()\n");
+  frudp_discovery_fini();
+  FREERTPS_INFO("udp fini\n");
   for (int i = 0; i < g_fu_rx_socks_used; i++)
   {
     close(g_fu_rx_socks[i].sock);

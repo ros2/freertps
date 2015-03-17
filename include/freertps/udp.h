@@ -21,23 +21,23 @@ typedef struct
 { 
   uint8_t major; 
   uint8_t minor; 
-} fu_pver_t; // protocol version
+} frudp_pver_t; // protocol version
 
-typedef uint16_t fu_vid_t; // vendor ID
-const char *fu_vendor(const fu_vid_t vid);
+typedef uint16_t frudp_vid_t; // vendor ID
+const char *frudp_vendor(const frudp_vid_t vid);
 
 // for now let's pretend that our vendor ID is 11311 in hex
 #define FREERTPS_VENDOR_ID 0x2C2F
 
-#define FU_GUIDPREFIX_LEN 12
-typedef uint8_t fu_guidprefix_t[12];
+#define FRUDP_GUIDPREFIX_LEN 12
+typedef uint8_t frudp_guid_prefix_t[FRUDP_GUIDPREFIX_LEN];
 
 typedef struct
 {
   uint32_t magic_word; // RTPS in ASCII
-  fu_pver_t pver; // protocol version
-  fu_vid_t  vid;  // vendor ID
-  fu_guidprefix_t guidprefix;
+  frudp_pver_t pver; // protocol version
+  frudp_vid_t  vid;  // vendor ID
+  frudp_guid_prefix_t guid_prefix;
 } fu_header_t;
 
 typedef struct
@@ -59,10 +59,23 @@ typedef struct
   uint8_t contents[];
 } fu_submsg_t;
 
+typedef union
+{
+  struct
+  {
+    uint8_t key[3];
+    uint8_t kind;
+  } s;
+  uint32_t u;
+} __attribute__((packed)) frudp_entityid_t;
+
+#define ENTITYID_UNKNOWN 0
+
 typedef struct
 {
-  fu_guidprefix_t guidprefix;
-} fu_guid_t;
+  frudp_guid_prefix_t guid_prefix;
+  frudp_entityid_t entity_id;
+} __attribute__((packed)) frudp_guid_t;
 
 typedef struct
 {
@@ -72,25 +85,14 @@ typedef struct
 
 typedef struct
 {
-  fu_pver_t       src_pver;
-  fu_vid_t        src_vid;
-  fu_guidprefix_t src_guidprefix;
-  fu_guidprefix_t dst_guidprefix;
+  frudp_pver_t       src_pver;
+  frudp_vid_t        src_vid;
+  frudp_guid_prefix_t src_guid_prefix;
+  frudp_guid_prefix_t dst_guid_prefix;
   bool            have_timestamp;
   fu_time_t       timestamp;
 } fu_receiver_state_t;
 
-typedef union
-{
-  struct
-  {
-    uint8_t key[3];
-    uint8_t kind;
-  } s;
-  uint32_t u;
-} frudp_entityid_t;
-
-#define ENTITYID_UNKNOWN 0
 
 typedef struct
 {
@@ -134,6 +136,26 @@ typedef struct
 #ifndef FRUDP_MAX_SUBSCRIPTIONS
 #  define FRUDP_MAX_SUBSCRIPTIONS 10
 #endif
+
+typedef struct
+{
+  int32_t kind;
+  uint32_t port;
+  uint8_t address[16];
+} __attribute__((packed)) frudp_locator_t;
+
+#define FRUDP_LOCATOR_KIND_INVALID -1
+#define FRUDP_LOCATOR_KIND_RESERVED 0
+#define FRUDP_LOCATOR_KIND_UDPV4    1
+#define FRUDP_LOCATOR_KIND_UDPV6    2
+
+typedef struct
+{
+  int32_t sec;
+  uint32_t nanosec;
+} frudp_duration_t;
+
+typedef uint32_t frudp_builtin_endpoint_set_t;
 
 /////////////////////////////////////////////////////////////////////
 // FUNCTIONS 
