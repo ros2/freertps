@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include "freertps/freertps.h"
 
 void freertps_perish_if(bool b, const char *msg)

@@ -13,5 +13,5 @@ void frudp_sedp_fini()
 
 void frudp_sedp_tick()
 {
-  FREERTPS_INFO("sedp tick\n");
+  //FREERTPS_INFO("sedp tick\n");
 }

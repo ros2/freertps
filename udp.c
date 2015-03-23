@@ -145,7 +145,7 @@ static bool fu_rx_info_ts(RX_MSG_ARGS)
   {
     rcvr->have_timestamp = true;
     // todo: care about alignment
-    rcvr->timestamp = *((fu_time_t *)(submsg->contents));
+    rcvr->timestamp = *((fr_time_t *)(submsg->contents));
     /*
     FREERTPS_INFO("info_ts rx timestamp %.6f\n", 
                   (double)(rcvr->timestamp.seconds) + 

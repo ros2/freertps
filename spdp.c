@@ -137,11 +137,16 @@ static void frudp_spdp_rx(fu_receiver_state_t *rcvr,
   }
 }
 
+static fr_time_t frudp_spdp_last_bcast;
+
 void frudp_spdp_init()
 {
   FREERTPS_INFO("sdp init\n");
+  frudp_spdp_last_bcast.seconds = 0;
+  frudp_spdp_last_bcast.fraction = 0;
   frudp_entityid_t unknown = { .u = 0 };
-  frudp_entityid_t writer  = { .s = { .key = { 0x00, 0x01, 0x00 }, .kind = 0xc2 } };
+  frudp_entityid_t writer  = { .s = { .key = { 0x00, 0x01, 0x00 }, 
+                                      .kind = 0xc2 } };
   frudp_subscribe(unknown, writer, frudp_spdp_rx);
 }
 
@@ -152,6 +157,12 @@ void frudp_spdp_fini()
 
 void frudp_spdp_tick()
 {
-  FREERTPS_INFO("spdp tick\n");
+  const fr_time_t t = fr_time_now();
+  if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second
+  {
+    FREERTPS_INFO("spdp bcast\n");
+    frudp_spdp_last_bcast = t;
+    // TODO: actually broadcast
+  }
 }
 

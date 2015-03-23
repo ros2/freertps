@@ -18,6 +18,6 @@ void frudp_discovery_fini()
 
 void frudp_discovery_tick()
 {
-  FREERTPS_INFO("discovery tick\n");
+  frudp_spdp_tick();
   frudp_sedp_tick();
 }

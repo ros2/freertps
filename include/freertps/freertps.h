@@ -2,8 +2,8 @@
 #define FREERTPS_H
 
 #include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
+
+#include "freertps/time.h"
 
 // maybe make this smarter someday
 #define FREERTPS_INFO(...) \
@@ -14,5 +14,4 @@
   do { printf("freertps FATAL: "); printf(__VA_ARGS__); } while (0)
 
 //void freertps_perish_if(bool b, const char *msg);
-
 #endif

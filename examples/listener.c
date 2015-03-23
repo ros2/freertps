@@ -16,6 +16,7 @@ int main(int argc, char **argv)
   {
     if (!fu_listen(1000))
       break;
+    frudp_discovery_tick();
   }
   fu_fini();
   return 0;
