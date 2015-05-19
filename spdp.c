@@ -5,7 +5,7 @@
 
 #define FRUDP_MAX_PARTICIPANTS 10
 static frudp_participant_t g_frudp_spdp_participants[FRUDP_MAX_PARTICIPANTS];
-static int frudp_spdp_num_participants = 0;
+static int g_frudp_spdp_num_participants = 0;
 
 static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
@@ -134,6 +134,34 @@ static void frudp_spdp_rx(fu_receiver_state_t *rcvr,
     // todo: do something with parameter value
     // now, advance to next item in list...
     item = (fu_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
+  }
+  // now that we have stuff the "part" buffer, spin through our
+  // participant list and see if we already have this one
+  bool found = false;
+  for (int i = 0; !found && i < g_frudp_spdp_num_participants; i++)
+  {
+    frudp_participant_t *p = &g_frudp_spdp_participants[i];
+    if (frudp_guid_prefix_identical(&p->guid_prefix, 
+                                    &part->guid_prefix))
+    {
+      printf("found match at participant slot %d\n", i);
+      found = true;
+      // TODO: see if anything has changed. update if needed
+    }
+  }
+  if (!found)
+  {
+    printf("didn't have this participant already.\n");
+    if (g_frudp_spdp_num_participants < FRUDP_MAX_PARTICIPANTS)
+    {
+      const int p_idx = g_frudp_spdp_num_participants; // save typing
+      frudp_participant_t *p = &g_frudp_spdp_participants[p_idx];
+      *p = *part; // save everything plz
+      printf("saved the new participant in slot %d\n", p_idx);
+      g_frudp_spdp_num_participants++;
+    }
+    else
+      printf("not enough room to save the new participant.\n");
   }
 }
 

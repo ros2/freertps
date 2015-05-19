@@ -32,6 +32,9 @@ const char *frudp_vendor(const frudp_vid_t vid);
 #define FRUDP_GUIDPREFIX_LEN 12
 typedef uint8_t frudp_guid_prefix_t[FRUDP_GUIDPREFIX_LEN];
 
+bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
+                                 frudp_guid_prefix_t * const b);
+
 typedef struct
 {
   uint32_t magic_word; // RTPS in ASCII

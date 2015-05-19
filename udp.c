@@ -259,3 +259,11 @@ bool frudp_subscribe(const frudp_entityid_t reader_id,
   return true;
 }
 
+bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
+                                 frudp_guid_prefix_t * const b)
+{
+  for (int i = 0; i < FRUDP_GUIDPREFIX_LEN; i++)
+    if ((*a)[i] != (*b)[i])
+      return false;
+  return true;
+}
