@@ -10,15 +10,15 @@ void sigint_handler(int signum)
 
 int main(int argc, char **argv)
 {
-  fu_init();
+  frudp_init();
   signal(SIGINT, sigint_handler);
   while (!g_done)
   {
-    if (!fu_listen(1000))
+    if (!frudp_listen(1000))
       break;
     frudp_discovery_tick();
   }
-  fu_fini();
+  frudp_fini();
   return 0;
 }
 

@@ -11,8 +11,8 @@ static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
 //////////////////////////////////////////////////////////////////////////
 
-static void frudp_spdp_rx(fu_receiver_state_t *rcvr,
-                          const fu_submsg_t *submsg,
+static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
+                          const frudp_submsg_t *submsg,
                           const uint16_t scheme,
                           const uint8_t *data)
 {
@@ -24,10 +24,10 @@ static void frudp_spdp_rx(fu_receiver_state_t *rcvr,
   }
   frudp_participant_t *part = &g_frudp_spdp_rx_participant;
   // todo: spin through this param list and save it
-  fu_parameter_list_item_t *item = (fu_parameter_list_item_t *)data;
+  frudp_parameter_list_item_t *item = (frudp_parameter_list_item_t *)data;
   while ((uint8_t *)item < submsg->contents + submsg->header.len)
   {
-    const fu_parameterid_t pid = item->pid;
+    const frudp_parameterid_t pid = item->pid;
     if (pid == FRUDP_PID_SENTINEL)
       break;
     const uint8_t *pval = item->value;
@@ -133,7 +133,7 @@ static void frudp_spdp_rx(fu_receiver_state_t *rcvr,
 
     // todo: do something with parameter value
     // now, advance to next item in list...
-    item = (fu_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
+    item = (frudp_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
   }
   // now that we have stuff the "part" buffer, spin through our
   // participant list and see if we already have this one
@@ -181,6 +181,14 @@ void frudp_spdp_init()
 void frudp_spdp_fini()
 {
   FREERTPS_INFO("sdp fini\n");
+}
+
+// todo: this will all eventually be factored somewhere else. for now, 
+// just work through what it takes to send messages
+
+frudp_msg_t *frudp_init_msg(uint8_t *buf)
+{
+  return NULL;
 }
 
 void frudp_spdp_tick()

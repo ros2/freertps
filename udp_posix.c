@@ -24,23 +24,23 @@ typedef struct
 {
   int sock;
   //freertps_udp_rx_callback_t cb;
-} fu_rx_sock_t;
+} frudp_rx_sock_t;
 
-static fu_rx_sock_t g_fu_rx_socks[FU_MAX_RX_SOCKS];
-static int g_fu_rx_socks_used;
+static frudp_rx_sock_t g_frudp_rx_socks[FU_MAX_RX_SOCKS];
+static int g_frudp_rx_socks_used;
 
-static struct in_addr g_fu_tx_addr;
-static int g_fu_tx_sock;
+static struct in_addr g_frudp_tx_addr;
+static int g_frudp_tx_sock;
 //static sockaddr_in g_freertps_udp_saddrs[FREERPS_MAX_RX_SOCKS];
 
 #define FU_RX_BUFSIZE 1500
 
-bool fu_init()
+bool frudp_init()
 {
   FREERTPS_INFO("udp init()\n");
   for (int i = 0; i < FU_MAX_RX_SOCKS; i++)
   {
-    g_fu_rx_socks[i].sock = -1;
+    g_frudp_rx_socks[i].sock = -1;
     //g_freertps_udp_rx_socks[i].cb = NULL;
   }
 
@@ -68,26 +68,26 @@ bool fu_init()
     tx_addr_str = host; // save this one for now
   }
   FREERTPS_INFO("using address %s\n", tx_addr_str);
-  g_fu_tx_addr.s_addr = inet_addr(tx_addr_str);
+  g_frudp_tx_addr.s_addr = inet_addr(tx_addr_str);
   freeifaddrs(ifaddr);
 
-  g_fu_tx_sock = socket(AF_INET, SOCK_DGRAM, 0);
-  if (g_fu_tx_sock < 0)
+  g_frudp_tx_sock = socket(AF_INET, SOCK_DGRAM, 0);
+  if (g_frudp_tx_sock < 0)
   {
     FREERTPS_FATAL("couldn't create tx sock\n");
     return false;
   }
   int result;
-  result = setsockopt(g_fu_tx_sock, IPPROTO_IP, IP_MULTICAST_IF,
-                      (char *)&g_fu_tx_addr,
-                      sizeof(g_fu_tx_addr));
+  result = setsockopt(g_frudp_tx_sock, IPPROTO_IP, IP_MULTICAST_IF,
+                      (char *)&g_frudp_tx_addr,
+                      sizeof(g_frudp_tx_addr));
   if (result < 0)
   {
     FREERTPS_FATAL("couldn't set tx sock to allow multicast\n");
     return false;
   }
   int loopback = 0;
-  result = setsockopt(g_fu_tx_sock, IPPROTO_IP, IP_MULTICAST_LOOP,
+  result = setsockopt(g_frudp_tx_sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                       &loopback, sizeof(loopback));
   if (result < 0)
   {
@@ -99,26 +99,26 @@ bool fu_init()
   // todo: make this parameterizable and put it in a generic udp init function,
   // since this isn't particular to POSIX (though... i suppose the way that we
   // pull out environment or config-file parameters will be)
-  fu_add_mcast_rx(inet_addr("239.255.0.1"), 7400); 
+  frudp_add_mcast_rx(inet_addr("239.255.0.1"), 7400); 
   return true;
 }
 
-void fu_fini()
+void frudp_fini()
 {
   frudp_discovery_fini();
   FREERTPS_INFO("udp fini\n");
-  for (int i = 0; i < g_fu_rx_socks_used; i++)
+  for (int i = 0; i < g_frudp_rx_socks_used; i++)
   {
-    close(g_fu_rx_socks[i].sock);
-    g_fu_rx_socks[i].sock = -1;
+    close(g_frudp_rx_socks[i].sock);
+    g_frudp_rx_socks[i].sock = -1;
   }
 }
 
-bool fu_add_mcast_rx(in_addr_t group, uint16_t port) //, 
+bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //, 
                      //const freertps_udp_rx_callback_t rx_cb)
 {
   FREERTPS_INFO("add mcast rx port %d\n", port);
-  if (g_fu_rx_socks_used >= FU_MAX_RX_SOCKS)
+  if (g_frudp_rx_socks_used >= FU_MAX_RX_SOCKS)
   {
     FREERTPS_ERROR("oh noes, i ran out of socks");
     return false;
@@ -153,28 +153,28 @@ bool fu_add_mcast_rx(in_addr_t group, uint16_t port) //,
 
   struct ip_mreq mreq;
   mreq.imr_multiaddr.s_addr = group;
-  mreq.imr_interface.s_addr = g_fu_tx_addr.s_addr;
+  mreq.imr_interface.s_addr = g_frudp_tx_addr.s_addr;
   result = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
   if (result < 0)
   {
     FREERTPS_ERROR("couldn't add rx sock to multicast group, errno = %d", errno);
     return false;
   }
-  g_fu_rx_socks[g_fu_rx_socks_used].sock = s;
+  g_frudp_rx_socks[g_frudp_rx_socks_used].sock = s;
   //g_freertps_udp_rx_socks[g_freertps_udp_rx_socks_used].cb = rx_cb;
-  g_fu_rx_socks_used++;
+  g_frudp_rx_socks_used++;
   return true;
 }
 
-bool fu_listen(const uint32_t max_usec)
+bool frudp_listen(const uint32_t max_usec)
 {
-  static uint8_t s_fu_listen_buf[FU_RX_BUFSIZE]; // haha 
+  static uint8_t s_frudp_listen_buf[FU_RX_BUFSIZE]; // haha 
   fd_set rdset;
   FD_ZERO(&rdset);
   int max_fd = 0;
-  for (int i = 0; i < g_fu_rx_socks_used; i++)
+  for (int i = 0; i < g_frudp_rx_socks_used; i++)
   {
-    const int s = g_fu_rx_socks[i].sock;
+    const int s = g_frudp_rx_socks[i].sock;
     FD_SET(s, &rdset);
     if (s > max_fd)
       max_fd = s;
@@ -188,20 +188,20 @@ bool fu_listen(const uint32_t max_usec)
   else if (rv == 0)
     return true;  // nothing to do, boring
   // now, find out which of our rx socks had something exciting happen
-  for (int i = 0; i < g_fu_rx_socks_used; i++)
+  for (int i = 0; i < g_frudp_rx_socks_used; i++)
   {
-    if (FD_ISSET(g_fu_rx_socks[i].sock, &rdset))
+    if (FD_ISSET(g_frudp_rx_socks[i].sock, &rdset))
     {
       struct sockaddr_in src_addr;
       int addrlen = sizeof(src_addr);
-      int nbytes = recvfrom(g_fu_rx_socks[i].sock, 
-                            s_fu_listen_buf,
-                            sizeof(s_fu_listen_buf),
+      int nbytes = recvfrom(g_frudp_rx_socks[i].sock, 
+                            s_frudp_listen_buf,
+                            sizeof(s_frudp_listen_buf),
                             0, 
                             &src_addr, &addrlen);
-      fu_rx(src_addr.sin_addr.s_addr,
+      frudp_rx(src_addr.sin_addr.s_addr,
             src_addr.sin_port,
-            s_fu_listen_buf,
+            s_frudp_listen_buf,
             nbytes);
     }
   }

@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 
 // NOTE: the prefix freertps_udp_ is too long to type, so it will heretofore 
-// be shortened to fu_
+// be shortened to frudp_
 
 // NOTE: everything is assumed to be little-endian. if we ever need to run on
 // big-endian, we'll have to rethink some of this.
@@ -41,26 +41,26 @@ typedef struct
   frudp_pver_t pver; // protocol version
   frudp_vid_t  vid;  // vendor ID
   frudp_guid_prefix_t guid_prefix;
-} fu_header_t;
+} frudp_header_t;
 
 typedef struct
 {
-  fu_header_t header;
+  frudp_header_t header;
   uint8_t submsgs[];
-} fu_msg_t;
+} frudp_msg_t;
 
 typedef struct
 {
   uint8_t id;
   uint8_t flags;
   uint16_t len;
-} fu_submsg_header_t;
+} frudp_submsg_header_t;
 
 typedef struct
 {
-  fu_submsg_header_t header;
+  frudp_submsg_header_t header;
   uint8_t contents[];
-} fu_submsg_t;
+} frudp_submsg_t;
 
 typedef union
 {
@@ -88,14 +88,14 @@ typedef struct
   frudp_guid_prefix_t dst_guid_prefix;
   bool            have_timestamp;
   fr_time_t       timestamp;
-} fu_receiver_state_t;
+} frudp_receiver_state_t;
 
 
 typedef struct
 {
   int32_t high;
   uint32_t low;
-} fu_sequencenumber_t;
+} frudp_sequencenumber_t;
 
 typedef struct
 {
@@ -103,23 +103,23 @@ typedef struct
   uint16_t octets_to_inline_qos;
   frudp_entityid_t reader_id;
   frudp_entityid_t writer_id;
-  fu_sequencenumber_t writer_sn;
-} fu_submsg_contents_data_t;
+  frudp_sequencenumber_t writer_sn;
+} frudp_submsg_contents_data_t;
 
-typedef uint16_t fu_parameterid_t;
+typedef uint16_t frudp_parameterid_t;
 typedef struct
 {
-  fu_parameterid_t pid;
+  frudp_parameterid_t pid;
   uint16_t len;
   uint8_t value[];
-} fu_parameter_list_item_t;
+} frudp_parameter_list_item_t;
 
 #define FU_PID_SENTINEL 1
 
 #define FRUDP_DATA_ENCAP_SCHEME_PL_CDR_LE 0x0003
 
-typedef void (*frudp_rx_cb_t)(fu_receiver_state_t *rcvr,
-                              const fu_submsg_t *submsg,
+typedef void (*frudp_rx_cb_t)(frudp_receiver_state_t *rcvr,
+                              const frudp_submsg_t *submsg,
                               const uint16_t scheme,
                               const uint8_t *data);
 
@@ -158,19 +158,19 @@ typedef uint32_t frudp_builtin_endpoint_set_t;
 // FUNCTIONS 
 /////////////////////////////////////////////////////////////////////
 
-bool fu_init();
-void fu_fini();
+bool frudp_init();
+void frudp_fini();
 
-bool fu_add_mcast_rx(const in_addr_t group, 
-                     const uint16_t port); //,
+bool frudp_add_mcast_rx(const in_addr_t group, 
+                        const uint16_t port); //,
                                //const freertps_udp_rx_callback_t rx_cb);
 
-bool fu_listen(const uint32_t max_usec);
+bool frudp_listen(const uint32_t max_usec);
 
-bool fu_rx(const in_addr_t src_addr,
-           const in_port_t src_port,
-           const uint8_t *rx_data,
-           const uint16_t rx_len);
+bool frudp_rx(const in_addr_t src_addr,
+              const in_port_t src_port,
+              const uint8_t *rx_data,
+              const uint16_t rx_len);
 
 bool frudp_subscribe(const frudp_entityid_t reader_id,
                      const frudp_entityid_t writer_id,
