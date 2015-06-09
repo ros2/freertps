@@ -9,6 +9,11 @@ static int g_frudp_spdp_num_participants = 0;
 
 static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
+#define FRUDP_DISCOVERY_TX_BUFLEN 1500
+static uint8_t g_frudp_discovery_tx_buf[FRUDP_DISCOVERY_TX_BUFLEN];
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
@@ -186,8 +191,22 @@ void frudp_spdp_fini()
 // todo: this will all eventually be factored somewhere else. for now, 
 // just work through what it takes to send messages
 
+// todo: consolidate spdp and sedp into a 'discovery' module
+
 frudp_msg_t *frudp_init_msg(uint8_t *buf)
 {
+  frudp_msg_t *msg = (frudp_msg_t *)g_frudp_discovery_tx_buf;
+  msg->header.magic_word = 0x53505452;
+  msg->header.pver.major = 2;
+  msg->header.pver.minor = 1;
+  msg->header.vid = FREERTPS_VENDOR_ID;
+  msg->header.guid_prefix[0] = FREERTPS_VENDOR_ID >> 8;  // big endian (?)
+  msg->header.guid_prefix[1] = FREERTPS_VENDOR_ID & 0xff;
+  // todo: actually get mac address
+  const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
+  for (int i = 0; i < 6; i++)
+    msg->header.guid_prefix[2+i] = mac[i];
+  msg->header.guid_prefix[8] = 0;
   return NULL;
 }
 
