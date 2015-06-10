@@ -176,5 +176,10 @@ bool frudp_subscribe(const frudp_entityid_t reader_id,
                      const frudp_entityid_t writer_id,
                      const frudp_rx_cb_t cb);
 
+bool frudp_tx(const in_addr_t dst_addr,
+              const in_port_t dst_port,
+              const uint8_t *tx_data,
+              const uint16_t tx_len);
+
 #endif
 

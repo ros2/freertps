@@ -29,9 +29,9 @@ typedef struct
 static frudp_rx_sock_t g_frudp_rx_socks[FU_MAX_RX_SOCKS];
 static int g_frudp_rx_socks_used;
 
-static struct in_addr g_frudp_tx_addr;
+//static struct in_addr g_frudp_tx_addr;
+static struct sockaddr_in g_frudp_tx_addr;
 static int g_frudp_tx_sock;
-//static sockaddr_in g_freertps_udp_saddrs[FREERPS_MAX_RX_SOCKS];
 
 #define FU_RX_BUFSIZE 1500
 
@@ -68,7 +68,7 @@ bool frudp_init()
     tx_addr_str = host; // save this one for now
   }
   FREERTPS_INFO("using address %s\n", tx_addr_str);
-  g_frudp_tx_addr.s_addr = inet_addr(tx_addr_str);
+  g_frudp_tx_addr.sin_addr.s_addr = inet_addr(tx_addr_str);
   freeifaddrs(ifaddr);
 
   g_frudp_tx_sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -79,7 +79,7 @@ bool frudp_init()
   }
   int result;
   result = setsockopt(g_frudp_tx_sock, IPPROTO_IP, IP_MULTICAST_IF,
-                      (char *)&g_frudp_tx_addr,
+                      (char *)&g_frudp_tx_addr.sin_addr.s_addr,
                       sizeof(g_frudp_tx_addr));
   if (result < 0)
   {
@@ -153,7 +153,7 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
 
   struct ip_mreq mreq;
   mreq.imr_multiaddr.s_addr = group;
-  mreq.imr_interface.s_addr = g_frudp_tx_addr.s_addr;
+  mreq.imr_interface.s_addr = g_frudp_tx_addr.sin_addr.s_addr;
   result = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
   if (result < 0)
   {
@@ -208,3 +208,19 @@ bool frudp_listen(const uint32_t max_usec)
   return true;
 }
 
+bool frudp_tx(const in_addr_t dst_addr,
+              const in_port_t dst_port,
+              const uint8_t *tx_data,
+              const uint16_t tx_len)
+{
+  //struct sockaddr_in g_freertps_tx_addr;
+  g_frudp_tx_addr.sin_port = htons(dst_port);
+  g_frudp_tx_addr.sin_addr.s_addr = dst_addr;
+  // todo: be smarter
+  if (tx_len == sendto(g_frudp_tx_sock, tx_data, tx_len, 0,
+                       (struct sockaddr *)(&g_frudp_tx_addr), 
+                       sizeof(g_frudp_tx_addr)))
+    return true;
+  else
+    return false;
+}

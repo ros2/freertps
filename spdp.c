@@ -2,6 +2,9 @@
 #include "freertps/spdp.h"
 #include "freertps/udp.h"
 #include <string.h>
+#include <time.h>
+#include <inttypes.h>
+#include <arpa/inet.h>
 
 #define FRUDP_MAX_PARTICIPANTS 10
 static frudp_participant_t g_frudp_spdp_participants[FRUDP_MAX_PARTICIPANTS];
@@ -11,6 +14,7 @@ static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
 #define FRUDP_DISCOVERY_TX_BUFLEN 1500
 static uint8_t g_frudp_discovery_tx_buf[FRUDP_DISCOVERY_TX_BUFLEN];
+static uint16_t g_frudp_discovery_tx_buf_wpos;
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -195,7 +199,7 @@ void frudp_spdp_fini()
 
 frudp_msg_t *frudp_init_msg(uint8_t *buf)
 {
-  frudp_msg_t *msg = (frudp_msg_t *)g_frudp_discovery_tx_buf;
+  frudp_msg_t *msg = (frudp_msg_t *)buf; 
   msg->header.magic_word = 0x53505452;
   msg->header.pver.major = 2;
   msg->header.pver.minor = 1;
@@ -206,9 +210,25 @@ frudp_msg_t *frudp_init_msg(uint8_t *buf)
   const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
   for (int i = 0; i < 6; i++)
     msg->header.guid_prefix[2+i] = mac[i];
-  msg->header.guid_prefix[8] = 0;
-  return NULL;
+  // 4 bytes left. let's use the systime time in milliseconds
+  // todo: make this abstract by OS
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  const uint32_t millis = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+  memcpy(&msg->header.guid_prefix[8], &millis, 4);
+  g_frudp_discovery_tx_buf_wpos = 0;
+  return msg;
 }
+
+/*
+uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
+                             const frudp_submsg_t * const submsg)
+{
+  frudp_submsg_t *s = (frudp_submsg_t *)&msg->submsgs[msg_wpos];
+  memcpy(s, submsg, submsg->header.len);
+  return msg_wpos + submsg->header.len;
+}
+*/
 
 void frudp_spdp_tick()
 {
@@ -217,7 +237,15 @@ void frudp_spdp_tick()
   {
     FREERTPS_INFO("spdp bcast\n");
     frudp_spdp_last_bcast = t;
-    // TODO: actually broadcast
+    frudp_msg_t *msg = frudp_init_msg(g_frudp_discovery_tx_buf);
+    fr_time_t t = fr_time_now();
+    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)msg->submsgs;
+    ts_submsg->header.id = 0x9; // INFO_TS
+    ts_submsg->header.flags = 0x1; // wtf
+    ts_submsg->header.len = 8; 
+    memcpy(ts_submsg->contents, &t, 8);
+    frudp_tx(inet_addr("239.255.0.1"), 7400,
+             (const uint8_t *)msg, sizeof(frudp_msg_t) + 4 + 8);
   }
 }
 
