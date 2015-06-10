@@ -49,6 +49,10 @@ typedef struct
   uint8_t submsgs[];
 } frudp_msg_t;
 
+#define FRUDP_FLAGS_LITTLE_ENDIAN 0x1
+
+#define FRUDP_SUBMSG_ID_INFO_TS 0x9
+
 typedef struct
 {
   uint8_t id;

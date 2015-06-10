@@ -230,22 +230,27 @@ uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
 }
 */
 
+static void frudp_spdp_bcast()
+{
+  FREERTPS_INFO("spdp bcast\n");
+  frudp_msg_t *msg = frudp_init_msg(g_frudp_discovery_tx_buf);
+  fr_time_t t = fr_time_now();
+  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)msg->submsgs;
+  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  ts_submsg->header.len = 8;
+  memcpy(ts_submsg->contents, &t, 8);
+  frudp_tx(inet_addr("239.255.0.1"), 7400,
+           (const uint8_t *)msg, sizeof(frudp_msg_t) + 4 + 8);
+}
+
 void frudp_spdp_tick()
 {
   const fr_time_t t = fr_time_now();
   if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second
   {
-    FREERTPS_INFO("spdp bcast\n");
+    frudp_spdp_bcast();
     frudp_spdp_last_bcast = t;
-    frudp_msg_t *msg = frudp_init_msg(g_frudp_discovery_tx_buf);
-    fr_time_t t = fr_time_now();
-    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)msg->submsgs;
-    ts_submsg->header.id = 0x9; // INFO_TS
-    ts_submsg->header.flags = 0x1; // wtf
-    ts_submsg->header.len = 8; 
-    memcpy(ts_submsg->contents, &t, 8);
-    frudp_tx(inet_addr("239.255.0.1"), 7400,
-             (const uint8_t *)msg, sizeof(frudp_msg_t) + 4 + 8);
   }
 }
 
