@@ -235,11 +235,14 @@ static void frudp_spdp_bcast()
   FREERTPS_INFO("spdp bcast\n");
   frudp_msg_t *msg = frudp_init_msg(g_frudp_discovery_tx_buf);
   fr_time_t t = fr_time_now();
-  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)msg->submsgs;
+  uint16_t submsg_wpos = 0;
+  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)msg->submsgs[submsg_wpos];
   ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
   ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
   ts_submsg->header.len = 8;
   memcpy(ts_submsg->contents, &t, 8);
+  submsg_wpos += 4 + 8;
+  frudp_submsg_t *data_submsg = (frudp_submsg_t *)msg->submsgs[submsg_wpos];
   frudp_tx(inet_addr("239.255.0.1"), 7400,
            (const uint8_t *)msg, sizeof(frudp_msg_t) + 4 + 8);
 }

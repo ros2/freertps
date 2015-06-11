@@ -102,14 +102,14 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, const frudp_submsg_t *
     case 0x06: return frudp_rx_acknack(rcvr, submsg);
     case 0x07: return frudp_rx_heartbeat(rcvr, submsg);
     case 0x08: return frudp_rx_gap(rcvr, submsg);
-    case 0x09: return frudp_rx_info_ts(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_INFO_TS: return frudp_rx_info_ts(rcvr, submsg);
     case 0x0c: return frudp_rx_info_src(rcvr, submsg);
     case 0x0d: return frudp_rx_info_reply_ip4(rcvr, submsg);
     case 0x0e: return frudp_rx_dst(rcvr, submsg);
     case 0x0f: return frudp_rx_reply(rcvr, submsg);
     case 0x12: return frudp_rx_nack_frag(rcvr, submsg);
     case 0x13: return frudp_rx_heartbeat_frag(rcvr, submsg);
-    case 0x15: return frudp_rx_data(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_DATA:    return frudp_rx_data(rcvr, submsg);
     case 0x16: return frudp_rx_data_frag(rcvr, submsg);
     default: return false;
   }

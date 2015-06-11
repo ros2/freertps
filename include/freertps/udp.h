@@ -51,7 +51,8 @@ typedef struct
 
 #define FRUDP_FLAGS_LITTLE_ENDIAN 0x1
 
-#define FRUDP_SUBMSG_ID_INFO_TS 0x9
+#define FRUDP_SUBMSG_ID_INFO_TS 0x09
+#define FRUDP_SUBMSG_ID_DATA    0x15
 
 typedef struct
 {
