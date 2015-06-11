@@ -50,6 +50,8 @@ typedef struct
 } frudp_msg_t;
 
 #define FRUDP_FLAGS_LITTLE_ENDIAN 0x1
+#define FRUDP_FLAGS_INLINE_QOS    0x2
+#define FRUDP_FLAGS_DATA_PRESENT  0x4
 
 #define FRUDP_SUBMSG_ID_INFO_TS 0x09
 #define FRUDP_SUBMSG_ID_DATA    0x15
@@ -77,7 +79,8 @@ typedef union
   uint32_t u;
 } __attribute__((packed)) frudp_entityid_t;
 
-#define ENTITYID_UNKNOWN 0
+#define FRUDP_ENTITYID_UNKNOWN 0
+#define FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER 0x000100c2
 
 typedef struct
 {

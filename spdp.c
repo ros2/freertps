@@ -236,13 +236,30 @@ static void frudp_spdp_bcast()
   frudp_msg_t *msg = frudp_init_msg(g_frudp_discovery_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
-  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)msg->submsgs[submsg_wpos];
+
+  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
   ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
   ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
   ts_submsg->header.len = 8;
   memcpy(ts_submsg->contents, &t, 8);
   submsg_wpos += 4 + 8;
-  frudp_submsg_t *data_submsg = (frudp_submsg_t *)msg->submsgs[submsg_wpos];
+
+  frudp_submsg_t *data_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
+  data_submsg->header.id = FRUDP_SUBMSG_ID_DATA;
+  data_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
+                              FRUDP_FLAGS_INLINE_QOS    |
+                              FRUDP_FLAGS_DATA_PRESENT  ;
+  data_submsg->header.len = 340; // need to compute this dynamically?
+  frudp_submsg_contents_data_t *data_contents =
+                  (frudp_submsg_contents_data_t *)data_submsg->contents;
+  data_contents->extraflags = 0;
+  data_contents->octets_to_inline_qos = 16; // ?
+  data_contents->reader_id.u = FRUDP_ENTITYID_UNKNOWN;
+  data_contents->writer_id.u = FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER;
+  data_contents->writer_sn.high = 0;
+  static uint32_t bcast_count = 0;
+  data_contents->writer_sn.low = ++bcast_count;
+
   frudp_tx(inet_addr("239.255.0.1"), 7400,
            (const uint8_t *)msg, sizeof(frudp_msg_t) + 4 + 8);
 }
