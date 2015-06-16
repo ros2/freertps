@@ -46,13 +46,15 @@ static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
     */
     if (pid == FRUDP_PID_PROTOCOL_VERSION)
     {
-      FREERTPS_INFO("      spdp proto version 0x%04x\n", *((uint16_t *)(pval)));
+      FREERTPS_INFO("      spdp proto version 0x%04x\n", 
+                    *((uint16_t *)(pval)));
       part->pver = *((frudp_pver_t *)(pval)); // todo: what about alignment?
     }
-    else if (pid == FRUDP_PID_VENDORID)
+    else if (pid == FRUDP_PID_VENDOR_ID)
     {
       part->vid = htons(*((frudp_vid_t *)pval));
-      FREERTPS_INFO("      spdp vendorid 0x%04x = %s\n", part->vid, frudp_vendor(part->vid));
+      FREERTPS_INFO("      spdp vendor_id 0x%04x = %s\n", 
+                    part->vid, frudp_vendor(part->vid));
     }
     else if (pid == FRUDP_PID_DEFAULT_UNICAST_LOCATOR)
     {
@@ -259,6 +261,28 @@ static void frudp_spdp_bcast()
   data_contents->writer_sn.high = 0;
   static uint32_t bcast_count = 0;
   data_contents->writer_sn.low = ++bcast_count;
+  /////////////////////////////////////////////////////////////
+  frudp_parameter_list_item_t *inline_qos_param = 
+    (frudp_parameter_list_item_t *)(((uint8_t *)data_contents) + 
+                                    sizeof(frudp_submsg_contents_data_t));
+  inline_qos_param->pid = FRUDP_PID_SENTINEL;
+  inline_qos_param->len = 0;
+  /////////////////////////////////////////////////////////////
+  frudp_parameter_list_item_t *param_list = 
+    (frudp_parameter_list_item_t *)(((uint8_t *)inline_qos_param) + 4);
+  param_list->pid = FRUDP_PID_PROTOCOL_VERSION;
+  param_list->len = 4;
+  param_list->value[0] = 2;
+  param_list->value[1] = 1;
+  param_list->value[2] = param_list->value[3] = 0; // pad to 4-byte boundary
+  /////////////////////////////////////////////////////////////
+  param_list = (frudp_parameter_list_item_t *)(((uint8_t *)param_list) + 8);
+  param_list->pid = FRUDP_PID_VENDOR_ID;
+  param_list->len = 4;
+  param_list->value[0] = 2;
+  param_list->value[1] = 1;
+  param_list->value[2] = param_list->value[3] = 0; // pad to 4-byte boundary
+  param_list = (frudp_parameter_list_item_t *)(((uint8_t *)param_list) + 8);
 
   frudp_tx(inet_addr("239.255.0.1"), 7400,
            (const uint8_t *)msg, sizeof(frudp_msg_t) + 4 + 8);

@@ -1,4 +1,5 @@
 #include "freertps/udp.h"
+#include "freertps/spdp.h"
 #include <limits.h>
 #include <string.h>
 
@@ -213,7 +214,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       const uint8_t *pval = item->value;
       // todo: process parameter value
       item = (frudp_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
-      if (pid == FU_PID_SENTINEL)
+      if (pid == FRUDP_PID_SENTINEL)
         break; // adios
     }
     data_start = (uint8_t *)item; // after a PID_SENTINEL, this is correct

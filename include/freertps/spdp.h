@@ -7,7 +7,7 @@
 #define FRUDP_PID_PAD                           0x0000
 #define FRUDP_PID_SENTINEL                      0x0001
 #define FRUDP_PID_PROTOCOL_VERSION              0x0015
-#define FRUDP_PID_VENDORID                      0x0016
+#define FRUDP_PID_VENDOR_ID                     0x0016
 #define FRUDP_PID_DEFAULT_UNICAST_LOCATOR       0x0031
 #define FRUDP_PID_DEFAULT_MULTICAST_LOCATOR     0x0048
 #define FRUDP_PID_METATRAFFIC_UNICAST_LOCATOR   0x0032

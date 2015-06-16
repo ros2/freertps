@@ -122,8 +122,6 @@ typedef struct
   uint8_t value[];
 } frudp_parameter_list_item_t;
 
-#define FU_PID_SENTINEL 1
-
 #define FRUDP_DATA_ENCAP_SCHEME_PL_CDR_LE 0x0003
 
 typedef void (*frudp_rx_cb_t)(frudp_receiver_state_t *rcvr,

@@ -3,7 +3,7 @@ LIBNAME= freertps
 BIN    = bin
 LIB    = $(BIN)/lib$(LIBNAME).a
 # todo: figure out the right flags for other OS to get the posix includes right
-CFLAGS = -Iinclude --std=c99 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE
+CFLAGS = -Os -Iinclude --std=c99 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE
 LFLAGS = 
 
 SRCS = freertps.c spdp.c udp.c udp_posix.c discovery.c sedp.c \
