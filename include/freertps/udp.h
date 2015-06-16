@@ -112,7 +112,7 @@ typedef struct
   frudp_entityid_t reader_id;
   frudp_entityid_t writer_id;
   frudp_sequencenumber_t writer_sn;
-} frudp_submsg_contents_data_t;
+} __attribute__((packed)) frudp_submsg_contents_data_t;
 
 typedef uint16_t frudp_parameterid_t;
 typedef struct
@@ -120,9 +120,15 @@ typedef struct
   frudp_parameterid_t pid;
   uint16_t len;
   uint8_t value[];
-} frudp_parameter_list_item_t;
+} __attribute__((packed)) frudp_parameter_list_item_t;
 
-#define FRUDP_DATA_ENCAP_SCHEME_PL_CDR_LE 0x0003
+typedef struct
+{
+  uint16_t scheme;
+  uint16_t options;
+} __attribute__((packed)) frudp_encapsulation_scheme_t;
+
+#define FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE 0x0003
 
 typedef void (*frudp_rx_cb_t)(frudp_receiver_state_t *rcvr,
                               const frudp_submsg_t *submsg,
@@ -167,14 +173,21 @@ typedef uint32_t frudp_builtin_endpoint_set_t;
 bool frudp_init();
 void frudp_fini();
 
+bool frudp_generic_init();
+
 bool frudp_add_mcast_rx(const in_addr_t group, 
                         const uint16_t port); //,
                                //const freertps_udp_rx_callback_t rx_cb);
+
+// todo: elicit desired interface from the user in a sane way
+bool frudp_add_ucast_rx(const uint16_t port);
 
 bool frudp_listen(const uint32_t max_usec);
 
 bool frudp_rx(const in_addr_t src_addr,
               const in_port_t src_port,
+              const in_addr_t dst_addr,
+              const in_port_t dst_port,
               const uint8_t *rx_data,
               const uint16_t rx_len);
 

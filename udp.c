@@ -53,10 +53,9 @@ const char *frudp_vendor(const frudp_vid_t vid)
 }
 
 
-bool frudp_rx(const in_addr_t src_addr,
-           const in_port_t src_port,
-           const uint8_t *rx_data,
-           const uint16_t rx_len)
+bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
+              const in_addr_t dst_addr, const in_port_t dst_port,
+              const uint8_t *rx_data  , const uint16_t rx_len)
 {
   FREERTPS_INFO("freertps rx %d bytes\n", rx_len);
   const frudp_msg_t *msg = (frudp_msg_t *)rx_data;
@@ -268,3 +267,14 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
       return false;
   return true;
 }
+
+bool frudp_generic_init()
+{
+  FREERTPS_INFO("frudp_generic_init()\n");
+  // todo: make this parameterizable and put it in a generic udp init function,
+  // since this isn't particular to POSIX (though... i suppose the way that we
+  // pull out environment or config-file parameters will be)
+  frudp_add_mcast_rx(0xefff0001, 7400);// inet_addr("239.255.0.1")
+  return true;
+}
+
