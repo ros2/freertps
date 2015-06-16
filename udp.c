@@ -3,6 +3,8 @@
 #include <limits.h>
 #include <string.h>
 
+frudp_config_t g_frudp_config;
+
 static frudp_subscription_t g_frudp_subs[FRUDP_MAX_SUBSCRIPTIONS];
 static unsigned g_frudp_subs_used = 0;
 

@@ -206,18 +206,7 @@ frudp_msg_t *frudp_init_msg(uint8_t *buf)
   msg->header.pver.major = 2;
   msg->header.pver.minor = 1;
   msg->header.vid = FREERTPS_VENDOR_ID;
-  msg->header.guid_prefix[0] = FREERTPS_VENDOR_ID >> 8;  // big endian (?)
-  msg->header.guid_prefix[1] = FREERTPS_VENDOR_ID & 0xff;
-  // todo: actually get mac address
-  const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
-  for (int i = 0; i < 6; i++)
-    msg->header.guid_prefix[2+i] = mac[i];
-  // 4 bytes left. let's use the systime time in milliseconds
-  // todo: make this abstract by OS
-  struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  const uint32_t millis = (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
-  memcpy(&msg->header.guid_prefix[8], &millis, 4);
+  memcpy(msg->header.guid_prefix, g_frudp_config.guid_prefix, 12);
   g_frudp_discovery_tx_buf_wpos = 0;
   return msg;
 }

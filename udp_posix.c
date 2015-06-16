@@ -99,6 +99,14 @@ bool frudp_init()
   frudp_generic_init();
   if (!frudp_init_participant_id())
     return false; 
+  g_frudp_config.guid_prefix[0] = FREERTPS_VENDOR_ID >> 8;  // big endian (?)
+  g_frudp_config.guid_prefix[1] = FREERTPS_VENDOR_ID & 0xff;
+  // todo: actually get mac address
+  const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
+  memcpy(&g_frudp_config.guid_prefix[2], mac, 6);
+  // 4 bytes left. let's use the POSIX process ID 
+  uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
+  memcpy(&g_frudp_config.guid_prefix[8], &pid, 4);
   frudp_discovery_init();
   return true;
 }
@@ -106,17 +114,21 @@ bool frudp_init()
 bool frudp_init_participant_id()
 {
   FREERTPS_INFO("frudp_init_participant_id()\n");
-  for (int i = 0; i < 100; i++) // todo: hard upper bound is bad
+  for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
   {
     // see if we can open the port; if so, let's say we have a unique PID
-    const uint16_t port = 7401 + 2 * i;
+    const uint16_t port = FRUDP_PORT_PB + 
+                          FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+                          FRUDP_PORT_D1 +
+                          FRUDP_PORT_PG * pid;
     if (frudp_add_ucast_rx(port))
     {
-      // TODO: set global variable for pid
-      break;
+      FREERTPS_INFO("using RTPS/DDS PID %d\n", pid);
+      g_frudp_config.participant_id = pid;
+      return true;
     }
   }
-  return true;
+  return false; // couldn't find an available PID
 }
 
 void frudp_fini()
@@ -152,7 +164,7 @@ bool frudp_add_ucast_rx(const uint16_t port)
   struct sockaddr_in rx_bind_addr;
   memset(&rx_bind_addr, 0, sizeof(rx_bind_addr));
   rx_bind_addr.sin_family = AF_INET;
-  rx_bind_addr.sin_addr.s_addr = inet_addr("172.23.2.160"); // TODO: not this
+  rx_bind_addr.sin_addr.s_addr = g_frudp_tx_addr.sin_addr.s_addr;
   rx_bind_addr.sin_port = htons(port);
   int result = bind(s, (struct sockaddr *)&rx_bind_addr, sizeof(rx_bind_addr));
   if (result < 0)

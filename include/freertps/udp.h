@@ -13,9 +13,22 @@
 // big-endian, we'll have to rethink some of this.
 
 /////////////////////////////////////////////////////////////////////
-// TYPES 
+// A FEW CONSTANTS FROM THE SPEC
 /////////////////////////////////////////////////////////////////////
 
+#define FRUDP_PORT_PB 7400
+#define FRUDP_PORT_DG  250
+#define FRUDP_PORT_PG    2
+#define FRUDP_PORT_D0    0
+#define FRUDP_PORT_D1   10
+#define FRUDP_PORT_D2    1
+#define FRUDP_PORT_D3   11
+
+#define FRUDP_DOMAIN_ID  0
+
+/////////////////////////////////////////////////////////////////////
+// TYPES 
+/////////////////////////////////////////////////////////////////////
 
 typedef struct 
 { 
@@ -165,6 +178,13 @@ typedef struct
 } frudp_duration_t;
 
 typedef uint32_t frudp_builtin_endpoint_set_t;
+
+typedef struct
+{
+  frudp_guid_prefix_t guid_prefix;
+  int participant_id;
+} frudp_config_t;
+extern frudp_config_t g_frudp_config;
 
 /////////////////////////////////////////////////////////////////////
 // FUNCTIONS 
