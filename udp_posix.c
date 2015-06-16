@@ -96,10 +96,26 @@ bool frudp_init()
     FREERTPS_FATAL("couldn't disable outbound tx multicast loopback\n");
     return false;
   }
-  frudp_discovery_init();
-
   frudp_generic_init();
+  if (!frudp_init_participant_id())
+    return false; 
+  frudp_discovery_init();
+  return true;
+}
 
+bool frudp_init_participant_id()
+{
+  FREERTPS_INFO("frudp_init_participant_id()\n");
+  for (int i = 0; i < 100; i++) // todo: hard upper bound is bad
+  {
+    // see if we can open the port; if so, let's say we have a unique PID
+    const uint16_t port = 7401 + 2 * i;
+    if (frudp_add_ucast_rx(port))
+    {
+      // TODO: set global variable for pid
+      break;
+    }
+  }
   return true;
 }
 
@@ -187,7 +203,7 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
   result = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
   if (result < 0)
   {
-    FREERTPS_ERROR("couldn't add rx sock to multicast group, errno = %d", 
+    FREERTPS_ERROR("couldn't add rx sock to multicast group, errno = %d\n", 
                    errno);
     return false;
   }

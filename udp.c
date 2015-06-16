@@ -274,7 +274,7 @@ bool frudp_generic_init()
   // todo: make this parameterizable and put it in a generic udp init function,
   // since this isn't particular to POSIX (though... i suppose the way that we
   // pull out environment or config-file parameters will be)
-  frudp_add_mcast_rx(0xefff0001, 7400);// inet_addr("239.255.0.1")
+  frudp_add_mcast_rx(htonl(0xefff0001), 7400);// inet_addr("239.255.0.1")
   return true;
 }
 

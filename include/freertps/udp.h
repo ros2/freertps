@@ -174,6 +174,7 @@ bool frudp_init();
 void frudp_fini();
 
 bool frudp_generic_init();
+bool frudp_init_participant_id();
 
 bool frudp_add_mcast_rx(const in_addr_t group, 
                         const uint16_t port); //,
