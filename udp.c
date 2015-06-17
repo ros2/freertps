@@ -2,6 +2,7 @@
 #include "freertps/spdp.h"
 #include <limits.h>
 #include <string.h>
+#include <stdio.h>
 
 frudp_config_t g_frudp_config;
 
@@ -79,7 +80,7 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
   frudp_receiver_state_t rcvr;
   rcvr.src_pver = msg->header.pver;
   rcvr.src_vid = msg->header.vid;
-  memcpy(rcvr.src_guid_prefix, msg->header.guid_prefix, FRUDP_GUIDPREFIX_LEN);
+  memcpy(rcvr.src_guid_prefix, msg->header.guid_prefix, FRUDP_GUID_PREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages
   for (const uint8_t *submsg_start = msg->submsgs;
@@ -264,7 +265,7 @@ bool frudp_subscribe(const frudp_entityid_t reader_id,
 bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
                                  frudp_guid_prefix_t * const b)
 {
-  for (int i = 0; i < FRUDP_GUIDPREFIX_LEN; i++)
+  for (int i = 0; i < FRUDP_GUID_PREFIX_LEN; i++)
     if ((*a)[i] != (*b)[i])
       return false;
   return true;
@@ -276,7 +277,55 @@ bool frudp_generic_init()
   // todo: make this parameterizable and put it in a generic udp init function,
   // since this isn't particular to POSIX (though... i suppose the way that we
   // pull out environment or config-file parameters will be)
-  frudp_add_mcast_rx(htonl(0xefff0001), 7400);// inet_addr("239.255.0.1")
+  const uint16_t mcast_port = frudp_spdp_port();
+  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), mcast_port);
   return true;
 }
 
+uint16_t frudp_spdp_port()
+{
+  return FRUDP_PORT_PB +
+         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_D0;
+}
+
+uint16_t frudp_mcast_builtin_port()
+{
+  return FRUDP_PORT_PB + 
+         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_D0;
+}
+
+uint16_t frudp_ucast_builtin_port()
+{
+  return FRUDP_PORT_PB + 
+         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_D1 +
+         FRUDP_PORT_PG * g_frudp_config.participant_id;
+}
+
+uint16_t frudp_mcast_user_port()
+{
+  return FRUDP_PORT_PB + 
+         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_D2;
+}
+
+uint16_t frudp_ucast_user_port()
+{
+  return FRUDP_PORT_PB + 
+         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_D3 +
+         FRUDP_PORT_PG * g_frudp_config.participant_id;
+}
+
+const char *frudp_ip4_ntoa(const uint32_t addr)
+{
+  static uint8_t ntoa_buf[20]; 
+  snprintf(ntoa_buf, sizeof(ntoa_buf), "%d.%d.%d.%d",
+           (addr      ) & 0xff,
+           (addr >>  8) & 0xff,
+           (addr >> 16) & 0xff,
+           (addr >> 24) & 0xff);
+  return ntoa_buf;
+}

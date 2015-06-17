@@ -26,6 +26,9 @@
 
 #define FRUDP_DOMAIN_ID  0
 
+// default multicast group is 239.255.0.1
+#define FRUDP_DEFAULT_MCAST_GROUP 0xefff0001
+
 /////////////////////////////////////////////////////////////////////
 // TYPES 
 /////////////////////////////////////////////////////////////////////
@@ -42,8 +45,8 @@ const char *frudp_vendor(const frudp_vid_t vid);
 // for now let's pretend that our vendor ID is 11311 in hex
 #define FREERTPS_VENDOR_ID 0x2C2F
 
-#define FRUDP_GUIDPREFIX_LEN 12
-typedef uint8_t frudp_guid_prefix_t[FRUDP_GUIDPREFIX_LEN];
+#define FRUDP_GUID_PREFIX_LEN 12
+typedef uint8_t frudp_guid_prefix_t[FRUDP_GUID_PREFIX_LEN];
 
 bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
                                  frudp_guid_prefix_t * const b);
@@ -163,7 +166,15 @@ typedef struct
 {
   int32_t kind;
   uint32_t port;
-  uint8_t address[16];
+  union
+  {
+    uint8_t raw[16];
+    struct
+    {
+      uint8_t zeros[12];
+      uint32_t addr;
+    } udp4;
+  } addr; 
 } __attribute__((packed)) frudp_locator_t;
 
 #define FRUDP_LOCATOR_KIND_INVALID -1
@@ -183,6 +194,7 @@ typedef struct
 {
   frudp_guid_prefix_t guid_prefix;
   int participant_id;
+  uint32_t unicast_addr;
 } frudp_config_t;
 extern frudp_config_t g_frudp_config;
 
@@ -220,6 +232,14 @@ bool frudp_tx(const in_addr_t dst_addr,
               const in_port_t dst_port,
               const uint8_t *tx_data,
               const uint16_t tx_len);
+
+uint16_t frudp_ucast_builtin_port();
+uint16_t frudp_mcast_builtin_port();
+uint16_t frudp_ucast_user_port();
+uint16_t frudp_mcast_user_port();
+uint16_t frudp_spdp_port();
+
+const char *frudp_ip4_ntoa(const uint32_t addr);
 
 #endif
 

@@ -71,6 +71,7 @@ bool frudp_init()
   }
   FREERTPS_INFO("using address %s\n", tx_addr_str);
   g_frudp_tx_addr.sin_addr.s_addr = inet_addr(tx_addr_str);
+  g_frudp_config.unicast_addr = (uint32_t)g_frudp_tx_addr.sin_addr.s_addr;
   freeifaddrs(ifaddr);
 
   g_frudp_tx_sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -88,6 +89,7 @@ bool frudp_init()
     FREERTPS_FATAL("couldn't set tx sock to allow multicast\n");
     return false;
   }
+  /*
   int loopback = 0;
   result = setsockopt(g_frudp_tx_sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                       &loopback, sizeof(loopback));
@@ -96,6 +98,7 @@ bool frudp_init()
     FREERTPS_FATAL("couldn't disable outbound tx multicast loopback\n");
     return false;
   }
+  */
   frudp_generic_init();
   if (!frudp_init_participant_id())
     return false; 
@@ -117,10 +120,8 @@ bool frudp_init_participant_id()
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
   {
     // see if we can open the port; if so, let's say we have a unique PID
-    const uint16_t port = FRUDP_PORT_PB + 
-                          FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
-                          FRUDP_PORT_D1 +
-                          FRUDP_PORT_PG * pid;
+    const uint16_t port = frudp_ucast_builtin_port();
+    
     if (frudp_add_ucast_rx(port))
     {
       FREERTPS_INFO("using RTPS/DDS PID %d\n", pid);
