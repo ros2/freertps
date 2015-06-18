@@ -56,21 +56,29 @@ const char *frudp_vendor(const frudp_vid_t vid)
 }
 
 
+//#define RX_VERBOSE
+
 bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
               const in_addr_t dst_addr, const in_port_t dst_port,
               const uint8_t *rx_data  , const uint16_t rx_len)
 {
+#ifdef RX_VERBOSE
   FREERTPS_INFO("freertps rx %d bytes\n", rx_len);
+#endif
   const frudp_msg_t *msg = (frudp_msg_t *)rx_data;
   //const frudp_header_t *header = (frudp_header_t *)rx_data;
   if (msg->header.magic_word != 0x53505452) // todo: care about endianness someday
     return false; // it wasn't RTPS. no soup for you.
+#ifdef RX_VERBOSE
   FREERTPS_INFO("rx proto ver %d.%d\n", msg->header.pver.major, msg->header.pver.minor);
+#endif
   if (msg->header.pver.major != 2)
     return false; // we aren't cool enough to be oldschool
+#ifdef RX_VERBOSE
   FREERTPS_INFO("rx vendor 0x%04x = %s\n", 
                 (unsigned)ntohs(msg->header.vid), 
                 frudp_vendor(ntohs(msg->header.vid)));
+#endif
   //frudp_guidprefix_t *guidp = (frudp_guidprefix_t *)(rx_data + 8);
   /*
   for (int i = 0; i < 12; i++)
@@ -80,6 +88,14 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
   frudp_receiver_state_t rcvr;
   rcvr.src_pver = msg->header.pver;
   rcvr.src_vid = msg->header.vid;
+
+  bool our_guid = true;
+  for (int i = 0; i < 12; i++)
+    if (msg->header.guid_prefix[i] != g_frudp_config.guid_prefix[i])
+      our_guid = false;
+  if (our_guid)
+    return true; // don't process our own messages
+
   memcpy(rcvr.src_guid_prefix, msg->header.guid_prefix, FRUDP_GUID_PREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages
@@ -95,9 +111,11 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
 
 static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, const frudp_submsg_t *submsg)
 {
+#ifdef RX_VERBOSE
   FREERTPS_INFO("rx submsg ID %d len %d\n", 
                 submsg->header.id,
                 submsg->header.len);
+#endif
   // dispatch to message handlers
   switch (submsg->header.id)
   {
@@ -191,7 +209,9 @@ static bool frudp_rx_heartbeat_frag(RX_MSG_ARGS)
 static bool frudp_rx_data(RX_MSG_ARGS)
 {
   frudp_submsg_contents_data_t *contents = (frudp_submsg_contents_data_t *)submsg->contents;
+#ifdef RX_VERBOSE
   FREERTPS_INFO("rx data flags = %d\n", 0x0f7 & submsg->header.flags);
+#endif
   // todo: care about endianness
   const bool q = submsg->header.flags & 0x02;
   const bool d = submsg->header.flags & 0x04;
@@ -211,7 +231,9 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     frudp_parameter_list_item_t *item = (frudp_parameter_list_item_t *)inline_qos_start;
     while ((uint8_t *)item < submsg->contents + submsg->header.len)
     {
+#ifdef RX_VERBOSE
       FREERTPS_INFO("data inline QoS param 0x%x len %d\n", (unsigned)item->pid, item->len);
+#endif
       const frudp_parameterid_t pid = item->pid;
       const uint8_t *pval = item->value;
       // todo: process parameter value
@@ -222,8 +244,12 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     data_start = (uint8_t *)item; // after a PID_SENTINEL, this is correct
   }
   const uint16_t scheme = ntohs(*((uint16_t *)data_start));
+  //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
   // spin through subscriptions and see if anyone is listening
+  printf("  reader id = 0x%08x  writer id = 0x%08x\n",
+         htonl(contents->writer_id.u), 
+         htonl(contents->reader_id.u));
   for (unsigned i = 0; i < g_frudp_subs_used; i++)
   {
     if (g_frudp_subs[i].writer_id.u == contents->writer_id.u &&
@@ -274,11 +300,13 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
 bool frudp_generic_init()
 {
   FREERTPS_INFO("frudp_generic_init()\n");
-  // todo: make this parameterizable and put it in a generic udp init function,
-  // since this isn't particular to POSIX (though... i suppose the way that we
-  // pull out environment or config-file parameters will be)
-  const uint16_t mcast_port = frudp_spdp_port();
-  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), mcast_port);
+  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+                     frudp_spdp_port());
+  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+                     frudp_mcast_builtin_port());
+  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+                     frudp_mcast_user_port());
+  frudp_add_ucast_rx(frudp_ucast_user_port());
   return true;
 }
 

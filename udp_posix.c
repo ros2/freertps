@@ -35,7 +35,7 @@ static int g_frudp_rx_socks_used;
 static struct sockaddr_in g_frudp_tx_addr;
 static int g_frudp_tx_sock;
 
-#define FU_RX_BUFSIZE 1500
+#define FU_RX_BUFSIZE 4096
 
 bool frudp_init()
 {
@@ -99,9 +99,9 @@ bool frudp_init()
     return false;
   }
   */
-  frudp_generic_init();
   if (!frudp_init_participant_id())
     return false; 
+  frudp_generic_init();
   g_frudp_config.guid_prefix[0] = FREERTPS_VENDOR_ID >> 8;  // big endian (?)
   g_frudp_config.guid_prefix[1] = FREERTPS_VENDOR_ID & 0xff;
   // todo: actually get mac address
@@ -120,12 +120,12 @@ bool frudp_init_participant_id()
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
   {
     // see if we can open the port; if so, let's say we have a unique PID
+    g_frudp_config.participant_id = pid;
     const uint16_t port = frudp_ucast_builtin_port();
     
     if (frudp_add_ucast_rx(port))
     {
       FREERTPS_INFO("using RTPS/DDS PID %d\n", pid);
-      g_frudp_config.participant_id = pid;
       return true;
     }
   }
@@ -170,7 +170,7 @@ bool frudp_add_ucast_rx(const uint16_t port)
   int result = bind(s, (struct sockaddr *)&rx_bind_addr, sizeof(rx_bind_addr));
   if (result < 0)
   {
-    FREERTPS_ERROR("couldn't bind to unicast port %d", port);
+    FREERTPS_ERROR("couldn't bind to unicast port %d\n", port);
     close(s);
     return false;
   }
@@ -278,7 +278,7 @@ bool frudp_tx(const in_addr_t dst_addr,
   g_frudp_tx_addr.sin_port = htons(dst_port);
   g_frudp_tx_addr.sin_addr.s_addr = dst_addr;
   // todo: be smarter
-  if (tx_len == sendto(g_frudp_tx_sock, tx_data, tx_len, 0,
+  if (tx_len == sendto(g_frudp_rx_socks[4].sock, tx_data, tx_len, 0,
                        (struct sockaddr *)(&g_frudp_tx_addr), 
                        sizeof(g_frudp_tx_addr)))
     return true;
