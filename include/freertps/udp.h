@@ -24,10 +24,14 @@
 #define FRUDP_PORT_D2    1
 #define FRUDP_PORT_D3   11
 
+// to avoid conflicts / false-positives on our LAN
 #define FRUDP_DOMAIN_ID  0
 
 // default multicast group is 239.255.0.1
 #define FRUDP_DEFAULT_MCAST_GROUP 0xefff0001
+
+// for now let's pretend that our vendor ID is 11311 in hex
+#define FREERTPS_VENDOR_ID 0x2C2F
 
 /////////////////////////////////////////////////////////////////////
 // TYPES 
@@ -42,11 +46,11 @@ typedef struct
 typedef uint16_t frudp_vid_t; // vendor ID
 const char *frudp_vendor(const frudp_vid_t vid);
 
-// for now let's pretend that our vendor ID is 11311 in hex
-#define FREERTPS_VENDOR_ID 0x2C2F
-
 #define FRUDP_GUID_PREFIX_LEN 12
-typedef uint8_t frudp_guid_prefix_t[FRUDP_GUID_PREFIX_LEN];
+typedef struct
+{
+  uint8_t prefix[FRUDP_GUID_PREFIX_LEN];
+} frudp_guid_prefix_t;
 
 bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
                                  frudp_guid_prefix_t * const b);
@@ -93,15 +97,16 @@ typedef union
     uint8_t kind;
   } s;
   uint32_t u;
-} __attribute__((packed)) frudp_entityid_t;
+} __attribute__((packed)) frudp_entity_id_t;
 
-#define FRUDP_ENTITYID_UNKNOWN 0
+extern const frudp_entity_id_t g_frudp_entity_id_unknown;
+
 #define FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER 0x000100c2
 
 typedef struct
 {
   frudp_guid_prefix_t guid_prefix;
-  frudp_entityid_t entity_id;
+  frudp_entity_id_t entity_id;
 } __attribute__((packed)) frudp_guid_t;
 
 typedef struct
@@ -119,16 +124,40 @@ typedef struct
 {
   int32_t high;
   uint32_t low;
-} frudp_sequencenumber_t;
+} frudp_sequence_number_t;
+
+typedef struct
+{
+  frudp_sequence_number_t bitmap_base;
+  uint32_t num_bits;
+  uint32_t bitmap[];
+} frudp_sequence_number_set_t;
 
 typedef struct
 {
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
-  frudp_entityid_t reader_id;
-  frudp_entityid_t writer_id;
-  frudp_sequencenumber_t writer_sn;
+  frudp_entity_id_t reader_id;
+  frudp_entity_id_t writer_id;
+  frudp_sequence_number_t writer_sn;
 } __attribute__((packed)) frudp_submsg_contents_data_t;
+
+typedef struct
+{
+  frudp_entity_id_t reader_id;
+  frudp_entity_id_t writer_id;
+  frudp_sequence_number_t first_sn;
+  frudp_sequence_number_t last_sn;
+  uint32_t count;
+} __attribute__((packed)) frudp_submsg_heartbeat_t;
+
+typedef struct
+{
+  frudp_entity_id_t reader_id;
+  frudp_entity_id_t writer_id;
+  frudp_sequence_number_set_t reader_sn_state_t;
+  uint32_t count;
+} __attribute__((packed)) frudp_submsg_acknack_t;
 
 typedef uint16_t frudp_parameterid_t;
 typedef struct
@@ -153,8 +182,8 @@ typedef void (*frudp_rx_cb_t)(frudp_receiver_state_t *rcvr,
 
 typedef struct
 {
-  frudp_entityid_t reader_id;
-  frudp_entityid_t writer_id;
+  frudp_entity_id_t reader_id;
+  frudp_entity_id_t writer_id;
   frudp_rx_cb_t cb;
 } frudp_subscription_t;
 
@@ -198,6 +227,12 @@ typedef struct
 } frudp_config_t;
 extern frudp_config_t g_frudp_config;
 
+typedef struct
+{
+  uint32_t len;
+  uint8_t data[];
+} frudp_rtps_string_t;
+
 /////////////////////////////////////////////////////////////////////
 // FUNCTIONS 
 /////////////////////////////////////////////////////////////////////
@@ -224,8 +259,8 @@ bool frudp_rx(const in_addr_t src_addr,
               const uint8_t *rx_data,
               const uint16_t rx_len);
 
-bool frudp_subscribe(const frudp_entityid_t reader_id,
-                     const frudp_entityid_t writer_id,
+bool frudp_subscribe(const frudp_entity_id_t reader_id,
+                     const frudp_entity_id_t writer_id,
                      const frudp_rx_cb_t cb);
 
 bool frudp_tx(const in_addr_t dst_addr,
@@ -240,6 +275,10 @@ uint16_t frudp_mcast_user_port();
 uint16_t frudp_spdp_port();
 
 const char *frudp_ip4_ntoa(const uint32_t addr);
+
+bool frudp_parse_string(char *buf, uint32_t buf_len, frudp_rtps_string_t *s);
+
+frudp_msg_t *frudp_init_msg(uint8_t *buf);
 
 #endif
 

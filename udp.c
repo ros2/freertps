@@ -1,9 +1,11 @@
 #include "freertps/udp.h"
 #include "freertps/spdp.h"
+#include "freertps/discovery.h"
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
 
+const frudp_entity_id_t g_frudp_entity_id_unknown = { .u = 0 };
 frudp_config_t g_frudp_config;
 
 static frudp_subscription_t g_frudp_subs[FRUDP_MAX_SUBSCRIPTIONS];
@@ -91,12 +93,15 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
 
   bool our_guid = true;
   for (int i = 0; i < 12; i++)
-    if (msg->header.guid_prefix[i] != g_frudp_config.guid_prefix[i])
+    if (msg->header.guid_prefix.prefix[i] != 
+        g_frudp_config.guid_prefix.prefix[i])
       our_guid = false;
   if (our_guid)
     return true; // don't process our own messages
 
-  memcpy(rcvr.src_guid_prefix, msg->header.guid_prefix, FRUDP_GUID_PREFIX_LEN);
+  memcpy(rcvr.src_guid_prefix.prefix, 
+         msg->header.guid_prefix.prefix, 
+         FRUDP_GUID_PREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages
   for (const uint8_t *submsg_start = msg->submsgs;
@@ -140,11 +145,23 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, const frudp_submsg_t *
 
 static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
+  frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
+  printf("  ACKNACK   reader id = 0x%08x  writer id = 0x%08x\n",
+         htonl(m->writer_id.u), 
+         htonl(m->reader_id.u));
   return true;
 }
 
 static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 {
+  // todo: care about endianness
+  const bool f = submsg->header.flags & 0x02;
+  const bool l = submsg->header.flags & 0x04;
+  frudp_submsg_heartbeat_t *contents = 
+                              (frudp_submsg_heartbeat_t *)submsg->contents;
+  printf("  HEARTBEAT reader id = 0x%08x  writer id = 0x%08x\n",
+         htonl(contents->writer_id.u), 
+         htonl(contents->reader_id.u));
   return true;
 }
 
@@ -247,7 +264,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
   // spin through subscriptions and see if anyone is listening
-  printf("  reader id = 0x%08x  writer id = 0x%08x\n",
+  printf("  DATA reader id = 0x%08x  writer id = 0x%08x\n",
          htonl(contents->writer_id.u), 
          htonl(contents->reader_id.u));
   for (unsigned i = 0; i < g_frudp_subs_used; i++)
@@ -274,8 +291,8 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
   return true;
 }
 
-bool frudp_subscribe(const frudp_entityid_t reader_id,
-                     const frudp_entityid_t writer_id,
+bool frudp_subscribe(const frudp_entity_id_t reader_id,
+                     const frudp_entity_id_t writer_id,
                      const frudp_rx_cb_t cb)
 {
   if (g_frudp_subs_used >= FRUDP_MAX_SUBSCRIPTIONS)
@@ -292,7 +309,7 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
                                  frudp_guid_prefix_t * const b)
 {
   for (int i = 0; i < FRUDP_GUID_PREFIX_LEN; i++)
-    if ((*a)[i] != (*b)[i])
+    if (a->prefix[i] != b->prefix[i])
       return false;
   return true;
 }
@@ -301,20 +318,11 @@ bool frudp_generic_init()
 {
   FREERTPS_INFO("frudp_generic_init()\n");
   frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
-                     frudp_spdp_port());
-  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
                      frudp_mcast_builtin_port());
   frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
                      frudp_mcast_user_port());
   frudp_add_ucast_rx(frudp_ucast_user_port());
   return true;
-}
-
-uint16_t frudp_spdp_port()
-{
-  return FRUDP_PORT_PB +
-         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
-         FRUDP_PORT_D0;
 }
 
 uint16_t frudp_mcast_builtin_port()
@@ -357,3 +365,30 @@ const char *frudp_ip4_ntoa(const uint32_t addr)
            (addr >> 24) & 0xff);
   return ntoa_buf;
 }
+
+bool frudp_parse_string(char *buf, uint32_t buf_len, frudp_rtps_string_t *s)
+{
+  int wpos = 0;
+  for (; wpos < s->len && wpos < buf_len-1; wpos++)
+    buf[wpos] = s->data[wpos];
+  buf[wpos] = 0;
+  if (wpos < buf_len - 1)
+    return true;
+  else
+    return false; // couldn't fit entire string in buffer
+}
+
+frudp_msg_t *frudp_init_msg(uint8_t *buf)
+{
+  frudp_msg_t *msg = (frudp_msg_t *)buf; 
+  msg->header.magic_word = 0x53505452;
+  msg->header.pver.major = 2;
+  msg->header.pver.minor = 1;
+  msg->header.vid = FREERTPS_VENDOR_ID;
+  memcpy(msg->header.guid_prefix.prefix, 
+         g_frudp_config.guid_prefix.prefix, 
+         FRUDP_GUID_PREFIX_LEN);
+  g_frudp_discovery_tx_buf_wpos = 0;
+  return msg;
+}
+

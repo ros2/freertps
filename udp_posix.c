@@ -102,14 +102,15 @@ bool frudp_init()
   if (!frudp_init_participant_id())
     return false; 
   frudp_generic_init();
-  g_frudp_config.guid_prefix[0] = FREERTPS_VENDOR_ID >> 8;  // big endian (?)
-  g_frudp_config.guid_prefix[1] = FREERTPS_VENDOR_ID & 0xff;
+  // not sure about endianness here.
+  g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
+  g_frudp_config.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
   // todo: actually get mac address
   const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
-  memcpy(&g_frudp_config.guid_prefix[2], mac, 6);
+  memcpy(&g_frudp_config.guid_prefix.prefix[2], mac, 6);
   // 4 bytes left. let's use the POSIX process ID 
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
-  memcpy(&g_frudp_config.guid_prefix[8], &pid, 4);
+  memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
   frudp_discovery_init();
   return true;
 }
@@ -278,7 +279,7 @@ bool frudp_tx(const in_addr_t dst_addr,
   g_frudp_tx_addr.sin_port = htons(dst_port);
   g_frudp_tx_addr.sin_addr.s_addr = dst_addr;
   // todo: be smarter
-  if (tx_len == sendto(g_frudp_rx_socks[4].sock, tx_data, tx_len, 0,
+  if (tx_len == sendto(g_frudp_rx_socks[3].sock, tx_data, tx_len, 0,
                        (struct sockaddr *)(&g_frudp_tx_addr), 
                        sizeof(g_frudp_tx_addr)))
     return true;

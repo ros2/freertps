@@ -2,6 +2,15 @@
 #include "freertps/spdp.h"
 #include "freertps/sedp.h"
 
+uint8_t g_frudp_discovery_tx_buf[FRUDP_DISCOVERY_TX_BUFLEN];
+uint16_t g_frudp_discovery_tx_buf_wpos;
+
+frudp_participant_t g_frudp_discovery_participants
+                                   [FRUDP_DISCOVERY_MAX_PARTICIPANTS];
+int g_frudp_discovery_num_participants = 0;
+
+////////////////////////////////////////////////////////////////
+
 void frudp_discovery_init()
 {
   FREERTPS_INFO("discovery init\n");

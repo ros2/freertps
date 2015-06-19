@@ -5,30 +5,22 @@
 #include <time.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
+#include "freertps/discovery.h"
+#include "freertps/participant.h"
 
 //#define SPDP_VERBOSE
 
-#define FRUDP_MAX_PARTICIPANTS 10
-static frudp_participant_t g_frudp_spdp_participants[FRUDP_MAX_PARTICIPANTS];
-static int g_frudp_spdp_num_participants = 0;
+//#define FRUDP_MAX_PARTICIPANTS 10
+//static frudp_participant_t g_frudp_spdp_participants[FRUDP_MAX_PARTICIPANTS];
+//static int g_frudp_spdp_num_participants = 0;
 
 static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
-#define FRUDP_DISCOVERY_TX_BUFLEN 4096
-static uint8_t g_frudp_discovery_tx_buf[FRUDP_DISCOVERY_TX_BUFLEN];
-static uint16_t g_frudp_discovery_tx_buf_wpos;
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-static void frudp_sedp_writer_rx(frudp_receiver_state_t *rcvr,
-                                 const frudp_submsg_t *submsg,
-                                 const uint16_t scheme,
-                                 const uint8_t *data)
-{
-  FREERTPS_INFO("  sedp_writer rx\n");
-}
+#define SEDP_VERBOSE
 
 static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
                           const frudp_submsg_t *submsg,
@@ -151,7 +143,7 @@ static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
     {
       frudp_guid_t *guid = (frudp_guid_t *)pval;
       memcpy(&part->guid_prefix, &guid->guid_prefix, FRUDP_GUID_PREFIX_LEN);
-      uint8_t *p = guid->guid_prefix;
+      uint8_t *p = guid->guid_prefix.prefix;
 #ifdef SPDP_VERBOSE
       FREERTPS_INFO("      guid 0x%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
@@ -182,16 +174,15 @@ static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
                      (unsigned)pid, item->len);
     }
 
-    // todo: do something with parameter value
     // now, advance to next item in list...
     item = (frudp_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
   }
   // now that we have stuff the "part" buffer, spin through our
   // participant list and see if we already have this one
   bool found = false;
-  for (int i = 0; !found && i < g_frudp_spdp_num_participants; i++)
+  for (int i = 0; !found && i < g_frudp_discovery_num_participants; i++)
   {
-    frudp_participant_t *p = &g_frudp_spdp_participants[i];
+    frudp_participant_t *p = &g_frudp_discovery_participants[i];
     if (frudp_guid_prefix_identical(&p->guid_prefix, 
                                     &part->guid_prefix))
     {
@@ -207,13 +198,13 @@ static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
 #ifdef SPDP_VERBOSE
     printf("didn't have this participant already.\n");
 #endif
-    if (g_frudp_spdp_num_participants < FRUDP_MAX_PARTICIPANTS)
+    if (g_frudp_discovery_num_participants < FRUDP_DISCOVERY_MAX_PARTICIPANTS)
     {
-      const int p_idx = g_frudp_spdp_num_participants; // save typing
-      frudp_participant_t *p = &g_frudp_spdp_participants[p_idx];
+      const int p_idx = g_frudp_discovery_num_participants; // save typing
+      frudp_participant_t *p = &g_frudp_discovery_participants[p_idx];
       *p = *part; // save everything plz
       printf("saved new participant in slot %d\n", p_idx);
-      g_frudp_spdp_num_participants++;
+      g_frudp_discovery_num_participants++;
     }
     else
       printf("not enough room to save the new participant.\n");
@@ -227,14 +218,11 @@ void frudp_spdp_init()
   FREERTPS_INFO("sdp init\n");
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
-  frudp_entityid_t unknown = { .u = 0 };
-  frudp_entityid_t spdp_writer_id = { .s = { .key = { 0x00, 0x01, 0x00 }, 
-                                             .kind = 0xc2 } };
+  frudp_entity_id_t unknown = { .u = 0 };
+  frudp_entity_id_t spdp_writer_id = { .s = { .key = { 0x00, 0x01, 0x00 }, 
+                                              .kind = 0xc2 } };
   frudp_subscribe(unknown, spdp_writer_id, frudp_spdp_rx);
-/*
-  frudp_entityid_t sedp_pub_writer_id = { .u = 0xc2000300 };
-  frudp_subscribe(unknown, sedp_pub_writer_id, frudp_sedp_writer_rx);
-  */
+
 }
 
 void frudp_spdp_fini()
@@ -246,20 +234,6 @@ void frudp_spdp_fini()
 // just work through what it takes to send messages
 
 // todo: consolidate spdp and sedp into a 'discovery' module
-
-frudp_msg_t *frudp_init_msg(uint8_t *buf)
-{
-  frudp_msg_t *msg = (frudp_msg_t *)buf; 
-  msg->header.magic_word = 0x53505452;
-  msg->header.pver.major = 2;
-  msg->header.pver.minor = 1;
-  msg->header.vid = FREERTPS_VENDOR_ID;
-  memcpy(msg->header.guid_prefix, 
-         g_frudp_config.guid_prefix, 
-         FRUDP_GUID_PREFIX_LEN);
-  g_frudp_discovery_tx_buf_wpos = 0;
-  return msg;
-}
 
 /*
 uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
@@ -303,7 +277,7 @@ static void frudp_spdp_bcast()
                   (frudp_submsg_contents_data_t *)data_submsg->contents;
   data_contents->extraflags = 0;
   data_contents->octets_to_inline_qos = 16; // ?
-  data_contents->reader_id.u = FRUDP_ENTITYID_UNKNOWN;
+  data_contents->reader_id = g_frudp_entity_id_unknown;
   data_contents->writer_id.u = 
                        htonl(FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER);
   data_contents->writer_sn.high = 0;
@@ -336,7 +310,7 @@ static void frudp_spdp_bcast()
   param_list->pid = FRUDP_PID_PROTOCOL_VERSION;
   param_list->len = 4;
   param_list->value[0] = 2;
-  param_list->value[1] = 2;
+  param_list->value[1] = 1;
   param_list->value[2] = param_list->value[3] = 0; // pad to 4-byte boundary
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
@@ -404,26 +378,45 @@ static void frudp_spdp_bcast()
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_BUILTIN_ENDPOINT_SET;
   param_list->len = 4;
-  uint32_t endpoint_set = 0x415;
+  //uint32_t endpoint_set = 0x415;
+  //uint32_t endpoint_set = 0xfff;
+  uint32_t endpoint_set = 0xc3f;
   memcpy(param_list->value, &endpoint_set, 4);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_SENTINEL;
   param_list->len = 0;
+  //data_submsg->header.len = next_submsg_ptr - data_submsg->contents; 
   PLIST_ADVANCE(param_list);
   data_submsg->header.len = param_list->value - 4 - data_submsg->contents; 
+  frudp_submsg_t *next_submsg_ptr = (frudp_submsg_t *)param_list;
+  /////////////////////////////////////////////////////////////
+  /*
+  ts_submsg = (frudp_submsg_t *)param_list;
+  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  ts_submsg->header.len = 8;
+  memcpy(ts_submsg->contents, &t, 8);
+  uint8_t *next_submsg_ptr = ((uint8_t *)param_list) + 4 + 8;
+  */
+
+  /////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////
+  //data_submsg->header.len = next_submsg_ptr - data_submsg->contents; 
   //printf("len = %d\n", data_submsg->header.len);
   /////////////////////////////////////////////////////////////
-  int payload_len = ((uint8_t *)param_list) - ((uint8_t *)msg->submsgs);
-  frudp_tx(inet_addr("239.255.0.1"), 7400,
-           (const uint8_t *)msg, sizeof(frudp_msg_t) + payload_len);
+  //int payload_len = ((uint8_t *)param_list) - ((uint8_t *)msg->submsgs);
+  //int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg->submsgs);
+  int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg);
+  frudp_tx(inet_addr("239.255.0.1"), frudp_mcast_builtin_port(),
+           (const uint8_t *)msg, payload_len); 
 }
 
 void frudp_spdp_tick()
 {
   const fr_time_t t = fr_time_now();
-  //if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second
-  if (fr_time_diff(&t, &frudp_spdp_last_bcast).fraction >= 1000000000) // every second
+  if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second
+  //if (fr_time_diff(&t, &frudp_spdp_last_bcast).fraction >= 1000000000) // every second
   {
     frudp_spdp_bcast();
     frudp_spdp_last_bcast = t;
