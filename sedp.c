@@ -3,6 +3,7 @@
 #include "freertps/udp.h"
 #include "freertps/discovery.h"
 #include "freertps/qos.h"
+#include "freertps/participant.h"
 
 static char g_sedp_string_buf[256];
 
@@ -40,9 +41,15 @@ void frudp_tx_acknack(frudp_guid_prefix_t *guid_prefix,
                       frudp_sequence_number_set_t *set)
 {
   static int s_acknack_count = 0;
-  frudp_init_msg(g_frudp_discovery_tx_buf);
   // find the participant we are trying to talk to
-  //frudp_particpant_t *p = frudp_participant_find(...);
+  frudp_participant_t *p = frudp_participant_find(guid_prefix);
+  if (!p)
+  {
+    FREERTPS_ERROR("tried to acknack an unknown participant\n");
+    return; // woah.
+  }
+  frudp_init_msg(g_frudp_discovery_tx_buf);
+  FREERTPS_INFO("about to tx acknack\n");
 }
 
 static void frudp_sedp_writer_rx(frudp_receiver_state_t *rcvr,
@@ -51,7 +58,7 @@ static void frudp_sedp_writer_rx(frudp_receiver_state_t *rcvr,
                                  const uint8_t *data)
 {
 #ifdef SEDP_VERBOSE
-  printf("  sedp_writer rx\n");
+  printf("  sedp_writer data rx\n");
 #endif
   if (scheme != FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE)
   {
@@ -132,6 +139,10 @@ static void frudp_sedp_writer_rx(frudp_receiver_state_t *rcvr,
     // now, advance to next item in list...
     item = (frudp_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
   }
+  // now, we need to ack the packet
+  frudp_submsg_contents_data_t *data_submsg = (frudp_submsg_contents_data_t *)submsg->contents;
+  printf("      need to ack nack %d:%d\n",
+         data_submsg->writer_sn.high, data_submsg->writer_sn.low);
 }
 
 
