@@ -16,6 +16,8 @@
 
 static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
+static const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -278,8 +280,7 @@ static void frudp_spdp_bcast()
   data_contents->extraflags = 0;
   data_contents->octets_to_inline_qos = 16; // ?
   data_contents->reader_id = g_frudp_entity_id_unknown;
-  data_contents->writer_id.u = 
-                       htonl(FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER);
+  data_contents->writer_id = g_spdp_writer_id;
   data_contents->writer_sn.high = 0;
   //static uint32_t bcast_count = 0;
   data_contents->writer_sn.low = 1; //++bcast_count;

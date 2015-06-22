@@ -101,7 +101,7 @@ typedef union
 
 extern const frudp_entity_id_t g_frudp_entity_id_unknown;
 
-#define FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER 0x000100c2
+//#define FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER 0x000100c2
 
 typedef struct
 {

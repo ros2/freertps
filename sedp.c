@@ -5,7 +5,11 @@
 #include "freertps/qos.h"
 #include "freertps/participant.h"
 
+////////////////////////////////////////////////////////////////////////////
+// local constants
 static char g_sedp_string_buf[256];
+static frudp_entity_id_t g_sedp_pub_writer_id = { .u = 0xc2030000 };
+static frudp_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -19,9 +23,8 @@ static void frudp_sedp_writer_rx(frudp_receiver_state_t *rcvr,
 void frudp_sedp_init()
 {
   FREERTPS_INFO("sedp init\n");
-  frudp_entity_id_t sedp_pub_writer_id = { .u = 0xc2030000 };
   frudp_subscribe(g_frudp_entity_id_unknown,  // reader
-                  sedp_pub_writer_id,         // writer
+                  g_sedp_pub_writer_id,       // writer
                   frudp_sedp_writer_rx);      // callback
 }
 
@@ -143,6 +146,8 @@ static void frudp_sedp_writer_rx(frudp_receiver_state_t *rcvr,
   frudp_submsg_contents_data_t *data_submsg = (frudp_submsg_contents_data_t *)submsg->contents;
   printf("      need to ack nack %d:%d\n",
          data_submsg->writer_sn.high, data_submsg->writer_sn.low);
+//  frudp_tx_acknack(&rcvr->src_guid_prefix,
+                   
 }
 
 
