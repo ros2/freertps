@@ -7,6 +7,11 @@
 #include <arpa/inet.h>
 #include "freertps/discovery.h"
 #include "freertps/participant.h"
+#include "freertps/subscription.h"
+
+////////////////////////////////////////////////////////////////////////////
+// local constants
+static const frudp_entity_id_t spdp_writer_id = { .u = 0xc2000100 }; //s = { .key = { 0x00, 0x01, 0x00 }, .kind = 0xc2 } };
 
 //#define SPDP_VERBOSE
 
@@ -23,12 +28,6 @@ static const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
 //////////////////////////////////////////////////////////////////////////
 
 #define SEDP_VERBOSE
-
-static void frudp_spdp_rx_heartbeat(frudp_receiver_state_t *rcvr,
-                                    const frudp_submsg_heartbeat_t *hb)
-{
-  FREERTPS_INFO("spdp heartbeat\n");
-}
 
 static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
                                const frudp_submsg_t *submsg,
@@ -211,7 +210,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
       const int p_idx = g_frudp_discovery_num_participants; // save typing
       frudp_participant_t *p = &g_frudp_discovery_participants[p_idx];
       *p = *part; // save everything plz
-      printf("saved new participant in slot %d\n", p_idx);
+      printf("    saved new participant in slot %d\n", p_idx);
       g_frudp_discovery_num_participants++;
     }
     else
@@ -226,12 +225,9 @@ void frudp_spdp_init()
   FREERTPS_INFO("sdp init\n");
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
-  frudp_entity_id_t unknown = { .u = 0 };
-  frudp_entity_id_t spdp_writer_id = { .s = { .key = { 0x00, 0x01, 0x00 }, 
-                                              .kind = 0xc2 } };
-  frudp_subscribe(unknown, spdp_writer_id, 
-                  frudp_spdp_rx_data, frudp_spdp_rx_heartbeat);
-
+  frudp_subscribe(g_frudp_entity_id_unknown, 
+                  spdp_writer_id, 
+                  frudp_spdp_rx_data);
 }
 
 void frudp_spdp_fini()
@@ -386,9 +382,7 @@ static void frudp_spdp_bcast()
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_BUILTIN_ENDPOINT_SET;
   param_list->len = 4;
-  //uint32_t endpoint_set = 0x415;
-  //uint32_t endpoint_set = 0xfff;
-  uint32_t endpoint_set = 0xc3f;
+  uint32_t endpoint_set = 0x3f;
   memcpy(param_list->value, &endpoint_set, 4);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);

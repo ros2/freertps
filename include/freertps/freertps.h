@@ -3,7 +3,13 @@
 
 #include <stdio.h>
 
+// NOTE: the prefix freertps_udp_ is too long to type, so it will often
+// be shortened to frudp_
+
+#include "freertps/config.h"
 #include "freertps/time.h"
+#include "freertps/ports.h"
+#include "freertps/locator.h"
 
 // maybe make this smarter someday
 #define FREERTPS_INFO(...) \

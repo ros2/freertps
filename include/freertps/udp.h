@@ -5,33 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <netinet/in.h>
-
-// NOTE: the prefix freertps_udp_ is too long to type, so it will heretofore 
-// be shortened to frudp_
-
-// NOTE: everything is assumed to be little-endian. if we ever need to run on
-// big-endian, we'll have to rethink some of this.
-
-/////////////////////////////////////////////////////////////////////
-// A FEW CONSTANTS FROM THE SPEC
-/////////////////////////////////////////////////////////////////////
-
-#define FRUDP_PORT_PB 7400
-#define FRUDP_PORT_DG  250
-#define FRUDP_PORT_PG    2
-#define FRUDP_PORT_D0    0
-#define FRUDP_PORT_D1   10
-#define FRUDP_PORT_D2    1
-#define FRUDP_PORT_D3   11
-
-// to avoid conflicts / false-positives on our LAN
-#define FRUDP_DOMAIN_ID  0
-
-// default multicast group is 239.255.0.1
-#define FRUDP_DEFAULT_MCAST_GROUP 0xefff0001
-
-// for now let's pretend that our vendor ID is 11311 in hex
-#define FREERTPS_VENDOR_ID 0x2C2F
+#include "freertps/id.h"
 
 /////////////////////////////////////////////////////////////////////
 // TYPES 
@@ -42,18 +16,6 @@ typedef struct
   uint8_t major; 
   uint8_t minor; 
 } frudp_pver_t; // protocol version
-
-typedef uint16_t frudp_vid_t; // vendor ID
-const char *frudp_vendor(const frudp_vid_t vid);
-
-#define FRUDP_GUID_PREFIX_LEN 12
-typedef struct
-{
-  uint8_t prefix[FRUDP_GUID_PREFIX_LEN];
-} frudp_guid_prefix_t;
-
-bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
-                                 frudp_guid_prefix_t * const b);
 
 typedef struct
 {
@@ -90,26 +52,6 @@ typedef struct
   frudp_submsg_header_t header;
   uint8_t contents[];
 } frudp_submsg_t;
-
-typedef union
-{
-  struct
-  {
-    uint8_t key[3];
-    uint8_t kind;
-  } s;
-  uint32_t u;
-} __attribute__((packed)) frudp_entity_id_t;
-
-extern const frudp_entity_id_t g_frudp_entity_id_unknown;
-
-//#define FRUDP_ENTITYID_BUILTIN_SDP_PARTICIPANT_WRITER 0x000100c2
-
-typedef struct
-{
-  frudp_guid_prefix_t guid_prefix;
-  frudp_entity_id_t entity_id;
-} __attribute__((packed)) frudp_guid_t;
 
 typedef struct
 {
@@ -152,12 +94,22 @@ typedef struct
 
 typedef struct
 {
+  frudp_submsg_header_t header;
   frudp_entity_id_t reader_id;
   frudp_entity_id_t writer_id;
   frudp_sequence_number_t first_sn;
   frudp_sequence_number_t last_sn;
   uint32_t count;
 } __attribute__((packed)) frudp_submsg_heartbeat_t;
+
+typedef struct
+{
+  frudp_submsg_header_t header;
+  frudp_entity_id_t reader_id;
+  frudp_entity_id_t writer_id;
+  frudp_sequence_number_t gap_start;
+  frudp_sequence_number_set_t gap_end;
+} __attribute__((packed)) frudp_submsg_gap_t;
 
 typedef struct
 {
@@ -193,41 +145,6 @@ typedef void (*frudp_rx_data_cb_t)(frudp_receiver_state_t *rcvr,
                                    const uint16_t scheme,
                                    const uint8_t *data);
 
-typedef void (*frudp_rx_heartbeat_cb_t)(frudp_receiver_state_t *rcvr,
-                                        const frudp_submsg_heartbeat_t *hb);
-
-typedef struct
-{
-  frudp_entity_id_t reader_id;
-  frudp_entity_id_t writer_id;
-  frudp_rx_data_cb_t data_cb;
-  frudp_rx_heartbeat_cb_t heartbeat_cb;
-} frudp_subscription_t;
-
-#ifndef FRUDP_MAX_SUBSCRIPTIONS
-#  define FRUDP_MAX_SUBSCRIPTIONS 10
-#endif
-
-typedef struct
-{
-  int32_t kind;
-  uint32_t port;
-  union
-  {
-    uint8_t raw[16];
-    struct
-    {
-      uint8_t zeros[12];
-      uint32_t addr;
-    } udp4;
-  } addr; 
-} __attribute__((packed)) frudp_locator_t;
-
-#define FRUDP_LOCATOR_KIND_INVALID -1
-#define FRUDP_LOCATOR_KIND_RESERVED 0
-#define FRUDP_LOCATOR_KIND_UDPV4    1
-#define FRUDP_LOCATOR_KIND_UDPV6    2
-
 typedef struct
 {
   int32_t sec;
@@ -235,14 +152,6 @@ typedef struct
 } frudp_duration_t;
 
 typedef uint32_t frudp_builtin_endpoint_set_t;
-
-typedef struct
-{
-  frudp_guid_prefix_t guid_prefix;
-  int participant_id;
-  uint32_t unicast_addr;
-} frudp_config_t;
-extern frudp_config_t g_frudp_config;
 
 typedef struct
 {
@@ -275,11 +184,6 @@ bool frudp_rx(const in_addr_t src_addr,
               const in_port_t dst_port,
               const uint8_t *rx_data,
               const uint16_t rx_len);
-
-bool frudp_subscribe(const frudp_entity_id_t reader_id,
-                     const frudp_entity_id_t writer_id,
-                     const frudp_rx_data_cb_t data_cb,
-                     const frudp_rx_heartbeat_cb_t heartbeat_cb);
 
 bool frudp_tx(const in_addr_t dst_addr,
               const in_port_t dst_port,

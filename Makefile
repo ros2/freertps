@@ -7,8 +7,10 @@ CFLAGS = -Iinclude --std=c99 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE
 LFLAGS = 
 
 SRCS = freertps.c spdp.c udp.c udp_posix.c discovery.c sedp.c \
-       time.c time_posix.c participant.c
-INCS = include/freertps/udp.h include/freertps/spdp.h include/freertps/freertps.h
+       time.c time_posix.c participant.c id.c
+INC_FN = udp.h spdp.h freertps.h subscription.h id.h qos.h time.h  \
+         spdp.h sedp.h discovery.h
+INCS = $(addprefix include/freertps/,$(INC_FN))
 OBJS = $(addprefix $(BIN)/,$(SRCS:.c=.o))
 
 EXAMPLE_NAMES = listener
