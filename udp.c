@@ -99,6 +99,16 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
   if (our_guid)
     return true; // don't process our own messages
 
+  {
+    const uint8_t *p = msg->header.guid_prefix.prefix;
+    printf("RTPS sender guid prefix = %02x%02x%02x%02x:"
+                                     "%02x%02x%02x%02x:"
+                                     "%02x%02x%02x%02x\n",
+         p[0], p[1], p[2], p[3],
+         p[4], p[5], p[6], p[7],
+         p[8], p[9], p[10], p[11]);
+  }
+
   memcpy(rcvr.src_guid_prefix.prefix, 
          msg->header.guid_prefix.prefix, 
          FRUDP_GUID_PREFIX_LEN);
@@ -125,17 +135,17 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, const frudp_submsg_t *
   switch (submsg->header.id)
   {
     case 0x01: return true; // pad submessage. ignore (?)
-    case 0x06: return frudp_rx_acknack(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_ACKNACK:   return frudp_rx_acknack(rcvr, submsg);
     case 0x07: return frudp_rx_heartbeat(rcvr, submsg);
     case 0x08: return frudp_rx_gap(rcvr, submsg);
-    case FRUDP_SUBMSG_ID_INFO_TS: return frudp_rx_info_ts(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_INFO_TS:   return frudp_rx_info_ts(rcvr, submsg);
     case 0x0c: return frudp_rx_info_src(rcvr, submsg);
     case 0x0d: return frudp_rx_info_reply_ip4(rcvr, submsg);
-    case 0x0e: return frudp_rx_dst(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_INFO_DEST: return frudp_rx_dst(rcvr, submsg);
     case 0x0f: return frudp_rx_reply(rcvr, submsg);
     case 0x12: return frudp_rx_nack_frag(rcvr, submsg);
     case 0x13: return frudp_rx_heartbeat_frag(rcvr, submsg);
-    case FRUDP_SUBMSG_ID_DATA:    return frudp_rx_data(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_DATA:      return frudp_rx_data(rcvr, submsg);
     case 0x16: return frudp_rx_data_frag(rcvr, submsg);
     default: return false;
   }
@@ -146,9 +156,9 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, const frudp_submsg_t *
 static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
-  printf("  ACKNACK   reader id = 0x%08x  writer id = 0x%08x\n",
-         htonl(m->writer_id.u), 
-         htonl(m->reader_id.u));
+  printf("  ACKNACK   reader = 0x%08x  writer = 0x%08x\n",
+         htonl(m->reader_id.u), 
+         htonl(m->writer_id.u));
   return true;
 }
 
@@ -159,9 +169,18 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   const bool l = submsg->header.flags & 0x04;
   frudp_submsg_heartbeat_t *contents = 
                               (frudp_submsg_heartbeat_t *)submsg->contents;
-  printf("  HEARTBEAT reader id = 0x%08x  writer id = 0x%08x\n",
-         htonl(contents->writer_id.u), 
-         htonl(contents->reader_id.u));
+  printf("  HEARTBEAT reader = 0x%08x  writer = 0x%08x  %d -> %d\n",
+         htonl(contents->reader_id.u), 
+         htonl(contents->writer_id.u),
+         contents->first_sn.low,
+         contents->last_sn.low);
+  // spin through subscriptions and see if anyone is listening
+  for (unsigned i = 0; i < g_frudp_subs_used; i++)
+  {
+    if (g_frudp_subs[i].writer_id.u == contents->writer_id.u &&
+        g_frudp_subs[i].reader_id.u == contents->reader_id.u)
+      g_frudp_subs[i].heartbeat_cb(rcvr, contents);
+  }
   return true;
 }
 
@@ -205,6 +224,14 @@ static bool frudp_rx_info_reply_ip4(RX_MSG_ARGS)
 
 static bool frudp_rx_dst(RX_MSG_ARGS)
 {
+  frudp_submsg_info_dest_t *d = (frudp_submsg_info_dest_t *)submsg->contents;
+  uint8_t *p = d->guid_prefix.prefix;
+  printf("  INFO_DEST guid = %02x%02x%02x%02x:"
+                            "%02x%02x%02x%02x:"
+                            "%02x%02x%02x%02x\n",
+         p[0], p[1], p[2], p[3],
+         p[4], p[5], p[6], p[7],
+         p[8], p[9], p[10], p[11]);
   return true;
 }
 
@@ -225,7 +252,7 @@ static bool frudp_rx_heartbeat_frag(RX_MSG_ARGS)
 
 static bool frudp_rx_data(RX_MSG_ARGS)
 {
-  frudp_submsg_contents_data_t *contents = (frudp_submsg_contents_data_t *)submsg->contents;
+  frudp_submsg_data_t *contents = (frudp_submsg_data_t *)submsg->contents;
 #ifdef RX_VERBOSE
   FREERTPS_INFO("rx data flags = %d\n", 0x0f7 & submsg->header.flags);
 #endif
@@ -263,15 +290,15 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   const uint16_t scheme = ntohs(*((uint16_t *)data_start));
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
-  // spin through subscriptions and see if anyone is listening
   printf("  DATA reader id = 0x%08x  writer id = 0x%08x\n",
-         htonl(contents->writer_id.u), 
-         htonl(contents->reader_id.u));
+         htonl(contents->reader_id.u), 
+         htonl(contents->writer_id.u));
+  // spin through subscriptions and see if anyone is listening
   for (unsigned i = 0; i < g_frudp_subs_used; i++)
   {
     if (g_frudp_subs[i].writer_id.u == contents->writer_id.u &&
         g_frudp_subs[i].reader_id.u == contents->reader_id.u)
-      g_frudp_subs[i].cb(rcvr, submsg, scheme, data);
+      g_frudp_subs[i].data_cb(rcvr, submsg, scheme, data);
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
   return true;
@@ -293,14 +320,16 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
 
 bool frudp_subscribe(const frudp_entity_id_t reader_id,
                      const frudp_entity_id_t writer_id,
-                     const frudp_rx_cb_t cb)
+                     const frudp_rx_data_cb_t data_cb,
+                     const frudp_rx_heartbeat_cb_t heartbeat_cb)
 {
   if (g_frudp_subs_used >= FRUDP_MAX_SUBSCRIPTIONS)
     return false;
   frudp_subscription_t *sub = &g_frudp_subs[g_frudp_subs_used];
   sub->reader_id = reader_id;
   sub->writer_id = writer_id;
-  sub->cb = cb;
+  sub->data_cb = data_cb;
+  sub->heartbeat_cb = heartbeat_cb;
   g_frudp_subs_used++;
   return true;
 }
@@ -378,7 +407,7 @@ bool frudp_parse_string(char *buf, uint32_t buf_len, frudp_rtps_string_t *s)
     return false; // couldn't fit entire string in buffer
 }
 
-frudp_msg_t *frudp_init_msg(uint8_t *buf)
+frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
 {
   frudp_msg_t *msg = (frudp_msg_t *)buf; 
   msg->header.magic_word = 0x53505452;

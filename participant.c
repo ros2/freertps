@@ -2,7 +2,8 @@
 #include "freertps/discovery.h"
 #include "freertps/participant.h"
 
-frudp_participant_t *frudp_participant_find(frudp_guid_prefix_t *guid_prefix)
+frudp_participant_t *frudp_participant_find
+                                  (const frudp_guid_prefix_t *guid_prefix)
 {
   for (int i = 0; i < g_frudp_discovery_num_participants; i++)
   {

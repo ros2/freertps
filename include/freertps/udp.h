@@ -73,8 +73,10 @@ typedef struct
 #define FRUDP_FLAGS_INLINE_QOS    0x2
 #define FRUDP_FLAGS_DATA_PRESENT  0x4
 
-#define FRUDP_SUBMSG_ID_INFO_TS 0x09
-#define FRUDP_SUBMSG_ID_DATA    0x15
+#define FRUDP_SUBMSG_ID_ACKNACK   0x06
+#define FRUDP_SUBMSG_ID_INFO_TS   0x09
+#define FRUDP_SUBMSG_ID_INFO_DEST 0x0e
+#define FRUDP_SUBMSG_ID_DATA      0x15
 
 typedef struct
 {
@@ -119,7 +121,6 @@ typedef struct
   fr_time_t       timestamp;
 } frudp_receiver_state_t;
 
-
 typedef struct
 {
   int32_t high;
@@ -135,12 +136,19 @@ typedef struct
 
 typedef struct
 {
+  frudp_sequence_number_t bitmap_base;
+  uint32_t num_bits;
+  uint32_t bitmap;
+} frudp_sequence_number_set_32bits_t;
+
+typedef struct
+{
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
   frudp_entity_id_t reader_id;
   frudp_entity_id_t writer_id;
   frudp_sequence_number_t writer_sn;
-} __attribute__((packed)) frudp_submsg_contents_data_t;
+} __attribute__((packed)) frudp_submsg_data_t;
 
 typedef struct
 {
@@ -155,9 +163,14 @@ typedef struct
 {
   frudp_entity_id_t reader_id;
   frudp_entity_id_t writer_id;
-  frudp_sequence_number_set_t reader_sn_state_t;
+  frudp_sequence_number_set_t reader_sn_state;
   uint32_t count;
 } __attribute__((packed)) frudp_submsg_acknack_t;
+
+typedef struct
+{
+  frudp_guid_prefix_t guid_prefix;
+} __attribute__((packed)) frudp_submsg_info_dest_t;
 
 typedef uint16_t frudp_parameterid_t;
 typedef struct
@@ -175,16 +188,20 @@ typedef struct
 
 #define FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE 0x0003
 
-typedef void (*frudp_rx_cb_t)(frudp_receiver_state_t *rcvr,
-                              const frudp_submsg_t *submsg,
-                              const uint16_t scheme,
-                              const uint8_t *data);
+typedef void (*frudp_rx_data_cb_t)(frudp_receiver_state_t *rcvr,
+                                   const frudp_submsg_t *submsg,
+                                   const uint16_t scheme,
+                                   const uint8_t *data);
+
+typedef void (*frudp_rx_heartbeat_cb_t)(frudp_receiver_state_t *rcvr,
+                                        const frudp_submsg_heartbeat_t *hb);
 
 typedef struct
 {
   frudp_entity_id_t reader_id;
   frudp_entity_id_t writer_id;
-  frudp_rx_cb_t cb;
+  frudp_rx_data_cb_t data_cb;
+  frudp_rx_heartbeat_cb_t heartbeat_cb;
 } frudp_subscription_t;
 
 #ifndef FRUDP_MAX_SUBSCRIPTIONS
@@ -261,7 +278,8 @@ bool frudp_rx(const in_addr_t src_addr,
 
 bool frudp_subscribe(const frudp_entity_id_t reader_id,
                      const frudp_entity_id_t writer_id,
-                     const frudp_rx_cb_t cb);
+                     const frudp_rx_data_cb_t data_cb,
+                     const frudp_rx_heartbeat_cb_t heartbeat_cb);
 
 bool frudp_tx(const in_addr_t dst_addr,
               const in_port_t dst_port,
@@ -278,7 +296,7 @@ const char *frudp_ip4_ntoa(const uint32_t addr);
 
 bool frudp_parse_string(char *buf, uint32_t buf_len, frudp_rtps_string_t *s);
 
-frudp_msg_t *frudp_init_msg(uint8_t *buf);
+frudp_msg_t *frudp_init_msg(frudp_msg_t *buf);
 
 #endif
 

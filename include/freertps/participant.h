@@ -18,6 +18,7 @@ typedef struct
   frudp_builtin_endpoint_set_t builtin_endpoints;
 } frudp_participant_t;
 
-frudp_participant_t *frudp_participant_find(frudp_guid_prefix_t *guid_prefix);
+frudp_participant_t *frudp_participant_find
+                                (const frudp_guid_prefix_t *guid_prefix);
 
 #endif

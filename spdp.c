@@ -24,10 +24,16 @@ static const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
 
 #define SEDP_VERBOSE
 
-static void frudp_spdp_rx(frudp_receiver_state_t *rcvr,
-                          const frudp_submsg_t *submsg,
-                          const uint16_t scheme,
-                          const uint8_t *data)
+static void frudp_spdp_rx_heartbeat(frudp_receiver_state_t *rcvr,
+                                    const frudp_submsg_heartbeat_t *hb)
+{
+  FREERTPS_INFO("spdp heartbeat\n");
+}
+
+static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
+                               const frudp_submsg_t *submsg,
+                               const uint16_t scheme,
+                               const uint8_t *data)
 {
 #ifdef SPDP_VERBOSE
   FREERTPS_INFO("    spdp_rx\n");
@@ -223,7 +229,8 @@ void frudp_spdp_init()
   frudp_entity_id_t unknown = { .u = 0 };
   frudp_entity_id_t spdp_writer_id = { .s = { .key = { 0x00, 0x01, 0x00 }, 
                                               .kind = 0xc2 } };
-  frudp_subscribe(unknown, spdp_writer_id, frudp_spdp_rx);
+  frudp_subscribe(unknown, spdp_writer_id, 
+                  frudp_spdp_rx_data, frudp_spdp_rx_heartbeat);
 
 }
 
@@ -258,7 +265,7 @@ uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
 static void frudp_spdp_bcast()
 {
   //FREERTPS_INFO("spdp bcast\n");
-  frudp_msg_t *msg = frudp_init_msg(g_frudp_discovery_tx_buf);
+  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_discovery_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
 
@@ -275,8 +282,8 @@ static void frudp_spdp_bcast()
                               FRUDP_FLAGS_INLINE_QOS    |
                               FRUDP_FLAGS_DATA_PRESENT  ;
   data_submsg->header.len = 336; // need to compute this dynamically?
-  frudp_submsg_contents_data_t *data_contents =
-                  (frudp_submsg_contents_data_t *)data_submsg->contents;
+  frudp_submsg_data_t *data_contents =
+                  (frudp_submsg_data_t *)data_submsg->contents;
   data_contents->extraflags = 0;
   data_contents->octets_to_inline_qos = 16; // ?
   data_contents->reader_id = g_frudp_entity_id_unknown;
@@ -287,7 +294,7 @@ static void frudp_spdp_bcast()
   /////////////////////////////////////////////////////////////
   frudp_parameter_list_item_t *inline_qos_param = 
     (frudp_parameter_list_item_t *)(((uint8_t *)data_contents) + 
-                                    sizeof(frudp_submsg_contents_data_t));
+                                    sizeof(frudp_submsg_data_t));
   inline_qos_param->pid = FRUDP_PID_KEY_HASH;
   inline_qos_param->len = 16;
   memcpy(inline_qos_param->value, &g_frudp_config.guid_prefix, 12);
