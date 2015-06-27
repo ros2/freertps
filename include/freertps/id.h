@@ -14,6 +14,11 @@ typedef union
   uint32_t u;
 } __attribute__((packed)) frudp_entity_id_t;
 
+#define FRUDP_ENTITY_KIND_USER_WRITER_WITH_KEY 0x02
+#define FRUDP_ENTITY_KIND_USER_WRITER_NO_KEY   0x03
+#define FRUDP_ENTITY_KIND_USER_READER_NO_KEY   0x04
+#define FRUDP_ENTITY_KIND_USER_READER_WITH_KEY 0x07
+
 extern const frudp_entity_id_t g_frudp_entity_id_unknown;
 
 #define FRUDP_GUID_PREFIX_LEN 12

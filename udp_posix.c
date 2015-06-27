@@ -69,7 +69,7 @@ bool frudp_init()
       continue; // boring
     tx_addr_str = host; // save this one for now
   }
-  FREERTPS_INFO("using address %s\n", tx_addr_str);
+  FREERTPS_INFO("using address %s for unicast\n", tx_addr_str);
   g_frudp_tx_addr.sin_addr.s_addr = inet_addr(tx_addr_str);
   g_frudp_config.unicast_addr = (uint32_t)g_frudp_tx_addr.sin_addr.s_addr;
   freeifaddrs(ifaddr);

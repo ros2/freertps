@@ -8,9 +8,17 @@ void sigint_handler(int signum)
   g_done = true;
 }
 
+void chatter_cb(const void *msg)
+{
+  printf("chatter_cb\n");
+}
+
 int main(int argc, char **argv)
 {
   frudp_init();
+  freertps_create_subscription("chatter", 
+                               "simple_msgs::dds_::String_",
+                               chatter_cb);
   signal(SIGINT, sigint_handler);
   while (!g_done)
   {

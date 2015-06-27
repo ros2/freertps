@@ -210,7 +210,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
       const int p_idx = g_frudp_discovery_num_participants; // save typing
       frudp_participant_t *p = &g_frudp_discovery_participants[p_idx];
       *p = *part; // save everything plz
-      printf("    saved new participant in slot %d\n", p_idx);
+      //printf("    saved new participant in slot %d\n", p_idx);
       g_frudp_discovery_num_participants++;
     }
     else

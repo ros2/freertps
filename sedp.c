@@ -19,10 +19,6 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
                                    const frudp_submsg_t *submsg,
                                    const uint16_t scheme,
                                    const uint8_t *data);
-/*
-static void frudp_sedp_rx_pub_heartbeat(frudp_receiver_state_t *rcvr,
-                                        const frudp_submsg_heartbeat_t *hb);
-*/
 static void frudp_sedp_bcast();
 ////////////////////////////////////////////////////////////////////////////
 
@@ -125,6 +121,10 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
       if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_LAST)
       {
         printf("    history QoS: [keep last %d]\n", qos->depth);
+      }
+      else if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_ALL)
+      {
+        printf("    history QoS: [keep all]\n");
       }
       else
         FREERTPS_ERROR("unhandled history kind: %d\n", qos->kind);

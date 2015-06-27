@@ -12,11 +12,6 @@ const frudp_entity_id_t g_frudp_entity_id_unknown = { .u = 0 };
 frudp_config_t g_frudp_config;
 
 ////////////////////////////////////////////////////////////////////////////
-// local constants
-static frudp_subscription_t g_frudp_subs[FRUDP_MAX_SUBSCRIPTIONS];
-static unsigned g_frudp_subs_used = 0;
-
-////////////////////////////////////////////////////////////////////////////
 // local functions
 static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, 
                             const frudp_submsg_t *submsg);
@@ -159,21 +154,41 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   {
     frudp_subscription_t *sub = &g_frudp_subs[i];
     if (sub->writer_id.u == hb->writer_id.u &&
-        sub->reader_id.u == hb->reader_id.u)
+        (sub->reader_id.u == hb->reader_id.u ||
+         hb->reader_id.u == 0))
     {
       //g_frudp_subs[i].heartbeat_cb(rcvr, hb);
       if (!f)
       {
-        frudp_sequence_number_set_32bits_t set;
-        set.bitmap_base = hb->first_sn;
-        set.num_bits = hb->last_sn.low - hb->first_sn.low; // todo... not this
-        set.num_bits = 0;
-        set.bitmap = 0xffffffff;
         // we have to send an ACKNACK now
+        frudp_sequence_number_set_32bits_t set;
+        // todo: handle 64-bit sequence numbers
+        set.bitmap_base.high = 0;
+        if (sub->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
+        {
+          set.bitmap_base.low = hb->first_sn.low + 1;
+          set.num_bits = 0;
+          set.bitmap = 0xffffffff;
+        }
+        else
+        {
+          set.bitmap_base.low = sub->max_rx_sn.low + 1;
+          set.num_bits = hb->last_sn.low - sub->max_rx_sn.low - 1;
+          if (set.num_bits > 31)
+            set.num_bits = 31;
+          set.bitmap = 0xffffffff;
+        }
+        printf("    TX ACKNACK %d:%d\n",
+               set.bitmap_base.low, 
+               set.bitmap_base.low + set.num_bits);
         frudp_tx_acknack(&rcvr->src_guid_prefix,
                          &sub->reader_id,
                          &sub->writer_id,
                          (frudp_sequence_number_set_t *)&set);
+      }
+      else
+      {
+        printf("    FINAL flag not set in heartbeat; not going to tx acknack\n");
       }
     }
   }
@@ -305,8 +320,8 @@ static bool frudp_rx_data(RX_MSG_ARGS)
          contents->reader_id.u == g_frudp_entity_id_unknown.u))
     {
       // update the max-received sequence number counter
-      //sub->max_rx_sn = contents->
-
+      if (contents->writer_sn.low > sub->max_rx_sn.low) // todo: 64-bit
+        sub->max_rx_sn = contents->writer_sn;
       sub->data_cb(rcvr, submsg, scheme, data);
     }
   }
@@ -317,20 +332,6 @@ static bool frudp_rx_data(RX_MSG_ARGS)
 static bool frudp_rx_data_frag(RX_MSG_ARGS)
 {
   // todo
-  return true;
-}
-
-bool frudp_subscribe(const frudp_entity_id_t reader_id,
-                     const frudp_entity_id_t writer_id,
-                     const frudp_rx_data_cb_t data_cb)
-{
-  if (g_frudp_subs_used >= FRUDP_MAX_SUBSCRIPTIONS)
-    return false;
-  frudp_subscription_t *sub = &g_frudp_subs[g_frudp_subs_used];
-  sub->reader_id = reader_id;
-  sub->writer_id = writer_id;
-  sub->data_cb = data_cb;
-  g_frudp_subs_used++;
   return true;
 }
 
@@ -427,7 +428,7 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
   }
   frudp_msg_t *msg = (frudp_msg_t *)g_frudp_discovery_tx_buf;
   frudp_init_msg(msg);
-  printf("    about to tx acknack\n");
+  //printf("    about to tx acknack\n");
   frudp_submsg_t *dst_submsg = (frudp_submsg_t *)&msg->submsgs[0];
   dst_submsg->header.id = FRUDP_SUBMSG_ID_INFO_DEST;
   dst_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;

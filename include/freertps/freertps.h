@@ -19,5 +19,11 @@
 #define FREERTPS_FATAL(...) \
   do { printf("freertps FATAL: "); printf(__VA_ARGS__); } while (0)
 
+typedef void (*freertps_msg_cb_t)(const void *msg);
+
+void freertps_create_subscription(const char *topic_name,
+                                  const char *type_name,
+                                  freertps_msg_cb_t msg_cb);
+
 //void freertps_perish_if(bool b, const char *msg);
 #endif

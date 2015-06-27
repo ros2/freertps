@@ -7,7 +7,7 @@ CFLAGS = -Iinclude --std=c99 -D_XOPEN_SOURCE=500 -D_GNU_SOURCE
 LFLAGS = 
 
 SRCS = freertps.c spdp.c udp.c udp_posix.c discovery.c sedp.c \
-       time.c time_posix.c participant.c id.c
+       time.c time_posix.c participant.c id.c subscription.c
 INC_FN = udp.h spdp.h freertps.h subscription.h id.h qos.h time.h  \
          spdp.h sedp.h discovery.h
 INCS = $(addprefix include/freertps/,$(INC_FN))
