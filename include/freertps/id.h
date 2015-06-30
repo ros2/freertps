@@ -41,9 +41,11 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
 // VENDOR ID STUFF
 // for now let's pretend that our vendor ID is 11311 in hex
 #define FREERTPS_VENDOR_ID 0x2C2F
-typedef uint16_t frudp_vid_t; 
+typedef uint16_t frudp_vid_t;
 const char *frudp_vendor(const frudp_vid_t vid);
 
 extern unsigned g_frudp_next_user_entity_id;
+
+void print_guid_prefix(frudp_guid_prefix_t *guid_prefix);
 
 #endif

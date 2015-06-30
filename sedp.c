@@ -11,10 +11,10 @@
 ////////////////////////////////////////////////////////////////////////////
 // local constants
 static char g_sedp_string_buf[256];
-static const frudp_entity_id_t g_sedp_pub_writer_id = { .u = 0xc2040000 };
-static const frudp_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7040000 };
-static const frudp_entity_id_t g_sedp_sub_writer_id = { .u = 0xc2030000 };
-static const frudp_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7030000 };
+static const frudp_entity_id_t g_sedp_pub_writer_id = { .u = 0xc2030000 };
+static const frudp_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
+static const frudp_entity_id_t g_sedp_sub_writer_id = { .u = 0xc2040000 };
+static const frudp_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -94,9 +94,9 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
     const uint8_t *pval = item->value;
     if (pid == FRUDP_PID_ENDPOINT_GUID)
     {
+#ifdef SEDP_VERBOSE
       frudp_guid_t *guid = (frudp_guid_t *)pval;
       //memcpy(&part->guid_prefix, &guid->guid_prefix, FRUDP_GUID_PREFIX_LEN);
-#ifdef SEDP_VERBOSE
       uint8_t *p = guid->guid_prefix.prefix;
       printf("    endpoint guid 0x%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
@@ -169,8 +169,8 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
     }
     else if (pid == FRUDP_PID_TRANSPORT_PRIORITY)
     {
-      uint32_t priority = *((uint32_t *)pval);
 #ifdef SEDP_VERBOSE
+      uint32_t priority = *((uint32_t *)pval);
       printf("    transport priority: %d\n", priority);
 #endif
     }

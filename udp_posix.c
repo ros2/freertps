@@ -100,7 +100,7 @@ bool frudp_init()
   }
   */
   if (!frudp_init_participant_id())
-    return false; 
+    return false;
   frudp_generic_init();
   // not sure about endianness here.
   g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
@@ -108,7 +108,7 @@ bool frudp_init()
   // todo: actually get mac address
   const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
   memcpy(&g_frudp_config.guid_prefix.prefix[2], mac, 6);
-  // 4 bytes left. let's use the POSIX process ID 
+  // 4 bytes left. let's use the POSIX process ID
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
   memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
   frudp_discovery_init();
@@ -123,7 +123,7 @@ bool frudp_init_participant_id()
     // see if we can open the port; if so, let's say we have a unique PID
     g_frudp_config.participant_id = pid;
     const uint16_t port = frudp_ucast_builtin_port();
-    
+
     if (frudp_add_ucast_rx(port))
     {
       FREERTPS_INFO("using RTPS/DDS PID %d\n", pid);
@@ -183,7 +183,7 @@ bool frudp_add_ucast_rx(const uint16_t port)
   return true;
 }
 
-bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //, 
+bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
                      //const freertps_udp_rx_callback_t rx_cb)
 {
   FREERTPS_INFO("add mcast rx port %d\n", port);
@@ -217,7 +217,7 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
   result = setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
   if (result < 0)
   {
-    FREERTPS_ERROR("couldn't add rx sock to multicast group, errno = %d\n", 
+    FREERTPS_ERROR("couldn't add rx sock to multicast group, errno = %d\n",
                    errno);
     return false;
   }
@@ -232,7 +232,7 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
 
 bool frudp_listen(const uint32_t max_usec)
 {
-  static uint8_t s_frudp_listen_buf[FU_RX_BUFSIZE]; // haha 
+  static uint8_t s_frudp_listen_buf[FU_RX_BUFSIZE]; // haha
   fd_set rdset;
   FD_ZERO(&rdset);
   int max_fd = 0;
@@ -261,7 +261,9 @@ bool frudp_listen(const uint32_t max_usec)
       int addrlen = sizeof(src_addr);
       int nbytes = recvfrom(rxs->sock,
                             s_frudp_listen_buf, sizeof(s_frudp_listen_buf),
-                            0, &src_addr, &addrlen);
+                            0,
+                            (struct sockaddr *)&src_addr,
+                            (socklen_t *)&addrlen);
       frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
                rxs->addr, rxs->port,
                s_frudp_listen_buf, nbytes);
@@ -280,7 +282,7 @@ bool frudp_tx(const in_addr_t dst_addr,
   g_frudp_tx_addr.sin_addr.s_addr = dst_addr;
   // todo: be smarter
   if (tx_len == sendto(g_frudp_rx_socks[3].sock, tx_data, tx_len, 0,
-                       (struct sockaddr *)(&g_frudp_tx_addr), 
+                       (struct sockaddr *)(&g_frudp_tx_addr),
                        sizeof(g_frudp_tx_addr)))
     return true;
   else

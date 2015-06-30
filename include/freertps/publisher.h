@@ -37,7 +37,8 @@ void frudp_publish(frudp_publisher_t *publisher, frudp_submsg_data_t *submsg);
 
 frudp_publisher_t *frudp_publisher_from_writer_id(const frudp_entity_id_t id);
 
-void frudp_publisher_rx_acknack(frudp_publisher_t *pub, 
-                                frudp_submsg_acknack_t *acknack);
+void frudp_publisher_rx_acknack(frudp_publisher_t *pub,
+                                frudp_submsg_acknack_t *acknack,
+                                frudp_guid_prefix_t *guid_prefix);
 
 #endif

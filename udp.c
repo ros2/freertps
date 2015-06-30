@@ -77,8 +77,8 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
     return true; // don't process our own messages
 
   {
-    const uint8_t *p = msg->header.guid_prefix.prefix;
 #ifdef RX_VERBOSE
+    const uint8_t *p = msg->header.guid_prefix.prefix;
     printf("RTPS sender guid prefix = %02x%02x%02x%02x:"
                                      "%02x%02x%02x%02x:"
                                      "%02x%02x%02x%02x\n",
@@ -149,7 +149,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
     return true; // not sure what's happening.
   }
   else
-    frudp_publisher_rx_acknack(pub, m);
+    frudp_publisher_rx_acknack(pub, m, &rcvr->src_guid_prefix);
   return true;
 }
 
@@ -262,9 +262,9 @@ static bool frudp_rx_info_reply_ip4(RX_MSG_ARGS)
 
 static bool frudp_rx_dst(RX_MSG_ARGS)
 {
+#ifdef VERBOSE_INFO_DEST
   frudp_submsg_info_dest_t *d = (frudp_submsg_info_dest_t *)submsg->contents;
   uint8_t *p = d->guid_prefix.prefix;
-#ifdef VERBOSE_INFO_DEST
   printf("  INFO_DEST guid = %02x%02x%02x%02x:"
                             "%02x%02x%02x%02x:"
                             "%02x%02x%02x%02x\n",
@@ -289,6 +289,8 @@ static bool frudp_rx_heartbeat_frag(RX_MSG_ARGS)
 {
   return true;
 }
+
+#define  VERBOSE_DATA
 
 static bool frudp_rx_data(RX_MSG_ARGS)
 {

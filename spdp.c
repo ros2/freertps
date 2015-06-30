@@ -27,7 +27,7 @@ static const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-#define SEDP_VERBOSE
+//#define SPDP_VERBOSE
 
 static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
                                const frudp_submsg_t *submsg,
@@ -385,7 +385,7 @@ static void frudp_spdp_bcast()
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_BUILTIN_ENDPOINT_SET;
   param_list->len = 4;
-  uint32_t endpoint_set = 0x3f;
+  uint32_t endpoint_set = 0x33; // 0x3f;
   memcpy(param_list->value, &endpoint_set, 4);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);

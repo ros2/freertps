@@ -56,12 +56,12 @@ typedef struct
 
 typedef struct
 {
-  frudp_pver_t       src_pver;
-  frudp_vid_t        src_vid;
+  frudp_pver_t        src_pver;
+  frudp_vid_t         src_vid;
   frudp_guid_prefix_t src_guid_prefix;
   frudp_guid_prefix_t dst_guid_prefix;
-  bool            have_timestamp;
-  fr_time_t       timestamp;
+  bool                have_timestamp;
+  fr_time_t           timestamp;
 } frudp_receiver_state_t;
 
 typedef struct

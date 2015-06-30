@@ -1,4 +1,5 @@
 #include "freertps/id.h"
+#include <stdio.h>
 
 unsigned g_frudp_next_user_entity_id = 1;
 
@@ -36,4 +37,19 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
   return true;
 }
 
-
+void print_guid_prefix(frudp_guid_prefix_t *p)
+{
+  printf("%02x%02x%02x%02x:%02x%02x%02x%02x:%02x%02x%02x%02x",
+         (unsigned)p->prefix[0],
+         (unsigned)p->prefix[1],
+         (unsigned)p->prefix[2],
+         (unsigned)p->prefix[3],
+         (unsigned)p->prefix[4],
+         (unsigned)p->prefix[5],
+         (unsigned)p->prefix[6],
+         (unsigned)p->prefix[7],
+         (unsigned)p->prefix[8],
+         (unsigned)p->prefix[9],
+         (unsigned)p->prefix[10],
+         (unsigned)p->prefix[11]);
+}
