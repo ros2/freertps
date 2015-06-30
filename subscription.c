@@ -28,7 +28,6 @@ bool frudp_subscribe(const frudp_entity_id_t reader_id,
   return true;
 }
 
-
 void frudp_create_subscription(const char *topic_name,
                                const char *type_name,
                                freertps_msg_cb_t msg_cb)
@@ -57,8 +56,5 @@ void frudp_add_userland_subscription(frudp_userland_subscription_request_t *s)
     return; // no room. sorry.
   g_frudp_userland_subs[g_frudp_num_userland_subs] = *s;
   g_frudp_num_userland_subs++;
-  //frudp_publish()
-  // create the data sample
-  //g_sedp_subscription_pub
-
+  frudp_subscribe(s->entity_id, g_frudp_entity_id_unknown, s->msg_cb);
 }
