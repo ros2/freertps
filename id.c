@@ -1,5 +1,7 @@
 #include "freertps/id.h"
 
+unsigned g_frudp_next_user_entity_id = 1;
+
 const char *frudp_vendor(const frudp_vid_t vid)
 {
   switch (vid)

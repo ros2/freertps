@@ -52,13 +52,13 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
       break;
     const uint8_t *pval = item->value;
     /*
-    FREERTPS_INFO("      unhandled spdp rx param 0x%x len %d\n", 
+    FREERTPS_INFO("      unhandled spdp rx param 0x%x len %d\n",
                   (unsigned)pid, item->len);
     */
     if (pid == FRUDP_PID_PROTOCOL_VERSION)
     {
 #ifdef SPDP_VERBOSE
-      FREERTPS_INFO("      spdp proto version 0x%04x\n", 
+      FREERTPS_INFO("      spdp proto version 0x%04x\n",
                     *((uint16_t *)(pval)));
 #endif
       part->pver = *((frudp_pver_t *)(pval)); // todo: what about alignment?
@@ -67,7 +67,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     {
       part->vid = htons(*((frudp_vid_t *)pval));
 #ifdef SPDP_VERBOSE
-      FREERTPS_INFO("      spdp vendor_id 0x%04x = %s\n", 
+      FREERTPS_INFO("      spdp vendor_id 0x%04x = %s\n",
                     part->vid, frudp_vendor(part->vid));
 #endif
     }
@@ -142,7 +142,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
       frudp_duration_t *dur = (frudp_duration_t *)pval;
       part->lease_duration = *dur;
 #ifdef SPDP_VERBOSE
-      FREERTPS_INFO("      spdp lease duration: %d.%09d\n", 
+      FREERTPS_INFO("      spdp lease duration: %d.%09d\n",
                     dur->sec, dur->nanosec);
 #endif
     }
@@ -150,8 +150,9 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     {
       frudp_guid_t *guid = (frudp_guid_t *)pval;
       memcpy(&part->guid_prefix, &guid->guid_prefix, FRUDP_GUID_PREFIX_LEN);
-      uint8_t *p = guid->guid_prefix.prefix;
+
 #ifdef SPDP_VERBOSE
+      uint8_t *p = guid->guid_prefix.prefix;
       FREERTPS_INFO("      guid 0x%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x\n",
@@ -163,7 +164,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     {
       part->builtin_endpoints = *((frudp_builtin_endpoint_set_t *)pval);
 #ifdef SPDP_VERBOSE
-      FREERTPS_INFO("      builtin endpoints: 0x%08x\n", 
+      FREERTPS_INFO("      builtin endpoints: 0x%08x\n",
                     part->builtin_endpoints);
 #endif
     }
@@ -177,7 +178,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     }
     else
     {
-      FREERTPS_ERROR("      unhandled spdp rx param 0x%x len %d\n", 
+      FREERTPS_ERROR("      unhandled spdp rx param 0x%x len %d\n",
                      (unsigned)pid, item->len);
     }
 
@@ -190,7 +191,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
   for (int i = 0; !found && i < g_frudp_discovery_num_participants; i++)
   {
     frudp_participant_t *p = &g_frudp_discovery_participants[i];
-    if (frudp_guid_prefix_identical(&p->guid_prefix, 
+    if (frudp_guid_prefix_identical(&p->guid_prefix,
                                     &part->guid_prefix))
     {
 #ifdef SPDP_VERBOSE
@@ -225,8 +226,8 @@ void frudp_spdp_init()
   FREERTPS_INFO("sdp init\n");
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
-  frudp_subscribe(g_frudp_entity_id_unknown, 
-                  spdp_writer_id, 
+  frudp_subscribe(g_frudp_entity_id_unknown,
+                  spdp_writer_id,
                   frudp_spdp_rx_data);
 }
 
@@ -235,7 +236,7 @@ void frudp_spdp_fini()
   FREERTPS_INFO("sdp fini\n");
 }
 
-// todo: this will all eventually be factored somewhere else. for now, 
+// todo: this will all eventually be factored somewhere else. for now,
 // just work through what it takes to send messages
 
 // todo: consolidate spdp and sedp into a 'discovery' module
@@ -272,24 +273,26 @@ static void frudp_spdp_bcast()
   memcpy(ts_submsg->contents, &t, 8);
   submsg_wpos += 4 + 8;
 
-  frudp_submsg_t *data_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
+/*
+  frudp_submsg_t *data_submsg =
+*/
+  frudp_submsg_data_t *data_submsg = (frudp_submsg_data_t *)&msg->submsgs[submsg_wpos];
+  //(frudp_submsg_data_t *)data_submsg->contents;
   data_submsg->header.id = FRUDP_SUBMSG_ID_DATA;
   data_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
                               FRUDP_FLAGS_INLINE_QOS    |
                               FRUDP_FLAGS_DATA_PRESENT  ;
   data_submsg->header.len = 336; // need to compute this dynamically?
-  frudp_submsg_data_t *data_contents =
-                  (frudp_submsg_data_t *)data_submsg->contents;
-  data_contents->extraflags = 0;
-  data_contents->octets_to_inline_qos = 16; // ?
-  data_contents->reader_id = g_frudp_entity_id_unknown;
-  data_contents->writer_id = g_spdp_writer_id;
-  data_contents->writer_sn.high = 0;
+  data_submsg->extraflags = 0;
+  data_submsg->octets_to_inline_qos = 16; // ?
+  data_submsg->reader_id = g_frudp_entity_id_unknown;
+  data_submsg->writer_id = g_spdp_writer_id;
+  data_submsg->writer_sn.high = 0;
   //static uint32_t bcast_count = 0;
-  data_contents->writer_sn.low = 1; //++bcast_count;
+  data_submsg->writer_sn.low = 1; //++bcast_count;
   /////////////////////////////////////////////////////////////
-  frudp_parameter_list_item_t *inline_qos_param = 
-    (frudp_parameter_list_item_t *)(((uint8_t *)data_contents) + 
+  frudp_parameter_list_item_t *inline_qos_param =
+    (frudp_parameter_list_item_t *)(((uint8_t *)data_submsg) +
                                     sizeof(frudp_submsg_data_t));
   inline_qos_param->pid = FRUDP_PID_KEY_HASH;
   inline_qos_param->len = 16;
@@ -304,12 +307,12 @@ static void frudp_spdp_bcast()
   inline_qos_param->pid = FRUDP_PID_SENTINEL;
   inline_qos_param->len = 0;
   /////////////////////////////////////////////////////////////
-  frudp_encapsulation_scheme_t *scheme = 
+  frudp_encapsulation_scheme_t *scheme =
     (frudp_encapsulation_scheme_t *)(((uint8_t *)inline_qos_param) + 4);
   scheme->scheme = htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
   scheme->options = 0;
   /////////////////////////////////////////////////////////////
-  frudp_parameter_list_item_t *param_list = 
+  frudp_parameter_list_item_t *param_list =
     (frudp_parameter_list_item_t *)(((uint8_t *)scheme) + sizeof(*scheme));
   param_list->pid = FRUDP_PID_PROTOCOL_VERSION;
   param_list->len = 4;
@@ -331,7 +334,7 @@ static void frudp_spdp_bcast()
   loc = (frudp_locator_t *)param_list->value;
   loc->kind = FRUDP_LOCATOR_KIND_UDPV4;
   loc->port = frudp_ucast_user_port();
-  memset(loc->addr.udp4.zeros, 0, 12); 
+  memset(loc->addr.udp4.zeros, 0, 12);
   loc->addr.udp4.addr = g_frudp_config.unicast_addr;
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
@@ -340,7 +343,7 @@ static void frudp_spdp_bcast()
   loc = (frudp_locator_t *)param_list->value;
   loc->kind = FRUDP_LOCATOR_KIND_UDPV4;
   loc->port = frudp_mcast_user_port();
-  memset(loc->addr.udp4.zeros, 0, 12); 
+  memset(loc->addr.udp4.zeros, 0, 12);
   loc->addr.udp4.addr = htonl(FRUDP_DEFAULT_MCAST_GROUP);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
@@ -349,7 +352,7 @@ static void frudp_spdp_bcast()
   loc = (frudp_locator_t *)param_list->value;
   loc->kind = FRUDP_LOCATOR_KIND_UDPV4;
   loc->port = frudp_ucast_builtin_port();
-  memset(loc->addr.udp4.zeros, 0, 12); 
+  memset(loc->addr.udp4.zeros, 0, 12);
   loc->addr.udp4.addr = g_frudp_config.unicast_addr;
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
@@ -358,7 +361,7 @@ static void frudp_spdp_bcast()
   loc = (frudp_locator_t *)param_list->value;
   loc->kind = FRUDP_LOCATOR_KIND_UDPV4;
   loc->port = frudp_mcast_builtin_port();
-  memset(loc->addr.udp4.zeros, 0, 12); 
+  memset(loc->addr.udp4.zeros, 0, 12);
   loc->addr.udp4.addr = htonl(FRUDP_DEFAULT_MCAST_GROUP);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
@@ -372,7 +375,7 @@ static void frudp_spdp_bcast()
   param_list->pid = FRUDP_PID_PARTICIPANT_GUID;
   param_list->len = 16;
   frudp_guid_t *guid = (frudp_guid_t *)param_list->value;
-  memcpy(&guid->guid_prefix, &g_frudp_config.guid_prefix, 
+  memcpy(&guid->guid_prefix, &g_frudp_config.guid_prefix,
          sizeof(frudp_guid_prefix_t));
   guid->entity_id.s.key[0] = 0;
   guid->entity_id.s.key[1] = 0;
@@ -388,9 +391,9 @@ static void frudp_spdp_bcast()
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_SENTINEL;
   param_list->len = 0;
-  //data_submsg->header.len = next_submsg_ptr - data_submsg->contents; 
+  //data_submsg->header.len = next_submsg_ptr - data_submsg->contents;
   PLIST_ADVANCE(param_list);
-  data_submsg->header.len = param_list->value - 4 - data_submsg->contents; 
+  data_submsg->header.len = param_list->value - 4 - (uint8_t *)&data_submsg->extraflags;
   frudp_submsg_t *next_submsg_ptr = (frudp_submsg_t *)param_list;
   /////////////////////////////////////////////////////////////
   /*
@@ -404,14 +407,14 @@ static void frudp_spdp_bcast()
 
   /////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////
-  //data_submsg->header.len = next_submsg_ptr - data_submsg->contents; 
+  //data_submsg->header.len = next_submsg_ptr - data_submsg->contents;
   //printf("len = %d\n", data_submsg->header.len);
   /////////////////////////////////////////////////////////////
   //int payload_len = ((uint8_t *)param_list) - ((uint8_t *)msg->submsgs);
   //int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg->submsgs);
   int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg);
-  frudp_tx(inet_addr("239.255.0.1"), frudp_mcast_builtin_port(),
-           (const uint8_t *)msg, payload_len); 
+  frudp_tx(htonl(FRUDP_DEFAULT_MCAST_GROUP), frudp_mcast_builtin_port(),
+           (const uint8_t *)msg, payload_len);
 }
 
 void frudp_spdp_tick()
@@ -424,4 +427,3 @@ void frudp_spdp_tick()
     frudp_spdp_last_bcast = t;
   }
 }
-

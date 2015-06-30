@@ -1,9 +1,10 @@
 #include "freertps/subscription.h"
 #include "freertps/udp.h"
+#include "freertps/id.h"
+#include "freertps/sedp.h"
 
 frudp_subscription_t g_frudp_subs[FRUDP_MAX_SUBSCRIPTIONS];
 unsigned g_frudp_subs_used = 0;
-unsigned g_frudp_subscription_next_user_key = 1;
 
 ///////////////////////////////////////////////////////////////////////////
 static void frudp_add_userland_subscription(
@@ -36,8 +37,8 @@ void frudp_create_subscription(const char *topic_name,
          topic_name, type_name);
   frudp_entity_id_t sub_entity_id;
   sub_entity_id.s.kind = FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
-  sub_entity_id.s.key[0] = g_frudp_subscription_next_user_key++;
-  sub_entity_id.s.key[1] = 0;
+  sub_entity_id.s.key[0] = g_frudp_next_user_entity_id++;
+  sub_entity_id.s.key[1] = 0; // todo: >8 bit ID's
   sub_entity_id.s.key[2] = 0;
   frudp_userland_subscription_request_t req;
   // for now, just copy the pointers. maybe in the future we can/should have
@@ -47,12 +48,17 @@ void frudp_create_subscription(const char *topic_name,
   req.entity_id = sub_entity_id;
   req.msg_cb = msg_cb;
   frudp_add_userland_subscription(&req);
+  sedp_publish_subscription(&req);
 }
 
 void frudp_add_userland_subscription(frudp_userland_subscription_request_t *s)
 {
   if (g_frudp_num_userland_subs >= FRUDP_MAX_USERLAND_SUBS - 1)
     return; // no room. sorry.
-  g_frudp_userland_subs[g_frudp_num_userland_subs] = *s; 
+  g_frudp_userland_subs[g_frudp_num_userland_subs] = *s;
   g_frudp_num_userland_subs++;
+  //frudp_publish()
+  // create the data sample
+  //g_sedp_subscription_pub
+
 }

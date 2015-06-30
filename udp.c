@@ -10,10 +10,11 @@
 // global constants
 const frudp_entity_id_t g_frudp_entity_id_unknown = { .u = 0 };
 frudp_config_t g_frudp_config;
+const frudp_sequence_number_t g_frudp_sequence_number_unknown = { .high = -1, .low = 0 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
-static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, 
+static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
                             const frudp_submsg_t *submsg);
 #define RX_MSG_ARGS frudp_receiver_state_t *rcvr, const frudp_submsg_t *submsg
 static bool frudp_rx_acknack       (RX_MSG_ARGS);
@@ -47,18 +48,18 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
   FREERTPS_INFO("freertps rx %d bytes\n", rx_len);
 #endif
   const frudp_msg_t *msg = (frudp_msg_t *)rx_data;
-  if (msg->header.magic_word != 0x53505452) // todo: care about endianness 
+  if (msg->header.magic_word != 0x53505452) // todo: care about endianness
     return false; // it wasn't RTPS. no soup for you.
 #ifdef RX_VERBOSE
-  FREERTPS_INFO("rx proto ver %d.%d\n", 
-                msg->header.pver.major, 
+  FREERTPS_INFO("rx proto ver %d.%d\n",
+                msg->header.pver.major,
                 msg->header.pver.minor);
 #endif
   if (msg->header.pver.major != 2)
     return false; // we aren't cool enough to be oldschool
 #ifdef RX_VERBOSE
-  FREERTPS_INFO("rx vendor 0x%04x = %s\n", 
-                (unsigned)ntohs(msg->header.vid), 
+  FREERTPS_INFO("rx vendor 0x%04x = %s\n",
+                (unsigned)ntohs(msg->header.vid),
                 frudp_vendor(ntohs(msg->header.vid)));
 #endif
   // initialize the receiver state
@@ -68,7 +69,7 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
 
   bool our_guid = true;
   for (int i = 0; i < 12; i++)
-    if (msg->header.guid_prefix.prefix[i] != 
+    if (msg->header.guid_prefix.prefix[i] !=
         g_frudp_config.guid_prefix.prefix[i])
       our_guid = false;
   if (our_guid)
@@ -84,8 +85,8 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
          p[8], p[9], p[10], p[11]);
   }
 
-  memcpy(rcvr.src_guid_prefix.prefix, 
-         msg->header.guid_prefix.prefix, 
+  memcpy(rcvr.src_guid_prefix.prefix,
+         msg->header.guid_prefix.prefix,
          FRUDP_GUID_PREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages
@@ -97,13 +98,14 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
     // todo: ensure alignment? if this isn't dword-aligned, we're hosed
     submsg_start += sizeof(frudp_submsg_header_t) + submsg->header.len;
   }
+  return true;
 }
 
-static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr, 
+static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
                             const frudp_submsg_t *submsg)
 {
 #ifdef RX_VERBOSE
-  FREERTPS_INFO("rx submsg ID %d len %d\n", 
+  FREERTPS_INFO("rx submsg ID %d len %d\n",
                 submsg->header.id,
                 submsg->header.len);
 #endif
@@ -112,7 +114,7 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
   {
     case 0x01: return true; // pad submessage. ignore (?)
     case FRUDP_SUBMSG_ID_ACKNACK:   return frudp_rx_acknack(rcvr, submsg);
-    case 0x07: return frudp_rx_heartbeat(rcvr, submsg);
+    case FRUDP_SUBMSG_ID_HEARTBEAT: return frudp_rx_heartbeat(rcvr, submsg);
     case 0x08: return frudp_rx_gap(rcvr, submsg);
     case FRUDP_SUBMSG_ID_INFO_TS:   return frudp_rx_info_ts(rcvr, submsg);
     case 0x0c: return frudp_rx_info_src(rcvr, submsg);
@@ -133,7 +135,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
   printf("  ACKNACK   reader = 0x%08x  writer = 0x%08x\n",
-         htonl(m->reader_id.u), 
+         htonl(m->reader_id.u),
          htonl(m->writer_id.u));
   return true;
 }
@@ -142,10 +144,10 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
   const bool f = submsg->header.flags & 0x02;
-  const bool l = submsg->header.flags & 0x04;
+  //const bool l = submsg->header.flags & 0x04; // liveliness flag?
   frudp_submsg_heartbeat_t *hb = (frudp_submsg_heartbeat_t *)submsg;
   printf("  HEARTBEAT reader = 0x%08x  writer = 0x%08x  %d -> %d\n",
-         htonl(hb->reader_id.u), 
+         htonl(hb->reader_id.u),
          htonl(hb->writer_id.u),
          hb->first_sn.low,
          hb->last_sn.low);
@@ -179,7 +181,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
           set.bitmap = 0xffffffff;
         }
         printf("    TX ACKNACK %d:%d\n",
-               set.bitmap_base.low, 
+               set.bitmap_base.low,
                set.bitmap_base.low + set.num_bits);
         frudp_tx_acknack(&rcvr->src_guid_prefix,
                          &sub->reader_id,
@@ -221,8 +223,8 @@ static bool frudp_rx_info_ts(RX_MSG_ARGS)
     // todo: care about alignment
     rcvr->timestamp = *((fr_time_t *)(submsg->contents));
     /*
-    FREERTPS_INFO("info_ts rx timestamp %.6f\n", 
-                  (double)(rcvr->timestamp.seconds) + 
+    FREERTPS_INFO("info_ts rx timestamp %.6f\n",
+                  (double)(rcvr->timestamp.seconds) +
                   ((double)(rcvr->timestamp.fraction)) / ULONG_MAX);
     */
   }
@@ -269,22 +271,22 @@ static bool frudp_rx_heartbeat_frag(RX_MSG_ARGS)
 
 static bool frudp_rx_data(RX_MSG_ARGS)
 {
-  frudp_submsg_data_t *contents = (frudp_submsg_data_t *)submsg->contents;
+  frudp_submsg_data_t *data_submsg = (frudp_submsg_data_t *)submsg;
 #ifdef RX_VERBOSE
   FREERTPS_INFO("rx data flags = %d\n", 0x0f7 & submsg->header.flags);
 #endif
   // todo: care about endianness
   const bool q = submsg->header.flags & 0x02;
-  const bool d = submsg->header.flags & 0x04;
+  //const bool d = submsg->header.flags & 0x04; // no idea what this is
   const bool k = submsg->header.flags & 0x08;
   if (k)
   {
     FREERTPS_ERROR("ahhhh i don't know how to handle keyed data yet\n");
     return false;
   }
-  uint8_t *inline_qos_start = (uint8_t *)(&contents->octets_to_inline_qos) + 
-                              sizeof(contents->octets_to_inline_qos) + 
-                              contents->octets_to_inline_qos;
+  uint8_t *inline_qos_start = (uint8_t *)(&data_submsg->octets_to_inline_qos) +
+                              sizeof(data_submsg->octets_to_inline_qos) +
+                              data_submsg->octets_to_inline_qos;
   uint8_t *data_start = inline_qos_start;
   if (q)
   {
@@ -296,7 +298,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       FREERTPS_INFO("data inline QoS param 0x%x len %d\n", (unsigned)item->pid, item->len);
 #endif
       const frudp_parameterid_t pid = item->pid;
-      const uint8_t *pval = item->value;
+      //const uint8_t *pval = item->value;
       // todo: process parameter value
       item = (frudp_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
       if (pid == FRUDP_PID_SENTINEL)
@@ -308,20 +310,20 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
   printf("  DATA reader id = 0x%08x  writer id = 0x%08x  seq %d\n",
-         htonl(contents->reader_id.u), 
-         htonl(contents->writer_id.u),
-         contents->writer_sn.low);
+         htonl(data_submsg->reader_id.u),
+         htonl(data_submsg->writer_id.u),
+         data_submsg->writer_sn.low);
   // spin through subscriptions and see if anyone is listening
   for (unsigned i = 0; i < g_frudp_subs_used; i++)
   {
     frudp_subscription_t *sub = &g_frudp_subs[i];
-    if (sub->writer_id.u == contents->writer_id.u &&
-        (sub->reader_id.u == contents->reader_id.u ||
-         contents->reader_id.u == g_frudp_entity_id_unknown.u))
+    if (sub->writer_id.u == data_submsg->writer_id.u &&
+        (sub->reader_id.u == data_submsg->reader_id.u ||
+         data_submsg->reader_id.u == g_frudp_entity_id_unknown.u))
     {
       // update the max-received sequence number counter
-      if (contents->writer_sn.low > sub->max_rx_sn.low) // todo: 64-bit
-        sub->max_rx_sn = contents->writer_sn;
+      if (data_submsg->writer_sn.low > sub->max_rx_sn.low) // todo: 64-bit
+        sub->max_rx_sn = data_submsg->writer_sn;
       sub->data_cb(rcvr, submsg, scheme, data);
     }
   }
@@ -338,9 +340,9 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
 bool frudp_generic_init()
 {
   FREERTPS_INFO("frudp_generic_init()\n");
-  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_builtin_port());
-  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_user_port());
   frudp_add_ucast_rx(frudp_ucast_user_port());
   return true;
@@ -348,14 +350,14 @@ bool frudp_generic_init()
 
 uint16_t frudp_mcast_builtin_port()
 {
-  return FRUDP_PORT_PB + 
+  return FRUDP_PORT_PB +
          FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
          FRUDP_PORT_D0;
 }
 
 uint16_t frudp_ucast_builtin_port()
 {
-  return FRUDP_PORT_PB + 
+  return FRUDP_PORT_PB +
          FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
          FRUDP_PORT_D1 +
          FRUDP_PORT_PG * g_frudp_config.participant_id;
@@ -363,14 +365,14 @@ uint16_t frudp_ucast_builtin_port()
 
 uint16_t frudp_mcast_user_port()
 {
-  return FRUDP_PORT_PB + 
+  return FRUDP_PORT_PB +
          FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
          FRUDP_PORT_D2;
 }
 
 uint16_t frudp_ucast_user_port()
 {
-  return FRUDP_PORT_PB + 
+  return FRUDP_PORT_PB +
          FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
          FRUDP_PORT_D3 +
          FRUDP_PORT_PG * g_frudp_config.participant_id;
@@ -378,7 +380,7 @@ uint16_t frudp_ucast_user_port()
 
 const char *frudp_ip4_ntoa(const uint32_t addr)
 {
-  static uint8_t ntoa_buf[20]; 
+  static char ntoa_buf[20];
   snprintf(ntoa_buf, sizeof(ntoa_buf), "%d.%d.%d.%d",
            (addr      ) & 0xff,
            (addr >>  8) & 0xff,
@@ -401,13 +403,13 @@ bool frudp_parse_string(char *buf, uint32_t buf_len, frudp_rtps_string_t *s)
 
 frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
 {
-  frudp_msg_t *msg = (frudp_msg_t *)buf; 
+  frudp_msg_t *msg = (frudp_msg_t *)buf;
   msg->header.magic_word = 0x53505452;
   msg->header.pver.major = 2;
   msg->header.pver.minor = 1;
   msg->header.vid = FREERTPS_VENDOR_ID;
-  memcpy(msg->header.guid_prefix.prefix, 
-         g_frudp_config.guid_prefix.prefix, 
+  memcpy(msg->header.guid_prefix.prefix,
+         g_frudp_config.guid_prefix.prefix,
          FRUDP_GUID_PREFIX_LEN);
   g_frudp_discovery_tx_buf_wpos = 0;
   return msg;
@@ -438,7 +440,7 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
   acknack_submsg->header.id = FRUDP_SUBMSG_ID_ACKNACK;
   acknack_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
   acknack_submsg->header.len = 24 + (set->num_bits + 31)/32 * 4;
-  frudp_submsg_acknack_t *acknack = 
+  frudp_submsg_acknack_t *acknack =
                             (frudp_submsg_acknack_t *)acknack_submsg->contents;
   acknack->reader_id = *reader_id;
   acknack->writer_id = *writer_id;
@@ -452,4 +454,3 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
            part->metatraffic_unicast_locator.port,
            (const uint8_t *)msg, payload_len);
 }
-

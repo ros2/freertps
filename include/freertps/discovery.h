@@ -12,6 +12,11 @@
 #define FRUDP_PID_RELIABILITY                   0x001a
 #define FRUDP_PID_PROTOCOL_VERSION              0x0015
 #define FRUDP_PID_VENDOR_ID                     0x0016
+#define FRUDP_PID_RELIABILITY                   0x001a
+#define FRUDP_PID_LIVELINESS                    0x001b
+#define FRUDP_PID_DURABILITY                    0x001d
+#define FRUDP_PID_PRESENTATION                  0x0021
+#define FRUDP_PID_PARTITION                     0x0029
 #define FRUDP_PID_DEFAULT_UNICAST_LOCATOR       0x0031
 #define FRUDP_PID_METATRAFFIC_UNICAST_LOCATOR   0x0032
 #define FRUDP_PID_METATRAFFIC_MULTICAST_LOCATOR 0x0033
