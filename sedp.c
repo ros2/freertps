@@ -96,6 +96,7 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
     {
       frudp_guid_t *guid = (frudp_guid_t *)pval;
       //memcpy(&part->guid_prefix, &guid->guid_prefix, FRUDP_GUID_PREFIX_LEN);
+#ifdef SEDP_VERBOSE
       uint8_t *p = guid->guid_prefix.prefix;
       printf("    endpoint guid 0x%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
@@ -104,14 +105,16 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
              p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
              p[8], p[9], p[10], p[11],
              p[12], p[13], p[14], p[15]);
-
+#endif
     }
     else if (pid == FRUDP_PID_TOPIC_NAME)
     {
       frudp_rtps_string_t *s = (frudp_rtps_string_t *)pval;
       if (frudp_parse_string(g_sedp_string_buf, sizeof(g_sedp_string_buf), s))
       {
+#ifdef SEDP_VERBOSE
         printf("    topic name: [%s]\n", g_sedp_string_buf);
+#endif
       }
       else
         FREERTPS_ERROR("couldn't parse topic name of length %d\n", s->len);
@@ -121,7 +124,9 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
       frudp_rtps_string_t *s = (frudp_rtps_string_t *)pval;
       if (frudp_parse_string(g_sedp_string_buf, sizeof(g_sedp_string_buf), s))
       {
+#ifdef SEDP_VERBOSE
         printf("    type name: [%s]\n", g_sedp_string_buf);
+#endif
       }
       else
         FREERTPS_ERROR("couldn't parse type name of length %d\n", s->len);
@@ -131,11 +136,15 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
       frudp_qos_reliability_t *qos = (frudp_qos_reliability_t *)pval;
       if (qos->kind == FRUDP_QOS_RELIABILITY_KIND_BEST_EFFORT)
       {
+#ifdef SEDP_VERBOSE
         printf("    reliability QoS: [best-effort]\n");
+#endif
       }
       else if (qos->kind == FRUDP_QOS_RELIABILITY_KIND_RELIABLE)
       {
+#ifdef SEDP_VERBOSE
         printf("    reliability QoS: [reliable]\n");
+#endif
       }
       else
         FREERTPS_ERROR("unhandled reliability kind: %d\n", qos->kind);
@@ -145,11 +154,15 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
       frudp_qos_history_t *qos = (frudp_qos_history_t *)pval;
       if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_LAST)
       {
+#ifdef SEDP_VERBOSE
         printf("    history QoS: [keep last %d]\n", qos->depth);
+#endif
       }
       else if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_ALL)
       {
+#ifdef SEDP_VERBOSE
         printf("    history QoS: [keep all]\n");
+#endif
       }
       else
         FREERTPS_ERROR("unhandled history kind: %d\n", qos->kind);
@@ -157,7 +170,9 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
     else if (pid == FRUDP_PID_TRANSPORT_PRIORITY)
     {
       uint32_t priority = *((uint32_t *)pval);
+#ifdef SEDP_VERBOSE
       printf("    transport priority: %d\n", priority);
+#endif
     }
 
     // now, advance to next item in list...

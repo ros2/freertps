@@ -2,6 +2,7 @@
 #include "freertps/spdp.h"
 #include "freertps/discovery.h"
 #include "freertps/subscription.h"
+#include "freertps/publisher.h"
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
@@ -77,12 +78,14 @@ bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
 
   {
     const uint8_t *p = msg->header.guid_prefix.prefix;
+#ifdef RX_VERBOSE
     printf("RTPS sender guid prefix = %02x%02x%02x%02x:"
                                      "%02x%02x%02x%02x:"
                                      "%02x%02x%02x%02x\n",
          p[0], p[1], p[2], p[3],
          p[4], p[5], p[6], p[7],
          p[8], p[9], p[10], p[11]);
+#endif
   }
 
   memcpy(rcvr.src_guid_prefix.prefix,
@@ -134,9 +137,19 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
 static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
-  printf("  ACKNACK   reader = 0x%08x  writer = 0x%08x\n",
+  printf("  ACKNACK   reader = 0x%08x  writer = 0x%08x   %d -> %d\n",
          htonl(m->reader_id.u),
-         htonl(m->writer_id.u));
+         htonl(m->writer_id.u),
+         m->reader_sn_state.bitmap_base.low,
+         m->reader_sn_state.bitmap_base.low + m->reader_sn_state.num_bits);
+  frudp_publisher_t *pub = frudp_publisher_from_writer_id(m->writer_id);
+  if (!pub)
+  {
+    printf("couldn't find pub for writer id 0x%08x\n", htonl(m->writer_id.u));
+    return true; // not sure what's happening.
+  }
+  else
+    frudp_publisher_rx_acknack(pub, m);
   return true;
 }
 
@@ -146,11 +159,13 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   const bool f = submsg->header.flags & 0x02;
   //const bool l = submsg->header.flags & 0x04; // liveliness flag?
   frudp_submsg_heartbeat_t *hb = (frudp_submsg_heartbeat_t *)submsg;
+#ifdef VERBOSE_HEARTBEAT
   printf("  HEARTBEAT reader = 0x%08x  writer = 0x%08x  %d -> %d\n",
          htonl(hb->reader_id.u),
          htonl(hb->writer_id.u),
          hb->first_sn.low,
          hb->last_sn.low);
+#endif
   // spin through subscriptions and see if anyone is listening
   for (unsigned i = 0; i < g_frudp_subs_used; i++)
   {
@@ -180,9 +195,11 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
             set.num_bits = 31;
           set.bitmap = 0xffffffff;
         }
+#ifdef VERBOSE_HEARTBEAT
         printf("    TX ACKNACK %d:%d\n",
                set.bitmap_base.low,
                set.bitmap_base.low + set.num_bits);
+#endif
         frudp_tx_acknack(&rcvr->src_guid_prefix,
                          &sub->reader_id,
                          &sub->writer_id,
@@ -190,7 +207,9 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
       }
       else
       {
+#ifdef VERBOSE_HEARTBEAT
         printf("    FINAL flag not set in heartbeat; not going to tx acknack\n");
+#endif
       }
     }
   }
@@ -245,12 +264,14 @@ static bool frudp_rx_dst(RX_MSG_ARGS)
 {
   frudp_submsg_info_dest_t *d = (frudp_submsg_info_dest_t *)submsg->contents;
   uint8_t *p = d->guid_prefix.prefix;
+#ifdef VERBOSE_INFO_DEST
   printf("  INFO_DEST guid = %02x%02x%02x%02x:"
                             "%02x%02x%02x%02x:"
                             "%02x%02x%02x%02x\n",
          p[0], p[1], p[2], p[3],
          p[4], p[5], p[6], p[7],
          p[8], p[9], p[10], p[11]);
+#endif
   return true;
 }
 
@@ -309,10 +330,12 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   const uint16_t scheme = ntohs(*((uint16_t *)data_start));
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
+#ifdef VERBOSE_DATA
   printf("  DATA reader id = 0x%08x  writer id = 0x%08x  seq %d\n",
          htonl(data_submsg->reader_id.u),
          htonl(data_submsg->writer_id.u),
          data_submsg->writer_sn.low);
+#endif
   // spin through subscriptions and see if anyone is listening
   for (unsigned i = 0; i < g_frudp_subs_used; i++)
   {
