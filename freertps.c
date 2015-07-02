@@ -20,6 +20,5 @@ void freertps_create_subscription(const char *topic_name,
   // assume for now that we are only using UDP. in the future, this can
   // become smarter to handle when different (or multiple?) physical layer
   // are initialized
-  frudp_create_subscription(topic_name, type_name, msg_cb);
+  frudp_add_user_subscription(topic_name, type_name, msg_cb);
 }
-
