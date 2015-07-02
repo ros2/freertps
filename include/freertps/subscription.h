@@ -1,15 +1,15 @@
 #ifndef SUBSCRIPTION_H
 #define SUBSCRIPTION_H
 
-#ifndef FRUDP_MAX_SUBSCRIPTIONS
-#  define FRUDP_MAX_SUBSCRIPTIONS 10
+#ifndef FRUDP_MAX_MATCHED_READERS
+#  define FRUDP_MAX_MATCHED_READERS 10
 #endif
 
 #include "freertps/id.h"
 #include "freertps/udp.h"
 #include "freertps/freertps.h"
 
-// create userland UDP subscriptions. people should call the 
+// create userland UDP subscriptions. people should call the
 // freertps_create_subscription() from userland code though, to be agnostic
 // to the physical layer
 
@@ -26,19 +26,21 @@ void frudp_create_subscription(const char *topic_name,
 // eventually.
 bool frudp_subscribe(const frudp_entity_id_t reader_id,
                      const frudp_entity_id_t writer_id,
-                     const frudp_rx_data_cb_t data_cb);
+                     const frudp_rx_data_cb_t data_cb,
+                     const freertps_msg_cb_t msg_cb);
 
 typedef struct
 {
-  frudp_entity_id_t reader_id;
-  frudp_entity_id_t writer_id;
-  frudp_rx_data_cb_t data_cb;
+  frudp_guid_t writer_guid;
+  frudp_entity_id_t reader_entity_id;
   frudp_sequence_number_t max_rx_sn;
-} frudp_subscription_t;
+  frudp_rx_data_cb_t data_cb;
+  freertps_msg_cb_t msg_cb;
+} frudp_matched_reader_t;
 
 // not great to have these freely available. someday hide these.
-extern frudp_subscription_t g_frudp_subs[FRUDP_MAX_SUBSCRIPTIONS];
-extern unsigned g_frudp_subs_used;
+extern frudp_matched_reader_t g_frudp_matched_readers[FRUDP_MAX_MATCHED_READERS];
+extern unsigned g_frudp_num_matched_readers;
 
 typedef struct
 {

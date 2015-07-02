@@ -37,6 +37,13 @@ typedef struct
 bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
                                  frudp_guid_prefix_t * const b);
 
+bool frudp_guid_identical(const frudp_guid_t * const a,
+                          const frudp_guid_t * const b);
+
+void frudp_stuff_guid(frudp_guid_t *guid,
+                      const frudp_guid_prefix_t *prefix,
+                      const frudp_entity_id_t *id);
+
 /////////////////////////////////////////////////////////////////////////
 // VENDOR ID STUFF
 // for now let's pretend that our vendor ID is 11311 in hex
@@ -47,5 +54,6 @@ const char *frudp_vendor(const frudp_vid_t vid);
 extern unsigned g_frudp_next_user_entity_id;
 
 void print_guid_prefix(frudp_guid_prefix_t *guid_prefix);
+void frudp_print_guid(frudp_guid_t *guid);
 
 #endif

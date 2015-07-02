@@ -11,7 +11,7 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
-static const frudp_entity_id_t spdp_writer_id = { .u = 0xc2000100 }; //s = { .key = { 0x00, 0x01, 0x00 }, .kind = 0xc2 } };
+//static const frudp_entity_id_t spdp_writer_id = { .u = 0xc2000100 }; //s = { .key = { 0x00, 0x01, 0x00 }, .kind = 0xc2 } };
 
 //#define SPDP_VERBOSE
 
@@ -21,7 +21,8 @@ static const frudp_entity_id_t spdp_writer_id = { .u = 0xc2000100 }; //s = { .ke
 
 static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
 
-static const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
+const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
+const frudp_entity_id_t g_spdp_reader_id = { .u = 0xc7000100 };
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -227,8 +228,9 @@ void frudp_spdp_init()
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
   frudp_subscribe(g_frudp_entity_id_unknown,
-                  spdp_writer_id,
-                  frudp_spdp_rx_data);
+                  g_spdp_writer_id,
+                  frudp_spdp_rx_data,
+                  NULL);
 }
 
 void frudp_spdp_fini()

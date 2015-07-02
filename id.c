@@ -1,5 +1,6 @@
 #include "freertps/id.h"
 #include <stdio.h>
+#include <string.h>
 
 unsigned g_frudp_next_user_entity_id = 1;
 
@@ -37,6 +38,17 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
   return true;
 }
 
+bool frudp_guid_identical(const frudp_guid_t * const a,
+                          const frudp_guid_t * const b)
+{
+  if (a->entity_id.u != b->entity_id.u)
+    return false;
+  for (int i = 0; i < FRUDP_GUID_PREFIX_LEN; i++)
+    if (a->guid_prefix.prefix[i] != b->guid_prefix.prefix[i])
+      return false;
+  return true;
+}
+
 void print_guid_prefix(frudp_guid_prefix_t *p)
 {
   printf("%02x%02x%02x%02x:%02x%02x%02x%02x:%02x%02x%02x%02x",
@@ -52,4 +64,18 @@ void print_guid_prefix(frudp_guid_prefix_t *p)
          (unsigned)p->prefix[9],
          (unsigned)p->prefix[10],
          (unsigned)p->prefix[11]);
+}
+
+void frudp_stuff_guid(frudp_guid_t *guid,
+                      const frudp_guid_prefix_t *prefix,
+                      const frudp_entity_id_t *id)
+{
+  memcpy(&guid->guid_prefix, prefix, sizeof(frudp_guid_prefix_t));
+  guid->entity_id = *id;
+}
+
+void frudp_print_guid(frudp_guid_t *guid)
+{
+  print_guid_prefix(&guid->guid_prefix);
+  printf("%08x", guid->entity_id.u);
 }

@@ -54,7 +54,8 @@ void frudp_sedp_init()
                                                    FRUDP_MAX_SUBSCRIPTIONS);
   frudp_subscribe(g_sedp_pub_reader_id,
                   g_sedp_pub_writer_id,
-                  frudp_sedp_rx_pub_data);
+                  frudp_sedp_rx_pub_data,
+                  NULL);
 }
 
 void frudp_sedp_fini()
