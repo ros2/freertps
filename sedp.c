@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////
 // local constants
 static char g_sedp_string_buf[256];
-static const frudp_entity_id_t g_sedp_pub_writer_id = { .u = 0xc2030000 };
+static const frudp_entity_id_t __attribute__((unused)) g_sedp_pub_writer_id = { .u = 0xc2030000 };
 static const frudp_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
 static const frudp_entity_id_t g_sedp_sub_writer_id = { .u = 0xc2040000 };
 static const frudp_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
@@ -30,7 +30,7 @@ frudp_publisher_t *g_sedp_subscription_pub = NULL;
 // todo: an option to generate SEDP messages on-the-fly as requested,
 // rather than buffering them in precious SRAM
 #define SEDP_MSG_BUF_LEN 1024
-// save typing...
+// save some typing with a shorter symbol...
 #define MAX_SUBS FRUDP_MAX_SUBSCRIPTIONS
 //static uint8_t frudp_pub_sample_t[SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_sub_writer_data_buf[SEDP_MSG_BUF_LEN * MAX_SUBS];
@@ -52,10 +52,20 @@ void frudp_sedp_init()
                                                    g_sedp_sub_writer_id,
                                                    g_sedp_sub_writer_data_submsgs,
                                                    FRUDP_MAX_SUBSCRIPTIONS);
+  frudp_subscription_t sedp_sub;
+  sedp_sub.topic_name = NULL;
+  sedp_sub.type_name = NULL;
+  sedp_sub.reader_entity_id = g_sedp_pub_reader_id;
+  sedp_sub.data_cb = frudp_sedp_rx_pub_data;
+  sedp_sub.msg_cb = NULL;
+  frudp_add_subscription(&sedp_sub);
+
+  /*
   frudp_subscribe(g_sedp_pub_reader_id,
                   g_sedp_pub_writer_id,
                   frudp_sedp_rx_pub_data,
                   NULL);
+  */
 }
 
 void frudp_sedp_fini()
@@ -187,7 +197,7 @@ static void frudp_sedp_bcast()
   //fr_time_t t = fr_time_now();
 }
 
-void sedp_publish_subscription(frudp_userland_subscription_request_t *sub_req)
+void sedp_publish_subscription(frudp_subscription_t *sub)
 {
   frudp_submsg_data_t *d = (frudp_submsg_data_t *)g_sedp_sub_buf;
   d->header.id = FRUDP_SUBMSG_ID_DATA;
@@ -234,22 +244,28 @@ void sedp_publish_subscription(frudp_userland_subscription_request_t *sub_req)
   param->len = 16;
   frudp_guid_t reader_guid;
   reader_guid.guid_prefix = g_frudp_config.guid_prefix;
-  reader_guid.entity_id = sub_req->entity_id;
+  reader_guid.entity_id = sub->reader_entity_id;
   memcpy(param->value, &reader_guid, 16);
   /////////////////////////////////////////////////////////////
-  FRUDP_PLIST_ADVANCE(param);
-  param->pid = FRUDP_PID_TOPIC_NAME;
-  int topic_len = strlen(sub_req->topic_name);
-  *((uint32_t *)param->value) = topic_len + 1;
-  memcpy(param->value + 4, sub_req->topic_name, topic_len + 1);
-  param->len = (4 + topic_len + 3) & ~0x3; // params must be 32-bit aligned
+  if (sub->topic_name)
+  {
+    FRUDP_PLIST_ADVANCE(param);
+    param->pid = FRUDP_PID_TOPIC_NAME;
+    int topic_len = sub->topic_name ? strlen(sub->topic_name) : 0;
+    *((uint32_t *)param->value) = topic_len + 1;
+    memcpy(param->value + 4, sub->topic_name, topic_len + 1);
+    param->len = (4 + topic_len + 3) & ~0x3; // params must be 32-bit aligned
+  }
   /////////////////////////////////////////////////////////////
-  FRUDP_PLIST_ADVANCE(param);
-  param->pid = FRUDP_PID_TYPE_NAME;
-  int type_len = strlen(sub_req->type_name);
-  *((uint32_t *)param->value) = type_len + 1;
-  memcpy(param->value + 4, sub_req->type_name, type_len + 1);
-  param->len = (4 + type_len + 3) & ~0x3; // params must be 32-bit aligned
+  if (sub->type_name)
+  {
+    FRUDP_PLIST_ADVANCE(param);
+    param->pid = FRUDP_PID_TYPE_NAME;
+    int type_len = strlen(sub->type_name);
+    *((uint32_t *)param->value) = type_len + 1;
+    memcpy(param->value + 4, sub->type_name, type_len + 1);
+    param->len = (4 + type_len + 3) & ~0x3; // params must be 32-bit aligned
+  }
   /////////////////////////////////////////////////////////////
   FRUDP_PLIST_ADVANCE(param);
   param->pid = FRUDP_PID_RELIABILITY;
@@ -276,6 +292,14 @@ void sedp_publish_subscription(frudp_userland_subscription_request_t *sub_req)
   d->header.len = param->value - 4 - (uint8_t *)&d->extraflags;
   frudp_publish(g_sedp_subscription_pub, d);
 }
+
+void sedp_add_builtin_endpoints(frudp_participant_t *part)
+{
+  printf("adding endpoints for ");
+  frudp_print_guid_prefix(&part->guid_prefix);
+  printf("\n");
+}
+
 
 #if 0
 /////////////////////////////////////////////////////////////

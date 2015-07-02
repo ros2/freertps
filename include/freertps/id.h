@@ -32,7 +32,7 @@ typedef struct
   frudp_guid_prefix_t guid_prefix;
   frudp_entity_id_t entity_id;
 } __attribute__((packed)) frudp_guid_t;
-
+extern const frudp_guid_t g_frudp_guid_unknown;
 
 bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
                                  frudp_guid_prefix_t * const b);
@@ -53,7 +53,7 @@ const char *frudp_vendor(const frudp_vid_t vid);
 
 extern unsigned g_frudp_next_user_entity_id;
 
-void print_guid_prefix(frudp_guid_prefix_t *guid_prefix);
+void frudp_print_guid_prefix(frudp_guid_prefix_t *guid_prefix);
 void frudp_print_guid(frudp_guid_t *guid);
 
 #endif

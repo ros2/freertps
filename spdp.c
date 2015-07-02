@@ -1,5 +1,6 @@
 #include "freertps/freertps.h"
 #include "freertps/spdp.h"
+#include "freertps/sedp.h"
 #include "freertps/udp.h"
 #include <string.h>
 #include <time.h>
@@ -35,6 +36,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
                                const uint16_t scheme,
                                const uint8_t *data)
 {
+  FREERTPS_INFO("                                spdp_rx\n");
 #ifdef SPDP_VERBOSE
   FREERTPS_INFO("    spdp_rx\n");
 #endif
@@ -214,6 +216,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
       *p = *part; // save everything plz
       //printf("    saved new participant in slot %d\n", p_idx);
       g_frudp_discovery_num_participants++;
+      sedp_add_builtin_endpoints(p);
     }
     else
       printf("not enough room to save the new participant.\n");
@@ -227,10 +230,20 @@ void frudp_spdp_init()
   FREERTPS_INFO("sdp init\n");
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
+  frudp_matched_reader_t spdp_reader;
+  spdp_reader.writer_guid = g_frudp_guid_unknown;
+  spdp_reader.max_rx_sn.low = 0;
+  spdp_reader.max_rx_sn.high = 0;
+  spdp_reader.data_cb = frudp_spdp_rx_data;
+  spdp_reader.msg_cb = NULL;
+  frudp_add_matched_reader(&spdp_reader);
+
+  /*
   frudp_subscribe(g_frudp_entity_id_unknown,
                   g_spdp_writer_id,
                   frudp_spdp_rx_data,
                   NULL);
+  */
 }
 
 void frudp_spdp_fini()

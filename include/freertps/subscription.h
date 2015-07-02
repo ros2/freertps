@@ -34,7 +34,7 @@ typedef struct
   frudp_entity_id_t reader_entity_id;
   frudp_rx_data_cb_t data_cb;
   freertps_msg_cb_t msg_cb;
-} frudp_subscription_t; // awful name
+} frudp_subscription_t;
 
 void frudp_add_subscription(frudp_subscription_t *s);
 

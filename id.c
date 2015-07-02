@@ -4,6 +4,9 @@
 
 unsigned g_frudp_next_user_entity_id = 1;
 
+const frudp_guid_t g_frudp_guid_unknown = { .guid_prefix = { .prefix = {0} },
+                                            .entity_id = { .u = 0 } };
+
 const char *frudp_vendor(const frudp_vid_t vid)
 {
   switch (vid)
@@ -49,7 +52,7 @@ bool frudp_guid_identical(const frudp_guid_t * const a,
   return true;
 }
 
-void print_guid_prefix(frudp_guid_prefix_t *p)
+void frudp_print_guid_prefix(frudp_guid_prefix_t *p)
 {
   printf("%02x%02x%02x%02x:%02x%02x%02x%02x:%02x%02x%02x%02x",
          (unsigned)p->prefix[0],
@@ -76,6 +79,6 @@ void frudp_stuff_guid(frudp_guid_t *guid,
 
 void frudp_print_guid(frudp_guid_t *guid)
 {
-  print_guid_prefix(&guid->guid_prefix);
+  frudp_print_guid_prefix(&guid->guid_prefix);
   printf("%08x", guid->entity_id.u);
 }
