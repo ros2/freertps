@@ -1,4 +1,5 @@
 #include "freertps/time.h"
+#include "freertps/freertps.h"
 #include <limits.h>
 
 fr_duration_t fr_time_diff(const fr_time_t *end, const fr_time_t *start)

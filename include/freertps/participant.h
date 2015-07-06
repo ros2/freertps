@@ -2,6 +2,7 @@
 #define FRUDP_PARTICIPANT_H
 
 #include "freertps/udp.h"
+#include "freertps/locator.h"
 #include <stdbool.h>
 
 typedef struct

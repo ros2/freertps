@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "freertps/udp.h"
 #include "freertps/discovery.h"
 #include "freertps/participant.h"

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "freertps/publisher.h"
 #include "freertps/config.h"
 #include "freertps/id.h"

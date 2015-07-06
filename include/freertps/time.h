@@ -1,7 +1,6 @@
 #ifndef FREERTPS_TIME_H
 #define FREERTPS_TIME_H
 
-#include "freertps/freertps.h"
 #include <stdint.h>
 
 typedef struct
