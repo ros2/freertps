@@ -1,6 +1,7 @@
 #include "freertps/id.h"
 #include <stdio.h>
 #include <string.h>
+#include "net.h"
 
 unsigned g_frudp_next_user_entity_id = 1;
 
@@ -80,5 +81,5 @@ void frudp_stuff_guid(frudp_guid_t *guid,
 void frudp_print_guid(frudp_guid_t *guid)
 {
   frudp_print_guid_prefix(&guid->guid_prefix);
-  printf("%08x", (unsigned)guid->entity_id.u);
+  printf(":%08x", htonl((unsigned)guid->entity_id.u));
 }

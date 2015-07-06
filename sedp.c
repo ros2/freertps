@@ -13,7 +13,7 @@
 // local constants
 static char g_sedp_string_buf[256];
 static const frudp_entity_id_t __attribute__((unused)) g_sedp_pub_writer_id = { .u = 0xc2030000 };
-static const frudp_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
+static const frudp_entity_id_t __attribute__((unused)) g_sedp_pub_reader_id = { .u = 0xc7030000 };
 static const frudp_entity_id_t g_sedp_sub_writer_id = { .u = 0xc2040000 };
 static const frudp_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
 
@@ -56,7 +56,7 @@ void frudp_sedp_init()
   frudp_subscription_t sedp_sub;
   sedp_sub.topic_name = NULL;
   sedp_sub.type_name = NULL;
-  sedp_sub.reader_entity_id = g_sedp_pub_reader_id;
+  sedp_sub.reader_entity_id = g_sedp_sub_reader_id;
   sedp_sub.data_cb = frudp_sedp_rx_pub_data;
   sedp_sub.msg_cb = NULL;
   frudp_add_subscription(&sedp_sub);

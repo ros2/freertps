@@ -441,5 +441,6 @@ void frudp_spdp_tick()
   {
     frudp_spdp_bcast();
     frudp_spdp_last_bcast = t;
+    printf("%d participants known\n", (int)g_frudp_discovery_num_participants);
   }
 }

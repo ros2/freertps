@@ -142,12 +142,12 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
          (unsigned)htonl(m->reader_id.u),
          (unsigned)htonl(m->writer_id.u),
          (int)m->reader_sn_state.bitmap_base.low,
-         (int)(m->reader_sn_state.bitmap_base.low + 
+         (int)(m->reader_sn_state.bitmap_base.low +
                m->reader_sn_state.num_bits));
   frudp_publisher_t *pub = frudp_publisher_from_writer_id(m->writer_id);
   if (!pub)
   {
-    printf("couldn't find pub for writer id 0x%08x\n", 
+    printf("couldn't find pub for writer id 0x%08x\n",
            (unsigned)htonl(m->writer_id.u));
     return true; // not sure what's happening.
   }
@@ -172,18 +172,38 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 
   frudp_guid_t writer_guid;
   frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
-
-  // spin through subscriptions and see if anyone is listening
-  bool found = false;
-  for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
+  printf("%d matched readers\n", (int)g_frudp_num_matched_readers);
+  frudp_matched_reader_t *match = NULL;
+  // spin through subscriptions and see if we've already matched a reader
+  for (unsigned i = 0; !match && i < g_frudp_num_matched_readers; i++)
   {
-    frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
-    if (!frudp_guid_identical(&writer_guid, &match->writer_guid))
-      continue;
-    if (hb->reader_id.u != match->reader_entity_id.u)
-      continue;
-    found = true;
+    frudp_matched_reader_t *r = &g_frudp_matched_readers[i];
+    if (frudp_guid_identical(&writer_guid, &r->writer_guid) &&
+        hb->reader_id.u != match->reader_entity_id.u)
+      match = r;
+  }
+  // else, if we have a subscription for this, initialize a reader
+  if (!match)
+  {
+    for (unsigned i = 0; !match && i < g_frudp_num_subscriptions; i++)
+    {
+      frudp_subscription_t *sub = &g_frudp_subscriptions[i];
+      if (sub->reader_entity_id.u == hb->reader_id.u)
+      {
+        frudp_matched_reader_t r;
+        memcpy(&r.writer_guid, &writer_guid, sizeof(frudp_guid_t));
+        r.reader_entity_id = hb->reader_id;
+        r.max_rx_sn.high = 0;
+        r.max_rx_sn.low = 0;
+        r.data_cb = sub->data_cb;
+        r.msg_cb = sub->msg_cb;
+        match = &r;
+      }
+    }
+  }
 
+  if (match)
+  {
     //g_frudp_subs[i].heartbeat_cb(rcvr, hb);
     if (!f)
     {
@@ -205,11 +225,6 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
           set.num_bits = 31;
         set.bitmap = 0xffffffff;
       }
-#ifdef VERBOSE_HEARTBEAT
-      printf("    TX ACKNACK %d:%d\n",
-             set.bitmap_base.low,
-             set.bitmap_base.low + set.num_bits);
-#endif
       frudp_tx_acknack(&rcvr->src_guid_prefix,
                        &match->reader_entity_id,
                        &match->writer_guid,
@@ -222,12 +237,12 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 #endif
     }
   }
-  if (!found)
+  else
   {
     printf("      couldn't find match for inbound heartbeat:\n");
     printf("         writer = ");
     frudp_print_guid(&writer_guid);
-    printf("  reader entity = %08x", (unsigned)hb->reader_id.u);
+    printf("  reader entity = %08x\n", (unsigned)htonl(hb->reader_id.u));
   }
   return true;
 }
@@ -239,7 +254,7 @@ static bool frudp_rx_gap(RX_MSG_ARGS)
          (unsigned)htonl(gap->reader_id.u),
          (unsigned)htonl(gap->writer_id.u),
          (int)gap->gap_start.low,
-         (int)(gap->gap_end.bitmap_base.low + 
+         (int)(gap->gap_end.bitmap_base.low +
                gap->gap_end.num_bits));
   return true;
 }
@@ -358,6 +373,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   frudp_guid_t writer_guid;
   frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &data_submsg->writer_id);
   // spin through subscriptions and see if anyone is listening
+  int num_matches_found = 0;
   for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
   {
     frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
@@ -379,6 +395,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
         (sub->reader_id.u == data_submsg->reader_id.u ||
          data_submsg->reader_id.u == g_frudp_entity_id_unknown.u))
     */
+    num_matches_found++;
     {
       // update the max-received sequence number counter
       if (data_submsg->writer_sn.low > match->max_rx_sn.low) // todo: 64-bit
@@ -388,6 +405,11 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       if (match->msg_cb)
         match->msg_cb(data);
     }
+  }
+  if (!num_matches_found)
+  {
+    printf("    couldn't find a matched reader for this DATA\n");
+    printf("    available readers:\n");
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
   return true;
@@ -477,11 +499,18 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
   return msg;
 }
 
+#define VERBOSE_TX_ACKNACK
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
                       const frudp_entity_id_t *reader_id,
                       const frudp_guid_t      *writer_guid,
                       const frudp_sequence_number_set_t *set)
 {
+  #ifdef VERBOSE_TX_ACKNACK
+        printf("    TX ACKNACK %d:%d\n",
+               set->bitmap_base.low,
+               set->bitmap_base.low + set->num_bits);
+  #endif
+
   static int s_acknack_count = 1;
   // find the participant we are trying to talk to
   frudp_participant_t *part = frudp_participant_find(guid_prefix);
