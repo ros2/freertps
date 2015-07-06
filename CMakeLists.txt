@@ -2,7 +2,8 @@ include(CMakeForceCompiler)
 cmake_minimum_required(VERSION 2.8.12)
 project(freertps)
 
-# add more options here at some point
+# figure out a more principled way of adding more embedded targets
+# once at least stm32 is working
 option(stm32 "build for stm32?" OFF)
 set(extra_libs "")
 

@@ -3,6 +3,7 @@ default: posix
 posix:
 	mkdir -p build
 	cd build && cmake .. && make
+	ln -sf build/examples/listener .
 
 stm32:
 	mkdir -p build.stm32
