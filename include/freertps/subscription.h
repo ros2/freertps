@@ -54,7 +54,7 @@ typedef struct
 // not great to have these freely available. someday hide these.
 #define FRUDP_MAX_MATCHED_READERS 10
 extern frudp_matched_reader_t g_frudp_matched_readers[FRUDP_MAX_MATCHED_READERS];
-extern unsigned g_frudp_num_matched_readers;
+extern uint32_t g_frudp_num_matched_readers;
 
 void frudp_add_matched_reader(frudp_matched_reader_t *match);
 

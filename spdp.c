@@ -5,7 +5,8 @@
 #include <string.h>
 #include <time.h>
 #include <inttypes.h>
-#include <arpa/inet.h>
+#include "net.h"
+//#include <arpa/inet.h>
 #include "freertps/discovery.h"
 #include "freertps/participant.h"
 #include "freertps/subscription.h"
@@ -100,7 +101,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
 #endif
       }
       else
-        FREERTPS_INFO("        spdp unknown mcast locator kind: %d\n", loc->kind);
+        FREERTPS_INFO("        spdp unknown mcast locator kind: %d\n", (int)loc->kind);
     }
     else if (pid == FRUDP_PID_METATRAFFIC_UNICAST_LOCATOR)
     {
@@ -119,7 +120,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
         // ignore ip6 for now...
       }
       else
-        FREERTPS_INFO("        spdp unknown metatraffic mcast locator kind: %d\n", loc->kind);
+        FREERTPS_INFO("        spdp unknown metatraffic mcast locator kind: %d\n", (int)loc->kind);
     }
     else if (pid == FRUDP_PID_METATRAFFIC_MULTICAST_LOCATOR)
     {
@@ -138,7 +139,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
         // ignore ip6 for now...
       }
       else
-        FREERTPS_INFO("        spdp unknown metatraffic mcast locator kind: %d\n", loc->kind);
+        FREERTPS_INFO("        spdp unknown metatraffic mcast locator kind: %d\n", (int)loc->kind);
     }
     else if (pid == FRUDP_PID_PARTICIPANT_LEASE_DURATION)
     {

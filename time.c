@@ -30,7 +30,8 @@ double fr_time_double(const fr_time_t *t)
     return t->seconds + t->fraction / (double)UINT_MAX;
   else
   {
-    FREERTPS_ERROR("invalid fr_time: (%d, %u)\n", t->seconds, t->fraction);
+    FREERTPS_ERROR("invalid fr_time: (%d, %u)\n", 
+                   (int)t->seconds, (unsigned)t->fraction);
     return 0;
   }
     return t->seconds - t->fraction / (double)UINT_MAX;

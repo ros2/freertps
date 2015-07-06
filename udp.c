@@ -6,6 +6,7 @@
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
+#include "net.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants
@@ -41,8 +42,8 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
 
 //#define RX_VERBOSE
 
-bool frudp_rx(const in_addr_t src_addr, const in_port_t src_port,
-              const in_addr_t dst_addr, const in_port_t dst_port,
+bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
+              const uint32_t dst_addr, const uint16_t dst_port,
               const uint8_t *rx_data  , const uint16_t rx_len)
 {
 #ifdef RX_VERBOSE
@@ -138,14 +139,16 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
   printf("  ACKNACK   reader = 0x%08x  writer = 0x%08x   %d -> %d\n",
-         htonl(m->reader_id.u),
-         htonl(m->writer_id.u),
-         m->reader_sn_state.bitmap_base.low,
-         m->reader_sn_state.bitmap_base.low + m->reader_sn_state.num_bits);
+         (unsigned)htonl(m->reader_id.u),
+         (unsigned)htonl(m->writer_id.u),
+         (int)m->reader_sn_state.bitmap_base.low,
+         (int)(m->reader_sn_state.bitmap_base.low + 
+               m->reader_sn_state.num_bits));
   frudp_publisher_t *pub = frudp_publisher_from_writer_id(m->writer_id);
   if (!pub)
   {
-    printf("couldn't find pub for writer id 0x%08x\n", htonl(m->writer_id.u));
+    printf("couldn't find pub for writer id 0x%08x\n", 
+           (unsigned)htonl(m->writer_id.u));
     return true; // not sure what's happening.
   }
   else
@@ -224,7 +227,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
     printf("      couldn't find match for inbound heartbeat:\n");
     printf("         writer = ");
     frudp_print_guid(&writer_guid);
-    printf("  reader entity = %08x", hb->reader_id.u);
+    printf("  reader entity = %08x", (unsigned)hb->reader_id.u);
   }
   return true;
 }
@@ -233,10 +236,11 @@ static bool frudp_rx_gap(RX_MSG_ARGS)
 {
   frudp_submsg_gap_t *gap = (frudp_submsg_gap_t *)submsg;
   printf("  GAP reader = 0x%08x writer = 0x%08x  %d -> %d\n",
-         htonl(gap->reader_id.u),
-         htonl(gap->writer_id.u),
-         gap->gap_start.low,
-         gap->gap_end.bitmap_base.low + gap->gap_end.num_bits);
+         (unsigned)htonl(gap->reader_id.u),
+         (unsigned)htonl(gap->writer_id.u),
+         (int)gap->gap_start.low,
+         (int)(gap->gap_end.bitmap_base.low + 
+               gap->gap_end.num_bits));
   return true;
 }
 
@@ -347,9 +351,9 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   uint8_t *data = data_start + 4;
 #ifdef VERBOSE_DATA
   printf("  DATA reader id = 0x%08x  writer id = 0x%08x  seq %d\n",
-         htonl(data_submsg->reader_id.u),
-         htonl(data_submsg->writer_id.u),
-         data_submsg->writer_sn.low);
+         (unsigned)htonl(data_submsg->reader_id.u),
+         (unsigned)htonl(data_submsg->writer_id.u),
+         (int)data_submsg->writer_sn.low);
 #endif
   frudp_guid_t writer_guid;
   frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &data_submsg->writer_id);
@@ -358,9 +362,9 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   {
     frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
     printf("sub %d: writer = %08x, reader = %08x\n",
-           i,
-           htonl(match->writer_guid.entity_id.u),
-           htonl(match->reader_entity_id.u));
+           (int)i,
+           (unsigned)htonl(match->writer_guid.entity_id.u),
+           (unsigned)htonl(match->reader_entity_id.u));
     // have to special-case the SPDP entity ID's, since they come in
     // with any GUID prefix and with either an unknown reader entity ID
     // or the unknown-reader entity ID
@@ -440,10 +444,10 @@ const char *frudp_ip4_ntoa(const uint32_t addr)
 {
   static char ntoa_buf[20];
   snprintf(ntoa_buf, sizeof(ntoa_buf), "%d.%d.%d.%d",
-           (addr      ) & 0xff,
-           (addr >>  8) & 0xff,
-           (addr >> 16) & 0xff,
-           (addr >> 24) & 0xff);
+           (int)(addr      ) & 0xff,
+           (int)(addr >>  8) & 0xff,
+           (int)(addr >> 16) & 0xff,
+           (int)(addr >> 24) & 0xff);
   return ntoa_buf;
 }
 

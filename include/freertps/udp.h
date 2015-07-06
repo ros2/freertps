@@ -4,7 +4,7 @@
 #include "freertps/freertps.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include <netinet/in.h>
+//#include <netinet/in.h>
 #include "freertps/id.h"
 
 /////////////////////////////////////////////////////////////////////
@@ -173,7 +173,7 @@ void frudp_fini();
 bool frudp_generic_init();
 bool frudp_init_participant_id();
 
-bool frudp_add_mcast_rx(const in_addr_t group,
+bool frudp_add_mcast_rx(const uint32_t group,
                         const uint16_t port); //,
                                //const freertps_udp_rx_callback_t rx_cb);
 
@@ -182,15 +182,15 @@ bool frudp_add_ucast_rx(const uint16_t port);
 
 bool frudp_listen(const uint32_t max_usec);
 
-bool frudp_rx(const in_addr_t src_addr,
-              const in_port_t src_port,
-              const in_addr_t dst_addr,
-              const in_port_t dst_port,
+bool frudp_rx(const uint32_t src_addr,
+              const uint16_t src_port,
+              const uint32_t dst_addr,
+              const uint16_t dst_port,
               const uint8_t *rx_data,
               const uint16_t rx_len);
 
-bool frudp_tx(const in_addr_t dst_addr,
-              const in_port_t dst_port,
+bool frudp_tx(const uint32_t dst_addr,
+              const uint16_t dst_port,
               const uint8_t *tx_data,
               const uint16_t tx_len);
 

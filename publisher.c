@@ -2,6 +2,7 @@
 #include "freertps/config.h"
 #include "freertps/id.h"
 #include "freertps/participant.h"
+#include "net.h"
 #include <string.h>
 
 frudp_publisher_t g_frudp_pubs[FRUDP_MAX_PUBLISHERS];
@@ -58,7 +59,7 @@ void frudp_publish(frudp_publisher_t *pub, frudp_submsg_data_t *submsg)
   // TODO: now, send DATA and HEARTBEAT submessages
   printf("frudp publish %d bytes, seq num %d\n",
          submsg->header.len,
-         pub_submsg->writer_sn.low);
+         (int)pub_submsg->writer_sn.low);
 /*
   /////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////

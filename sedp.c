@@ -6,6 +6,7 @@
 #include "freertps/participant.h"
 #include "freertps/subscription.h"
 #include "freertps/publisher.h"
+#include "net.h"
 #include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -128,7 +129,7 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
 #endif
       }
       else
-        FREERTPS_ERROR("couldn't parse topic name of length %d\n", s->len);
+        FREERTPS_ERROR("couldn't parse topic name of length %d\n", (int)s->len);
     }
     else if (pid == FRUDP_PID_TYPE_NAME)
     {
@@ -140,7 +141,7 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
 #endif
       }
       else
-        FREERTPS_ERROR("couldn't parse type name of length %d\n", s->len);
+        FREERTPS_ERROR("couldn't parse type name of length %d\n", (int)s->len);
     }
     else if (pid == FRUDP_PID_RELIABILITY)
     {
@@ -158,7 +159,7 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
 #endif
       }
       else
-        FREERTPS_ERROR("unhandled reliability kind: %d\n", qos->kind);
+        FREERTPS_ERROR("unhandled reliability kind: %d\n", (int)qos->kind);
     }
     else if (pid == FRUDP_PID_HISTORY)
     {
@@ -176,7 +177,7 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
 #endif
       }
       else
-        FREERTPS_ERROR("unhandled history kind: %d\n", qos->kind);
+        FREERTPS_ERROR("unhandled history kind: %d\n", (int)qos->kind);
     }
     else if (pid == FRUDP_PID_TRANSPORT_PRIORITY)
     {
