@@ -49,6 +49,9 @@ bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
 #ifdef RX_VERBOSE
   FREERTPS_INFO("freertps rx %d bytes\n", rx_len);
 #endif
+  struct in_addr ina;
+  ina.s_addr = dst_addr;
+  printf("rx on %s:%d\n", inet_ntoa(ina), dst_port);
   const frudp_msg_t *msg = (frudp_msg_t *)rx_data;
   if (msg->header.magic_word != 0x53505452) // todo: care about endianness
     return false; // it wasn't RTPS. no soup for you.
@@ -158,23 +161,25 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
   return true;
 }
 
-//#define VERBOSE_HEARTBEAT
+#define VERBOSE_HEARTBEAT
 static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
   const bool f = submsg->header.flags & 0x02;
   //const bool l = submsg->header.flags & 0x04; // liveliness flag?
   frudp_submsg_heartbeat_t *hb = (frudp_submsg_heartbeat_t *)submsg;
+  frudp_guid_t writer_guid;
+  frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
 #ifdef VERBOSE_HEARTBEAT
-  printf("  HEARTBEAT reader = 0x%08x  writer = 0x%08x  %d -> %d\n",
+  printf("  HEARTBEAT   ");
+  frudp_print_guid(&writer_guid);
+  printf(" => 0x%08x  %d -> %d\n",
          htonl(hb->reader_id.u),
-         htonl(hb->writer_id.u),
          hb->first_sn.low,
          hb->last_sn.low);
 #endif
+  //frudp_print_matched_readers();
 
-  frudp_guid_t writer_guid;
-  frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
   //printf("%d matched readers\n", (int)g_frudp_num_matched_readers);
   frudp_matched_reader_t *match = NULL;
   // spin through subscriptions and see if we've already matched a reader
@@ -182,7 +187,8 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   {
     frudp_matched_reader_t *r = &g_frudp_matched_readers[i];
     if (frudp_guid_identical(&writer_guid, &r->writer_guid) &&
-        hb->reader_id.u == r->reader_entity_id.u)
+        (hb->reader_id.u == r->reader_entity_id.u ||
+         hb->reader_id.u == 0))
       match = r;
   }
   // else, if we have a subscription for this, initialize a reader
@@ -195,6 +201,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
       {
         frudp_matched_reader_t r;
         memcpy(&r.writer_guid, &writer_guid, sizeof(frudp_guid_t));
+        r.reliable = sub->reliable;
         r.reader_entity_id = hb->reader_id;
         r.max_rx_sn.high = 0;
         r.max_rx_sn.low = 0;
@@ -209,20 +216,23 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   if (match)
   {
     //g_frudp_subs[i].heartbeat_cb(rcvr, hb);
-    if (!f)
+    if (match->reliable && !f)
     {
+      printf("acknack requested in heartbeat\n");
       // we have to send an ACKNACK now
       frudp_sequence_number_set_32bits_t set;
       // todo: handle 64-bit sequence numbers
       set.bitmap_base.high = 0;
       if (match->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
       {
+        printf("hb up to date\n");
         set.bitmap_base.low = hb->first_sn.low + 1;
         set.num_bits = 0;
         set.bitmap = 0xffffffff;
       }
       else
       {
+        printf("hb acknack'ing multiple samples\n");
         set.bitmap_base.low = match->max_rx_sn.low + 1;
         set.num_bits = hb->last_sn.low - match->max_rx_sn.low - 1;
         if (set.num_bits > 31)
@@ -254,9 +264,9 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 static bool frudp_rx_gap(RX_MSG_ARGS)
 {
   frudp_submsg_gap_t *gap = (frudp_submsg_gap_t *)submsg;
-  printf("  GAP reader = 0x%08x writer = 0x%08x  %d -> %d\n",
-         (unsigned)htonl(gap->reader_id.u),
+  printf("  GAP 0x%08x => 0x%08x  %d -> %d\n",
          (unsigned)htonl(gap->writer_id.u),
+         (unsigned)htonl(gap->reader_id.u),
          (int)gap->gap_start.low,
          (int)(gap->gap_end.bitmap_base.low +
                gap->gap_end.num_bits));
@@ -377,7 +387,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
          (unsigned)htonl(data_submsg->reader_id.u),
          (int)data_submsg->writer_sn.low);
 #endif
-  // special-case SEDP, since some SEDP broadcasts (e.g., from opensplice 
+  // special-case SEDP, since some SEDP broadcasts (e.g., from opensplice
   // sometimes (?)) seem to come with reader_id set to 0
   //frudp_entity_id_t reader_id = data_submsg->reader_id;
   //if (data_submsg->writer_id.u == 0xc2030000)
@@ -393,7 +403,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     printf(" => %08x\n", (unsigned)htonl(match->reader_entity_id.u));
     */
            //(unsigned)htonl(match->writer_guid.entity_id.u),
-           
+
     // have to special-case the SPDP entity ID's, since they come in
     // with any GUID prefix and with either an unknown reader entity ID
     // or the unknown-reader entity ID
@@ -519,7 +529,7 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
   return msg;
 }
 
-//#define VERBOSE_TX_ACKNACK
+#define VERBOSE_TX_ACKNACK
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
                       const frudp_entity_id_t *reader_id,
                       const frudp_guid_t      *writer_guid,
@@ -544,7 +554,8 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
   //printf("    about to tx acknack\n");
   frudp_submsg_t *dst_submsg = (frudp_submsg_t *)&msg->submsgs[0];
   dst_submsg->header.id = FRUDP_SUBMSG_ID_INFO_DEST;
-  dst_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  dst_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
+                             FRUDP_FLAGS_ACKNACK_FINAL;
   dst_submsg->header.len = 12;
   memcpy(dst_submsg->contents, guid_prefix, FRUDP_GUID_PREFIX_LEN);
   frudp_submsg_t *acknack_submsg = (frudp_submsg_t *)(&msg->submsgs[16]);
@@ -565,4 +576,3 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
            part->metatraffic_unicast_locator.port,
            (const uint8_t *)msg, payload_len);
 }
-

@@ -237,6 +237,7 @@ void frudp_spdp_init()
   spdp_reader.max_rx_sn.high = 0;
   spdp_reader.data_cb = frudp_spdp_rx_data;
   spdp_reader.msg_cb = NULL;
+  spdp_reader.reliable = false;
   frudp_add_matched_reader(&spdp_reader);
 
   /*

@@ -42,6 +42,7 @@ void frudp_add_user_subscription(const char *topic_name,
   req.reader_entity_id = sub_entity_id;
   req.msg_cb = msg_cb;
   req.data_cb = NULL;
+  req.reliable = false;
   frudp_add_subscription(&req);
   sedp_publish_subscription(&req);
 }
@@ -53,6 +54,17 @@ void frudp_add_subscription(const frudp_subscription_t *s)
   g_frudp_subscriptions[g_frudp_num_subscriptions] = *s;
   g_frudp_num_subscriptions++;
   //frudp_subscribe(s->entity_id, g_frudp_entity_id_unknown, NULL, s->msg_cb);
+}
+
+void frudp_print_matched_readers()
+{
+  for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
+  {
+    frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
+    printf("    sub %d: writer = ", (int)i); //%08x, reader = %08x\n",
+    frudp_print_guid(&match->writer_guid);
+    printf(" => %08x\n", (unsigned)htonl(match->reader_entity_id.u));
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////
