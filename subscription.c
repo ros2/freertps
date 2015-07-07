@@ -2,19 +2,25 @@
 #include "freertps/udp.h"
 #include "freertps/id.h"
 #include "freertps/sedp.h"
+#include "net.h"
 
 frudp_subscription_t g_frudp_subscriptions[FRUDP_MAX_SUBSCRIPTIONS];
-uint32_t g_frudp_num_subscriptions;
+uint32_t g_frudp_num_subscriptions = 0;
 
 frudp_matched_reader_t g_frudp_matched_readers[FRUDP_MAX_MATCHED_READERS];
 uint32_t g_frudp_num_matched_readers = 0;
 
 ///////////////////////////////////////////////////////////////////////////
 
-void frudp_add_matched_reader(frudp_matched_reader_t *match)
+void frudp_add_matched_reader(const frudp_matched_reader_t *match)
 {
   if (g_frudp_num_matched_readers >= FRUDP_MAX_MATCHED_READERS)
     return;
+  g_frudp_matched_readers[g_frudp_num_matched_readers] = *match;
+  g_frudp_num_matched_readers++;
+  printf("add_matched_reader(");
+  frudp_print_guid(&match->writer_guid);
+  printf(" => %08x)\n", htonl(match->reader_entity_id.u));
 }
 
 void frudp_add_user_subscription(const char *topic_name,
@@ -40,7 +46,7 @@ void frudp_add_user_subscription(const char *topic_name,
   sedp_publish_subscription(&req);
 }
 
-void frudp_add_subscription(frudp_subscription_t *s)
+void frudp_add_subscription(const frudp_subscription_t *s)
 {
   if (g_frudp_num_subscriptions >= FRUDP_MAX_SUBSCRIPTIONS - 1)
     return; // no room. sorry.

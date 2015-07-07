@@ -37,7 +37,6 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
                                const uint16_t scheme,
                                const uint8_t *data)
 {
-  FREERTPS_INFO("                                spdp_rx\n");
 #ifdef SPDP_VERBOSE
   FREERTPS_INFO("    spdp_rx\n");
 #endif
@@ -233,6 +232,7 @@ void frudp_spdp_init()
   frudp_spdp_last_bcast.fraction = 0;
   frudp_matched_reader_t spdp_reader;
   spdp_reader.writer_guid = g_frudp_guid_unknown;
+  spdp_reader.reader_entity_id = g_spdp_reader_id;
   spdp_reader.max_rx_sn.low = 0;
   spdp_reader.max_rx_sn.high = 0;
   spdp_reader.data_cb = frudp_spdp_rx_data;

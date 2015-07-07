@@ -172,7 +172,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 
   frudp_guid_t writer_guid;
   frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
-  printf("%d matched readers\n", (int)g_frudp_num_matched_readers);
+  //printf("%d matched readers\n", (int)g_frudp_num_matched_readers);
   frudp_matched_reader_t *match = NULL;
   // spin through subscriptions and see if we've already matched a reader
   for (unsigned i = 0; !match && i < g_frudp_num_matched_readers; i++)
@@ -377,7 +377,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
   {
     frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
-    printf("sub %d: writer = %08x, reader = %08x\n",
+    printf("    sub %d: writer = %08x, reader = %08x\n",
            (int)i,
            (unsigned)htonl(match->writer_guid.entity_id.u),
            (unsigned)htonl(match->reader_entity_id.u));
@@ -410,6 +410,13 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   {
     printf("    couldn't find a matched reader for this DATA\n");
     printf("    available readers:\n");
+    for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
+    {
+      frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
+      printf("      writer = ");
+      frudp_print_guid(&writer_guid);
+      printf("  reader = %08x\n", htonl(match->reader_entity_id.u));
+    }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
   return true;

@@ -53,7 +53,7 @@ bool frudp_guid_identical(const frudp_guid_t * const a,
   return true;
 }
 
-void frudp_print_guid_prefix(frudp_guid_prefix_t *p)
+void frudp_print_guid_prefix(const frudp_guid_prefix_t *p)
 {
   printf("%02x%02x%02x%02x:%02x%02x%02x%02x:%02x%02x%02x%02x",
          (unsigned)p->prefix[0],
@@ -78,7 +78,7 @@ void frudp_stuff_guid(frudp_guid_t *guid,
   guid->entity_id = *id;
 }
 
-void frudp_print_guid(frudp_guid_t *guid)
+void frudp_print_guid(const frudp_guid_t *guid)
 {
   frudp_print_guid_prefix(&guid->guid_prefix);
   printf(":%08x", htonl((unsigned)guid->entity_id.u));

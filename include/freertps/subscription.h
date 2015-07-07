@@ -36,7 +36,7 @@ typedef struct
   freertps_msg_cb_t msg_cb;
 } frudp_subscription_t;
 
-void frudp_add_subscription(frudp_subscription_t *s);
+void frudp_add_subscription(const frudp_subscription_t *s);
 
 #define FRUDP_MAX_SUBSCRIPTIONS 10
 extern frudp_subscription_t g_frudp_subscriptions[FRUDP_MAX_SUBSCRIPTIONS];
@@ -56,6 +56,6 @@ typedef struct
 extern frudp_matched_reader_t g_frudp_matched_readers[FRUDP_MAX_MATCHED_READERS];
 extern uint32_t g_frudp_num_matched_readers;
 
-void frudp_add_matched_reader(frudp_matched_reader_t *match);
+void frudp_add_matched_reader(const frudp_matched_reader_t *match);
 
 #endif
