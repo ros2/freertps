@@ -401,7 +401,7 @@ static void frudp_spdp_bcast()
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_BUILTIN_ENDPOINT_SET;
   param_list->len = 4;
-  uint32_t endpoint_set = 0x33; // 0x3f;
+  uint32_t endpoint_set = 0x3b; // 0x3f;
   memcpy(param_list->value, &endpoint_set, 4);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);

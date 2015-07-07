@@ -4,6 +4,7 @@
 #include "freertps/id.h"
 #include "freertps/udp.h"
 #include "freertps/freertps.h"
+#include "freertps/config.h"
 
 // create userland UDP subscriptions. people should call the
 // freertps_create_subscription() from userland code though, to be agnostic
@@ -38,7 +39,6 @@ typedef struct
 
 void frudp_add_subscription(const frudp_subscription_t *s);
 
-#define FRUDP_MAX_SUBSCRIPTIONS 10
 extern frudp_subscription_t g_frudp_subscriptions[FRUDP_MAX_SUBSCRIPTIONS];
 extern uint32_t g_frudp_num_subscriptions;
 
@@ -52,7 +52,6 @@ typedef struct
 } frudp_matched_reader_t;
 
 // not great to have these freely available. someday hide these.
-#define FRUDP_MAX_MATCHED_READERS 10
 extern frudp_matched_reader_t g_frudp_matched_readers[FRUDP_MAX_MATCHED_READERS];
 extern uint32_t g_frudp_num_matched_readers;
 

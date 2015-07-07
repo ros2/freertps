@@ -138,9 +138,11 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
 static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
-  printf("  ACKNACK   reader = 0x%08x  writer = 0x%08x   %d -> %d\n",
-         (unsigned)htonl(m->reader_id.u),
-         (unsigned)htonl(m->writer_id.u),
+  printf("  ACKNACK   0x%08x => ", (unsigned)htonl(m->writer_id.u));
+  frudp_guid_t reader_guid;
+  frudp_stuff_guid(&reader_guid, &rcvr->src_guid_prefix, &m->reader_id);
+  frudp_print_guid(&reader_guid);
+  printf("   %d -> %d\n",
          (int)m->reader_sn_state.bitmap_base.low,
          (int)(m->reader_sn_state.bitmap_base.low +
                m->reader_sn_state.num_bits));
@@ -156,6 +158,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
   return true;
 }
 
+//#define VERBOSE_HEARTBEAT
 static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
@@ -179,7 +182,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   {
     frudp_matched_reader_t *r = &g_frudp_matched_readers[i];
     if (frudp_guid_identical(&writer_guid, &r->writer_guid) &&
-        hb->reader_id.u != match->reader_entity_id.u)
+        hb->reader_id.u == r->reader_entity_id.u)
       match = r;
   }
   // else, if we have a subscription for this, initialize a reader
@@ -198,6 +201,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
         r.data_cb = sub->data_cb;
         r.msg_cb = sub->msg_cb;
         match = &r;
+        frudp_add_matched_reader(&r);
       }
     }
   }
@@ -240,9 +244,9 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   else
   {
     printf("      couldn't find match for inbound heartbeat:\n");
-    printf("         writer = ");
+    printf("         ");
     frudp_print_guid(&writer_guid);
-    printf("  reader entity = %08x\n", (unsigned)htonl(hb->reader_id.u));
+    printf(" => %08x\n", (unsigned)htonl(hb->reader_id.u));
   }
   return true;
 }
@@ -364,23 +368,32 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   const uint16_t scheme = ntohs(*((uint16_t *)data_start));
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
-#ifdef VERBOSE_DATA
-  printf("  DATA reader id = 0x%08x  writer id = 0x%08x  seq %d\n",
-         (unsigned)htonl(data_submsg->reader_id.u),
-         (unsigned)htonl(data_submsg->writer_id.u),
-         (int)data_submsg->writer_sn.low);
-#endif
   frudp_guid_t writer_guid;
   frudp_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &data_submsg->writer_id);
+#ifdef VERBOSE_DATA
+  printf("  DATA ");
+  frudp_print_guid(&writer_guid);
+  printf(" => 0x%08x  : %d\n",
+         (unsigned)htonl(data_submsg->reader_id.u),
+         (int)data_submsg->writer_sn.low);
+#endif
+  // special-case SEDP, since some SEDP broadcasts (e.g., from opensplice 
+  // sometimes (?)) seem to come with reader_id set to 0
+  //frudp_entity_id_t reader_id = data_submsg->reader_id;
+  //if (data_submsg->writer_id.u == 0xc2030000)
+  //  reader_id.u = 0xc7030000;
   // spin through subscriptions and see if anyone is listening
   int num_matches_found = 0;
   for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
   {
     frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
-    printf("    sub %d: writer = %08x, reader = %08x\n",
-           (int)i,
-           (unsigned)htonl(match->writer_guid.entity_id.u),
-           (unsigned)htonl(match->reader_entity_id.u));
+    /*
+    printf("    sub %d: writer = ", (int)i); //%08x, reader = %08x\n",
+    frudp_print_guid(&match->writer_guid);
+    printf(" => %08x\n", (unsigned)htonl(match->reader_entity_id.u));
+    */
+           //(unsigned)htonl(match->writer_guid.entity_id.u),
+           
     // have to special-case the SPDP entity ID's, since they come in
     // with any GUID prefix and with either an unknown reader entity ID
     // or the unknown-reader entity ID
@@ -414,8 +427,8 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     {
       frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
       printf("      writer = ");
-      frudp_print_guid(&writer_guid);
-      printf("  reader = %08x\n", htonl(match->reader_entity_id.u));
+      frudp_print_guid(&match->writer_guid);
+      printf(" => %08x\n", htonl(match->reader_entity_id.u));
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
@@ -506,7 +519,7 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
   return msg;
 }
 
-#define VERBOSE_TX_ACKNACK
+//#define VERBOSE_TX_ACKNACK
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
                       const frudp_entity_id_t *reader_id,
                       const frudp_guid_t      *writer_guid,
@@ -552,3 +565,4 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
            part->metatraffic_unicast_locator.port,
            (const uint8_t *)msg, payload_len);
 }
+

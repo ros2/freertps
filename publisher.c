@@ -150,7 +150,7 @@ void frudp_publisher_rx_acknack(frudp_publisher_t *pub,
                      acknack->reader_sn_state.num_bits + 1;
        req_seq_num++)
   {
-    //printf("     request for seq num %d\n", req_seq_num);
+    printf("     request for seq num %d\n", req_seq_num);
     for (int msg_idx = 0; msg_idx < pub->num_data_submsgs; msg_idx++)
     {
       frudp_submsg_data_t *data = pub->data_submsgs[msg_idx];
@@ -193,6 +193,7 @@ void frudp_publisher_rx_acknack(frudp_publisher_t *pub,
         hb_submsg->header.len = 28;
         hb_submsg->reader_id = data->reader_id;
         hb_submsg->writer_id = data->writer_id;
+        //printf("hb writer id = 0x%08x\n", htonl(data->writer_id.u));
         hb_submsg->first_sn.low = 1; // todo
         hb_submsg->first_sn.high = 0; // todo
         hb_submsg->last_sn = data->writer_sn;
@@ -202,7 +203,7 @@ void frudp_publisher_rx_acknack(frudp_publisher_t *pub,
         submsg_wpos += 4 + hb_submsg->header.len;
 
         int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
-        //printf("         sending %d bytes\n", payload_len);
+        printf("         sending %d bytes\n", payload_len);
         frudp_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
                  part->metatraffic_unicast_locator.port,
                  (const uint8_t *)msg, payload_len);
