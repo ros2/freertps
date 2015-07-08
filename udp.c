@@ -49,9 +49,11 @@ bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
 #ifdef RX_VERBOSE
   FREERTPS_INFO("freertps rx %d bytes\n", rx_len);
 #endif
+  /*
   struct in_addr ina;
   ina.s_addr = dst_addr;
   printf("rx on %s:%d\n", inet_ntoa(ina), dst_port);
+  */
   const frudp_msg_t *msg = (frudp_msg_t *)rx_data;
   if (msg->header.magic_word != 0x53505452) // todo: care about endianness
     return false; // it wasn't RTPS. no soup for you.
@@ -141,6 +143,7 @@ static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
 static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
+#ifdef VERBOSE_ACKNACK
   printf("  ACKNACK   0x%08x => ", (unsigned)htonl(m->writer_id.u));
   frudp_guid_t reader_guid;
   frudp_stuff_guid(&reader_guid, &rcvr->src_guid_prefix, &m->reader_id);
@@ -149,6 +152,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
          (int)m->reader_sn_state.bitmap_base.low,
          (int)(m->reader_sn_state.bitmap_base.low +
                m->reader_sn_state.num_bits));
+#endif
   frudp_publisher_t *pub = frudp_publisher_from_writer_id(m->writer_id);
   if (!pub)
   {
@@ -161,7 +165,6 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
   return true;
 }
 
-#define VERBOSE_HEARTBEAT
 static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
@@ -336,8 +339,6 @@ static bool frudp_rx_heartbeat_frag(RX_MSG_ARGS)
   return true;
 }
 
-#define  VERBOSE_DATA
-
 static bool frudp_rx_data(RX_MSG_ARGS)
 {
   frudp_submsg_data_t *data_submsg = (frudp_submsg_data_t *)submsg;
@@ -426,7 +427,19 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       if (match->data_cb)
         match->data_cb(rcvr, submsg, scheme, data);
       if (match->msg_cb)
+      {
+        /*
+        int len = data_submsg->header.len - ((uint8_t *)data - (uint8_t *)data_submsg);
+        printf("    msg len = %d\n", len);
+        for (int i = 0; i < len; i++)
+        {
+          printf("%2x ", (unsigned)data[i]);
+          if (i % 8 == 7)
+            printf("\n");
+        }
+        */
         match->msg_cb(data);
+      }
     }
   }
   if (!num_matches_found)
