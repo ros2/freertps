@@ -2,5 +2,6 @@
 #define NET_CONFIG_H
 
 #define FRUDP_IP4_ADDR 0xc0a80063
+#define ENET_MAC { 0xa4, 0xf3, 0xc1, 0x0, 0x2, 0x0 };
 
 #endif

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+extern const uint8_t g_enet_mac[6];
+
 void enet_init();
 
 typedef enum { ENET_LINK_DOWN, ENET_LINK_UP } enet_link_status_t;

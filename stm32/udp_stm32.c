@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include "net_config.h"
+#include "enet.h"
 
 bool frudp_init()
 {
@@ -17,18 +19,18 @@ bool frudp_init()
   // not sure about endianness here.
   g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
   g_frudp_config.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
-  // todo: actually get mac address
-  const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
-  memcpy(&g_frudp_config.guid_prefix.prefix[2], mac, 6);
-  // 4 bytes left. let's use the POSIX process ID
-  uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
-  memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
+  memcpy(&g_frudp_config.guid_prefix.prefix[2], g_enet_mac, 6);
+  // 4 bytes left. let's use the system time in microseconds since power-up
+  // todo: init ethernet PHY. after PHY link is up, 
+  // store system time in the guid_prefix. 
+  //memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
   frudp_discovery_init();
   return true;
 }
 
 bool frudp_init_participant_id()
 {
+  g_frudp_config.participant_id = 0;
   FREERTPS_INFO("frudp_init_participant_id()\n");
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
   {

@@ -6,6 +6,7 @@
 #include "delay.h"
 #include "pin.h"
 #include "led.h"
+#include "net_config.h"
 
 // declare the pin numbers
 #define PORTA_ETH_REFCLK 1
@@ -54,7 +55,7 @@ uint32_t eth_htonl(const uint32_t x)
 uint32_t g_host_ip_addr = 0x0a42b164; // TODO: overwrite this intelligently
 
 // todo: parameterize this nicely for a makefile
-static const uint8_t s_enet_mac[6] = { 0xa4, 0xf3, 0xc1, 0x0, 0x1, 0x1 };
+const uint8_t g_enet_mac[6] = ENET_MAC;
 static uint8_t g_enet_master_mac[6] = {0};
 static bool g_enet_arp_valid = false;
 
@@ -320,6 +321,7 @@ enet_link_status_t enet_get_link_status()
   return ENET_LINK_DOWN;
 }
 
+/*
 static bool enet_master_mac_valid()
 {
   for (int i = 0; i < 6; i++)
@@ -327,6 +329,7 @@ static bool enet_master_mac_valid()
       return true;
   return false; // all zeros = invalid master MAC
 }
+*/
 
 void eth_send_raw_packet(uint8_t *pkt, uint16_t pkt_len)
 {
@@ -460,7 +463,7 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
   for (int i = 0; i < 6; i++)
   {
     h->ip.eth.dest_addr[i] = dest_mac[i];
-    h->ip.eth.source_addr[i] = s_enet_mac[i];
+    h->ip.eth.source_addr[i] = g_enet_mac[i];
   }
   h->ip.eth.ethertype = eth_htons(ETH_ETHERTYPE_IP);
   h->ip.header_len = ETH_IP_HEADER_LEN;
@@ -517,7 +520,7 @@ uint_fast8_t enet_process_rx_ring()
     */
     for (int i = 0; i < 6; i++)
     {
-      if (e->dest_addr[i] != s_enet_mac[i])
+      if (e->dest_addr[i] != g_enet_mac[i])
         unicast_match = 0;
       if (e->dest_addr[i] != 0xff)
         broadcast_match = 0;
@@ -587,7 +590,7 @@ static bool eth_dispatch_icmp(uint8_t *data, const uint16_t len)
   for (int i = 0; i < 6; i++)
   {
     icmp_response->ip.eth.dest_addr[i]   = icmp->ip.eth.source_addr[i];
-    icmp_response->ip.eth.source_addr[i] = s_enet_mac[i];
+    icmp_response->ip.eth.source_addr[i] = g_enet_mac[i];
   }
   icmp_response->ip.eth.ethertype = eth_htons(ETH_ETHERTYPE_IP);
   icmp_response->ip.header_len = ETH_IP_HEADER_LEN;
@@ -654,8 +657,8 @@ static bool eth_dispatch_arp(const uint8_t *data, const uint16_t len)
     for (int i = 0; i < 6; i++)
     {
       response.eth.dest_addr[i]   = arp_pkt->sender_hw_addr[i];
-      response.eth.source_addr[i] = s_enet_mac[i];
-      response.sender_hw_addr[i]  = s_enet_mac[i];
+      response.eth.source_addr[i] = g_enet_mac[i];
+      response.sender_hw_addr[i]  = g_enet_mac[i];
       response.target_hw_addr[i]  = arp_pkt->sender_hw_addr[i];
     }
     response.eth.ethertype = eth_htons(ETH_ETHERTYPE_ARP);
@@ -693,7 +696,7 @@ static bool eth_dispatch_ip(const uint8_t *data, const uint16_t len)
   if (ip->version != 4) // we only handle ipv4 (for now...)
     return false;
   // if it's unicast, verify our IP address, otherwise ignore the packet
-  if (ip->eth.dest_addr[0] == s_enet_mac[0]) // todo: smarter MAC filter.
+  if (ip->eth.dest_addr[0] == g_enet_mac[0]) // todo: smarter MAC filter.
     if (ip->dest_addr != eth_htonl(ETH_IP_ADDR))
       return false;
   if (ip->proto == ETH_IP_PROTO_UDP)
