@@ -81,5 +81,5 @@ void frudp_stuff_guid(frudp_guid_t *guid,
 void frudp_print_guid(const frudp_guid_t *guid)
 {
   frudp_print_guid_prefix(&guid->guid_prefix);
-  printf(":%08x", htonl((unsigned)guid->entity_id.u));
+  printf(":%08x", (unsigned)htonl((unsigned)guid->entity_id.u));
 }

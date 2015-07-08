@@ -451,7 +451,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
       printf("      writer = ");
       frudp_print_guid(&match->writer_guid);
-      printf(" => %08x\n", htonl(match->reader_entity_id.u));
+      printf(" => %08x\n", (unsigned)htonl(match->reader_entity_id.u));
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
@@ -550,10 +550,9 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
 {
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",
-               set->bitmap_base.low,
-               set->bitmap_base.low + set->num_bits);
+               (int)set->bitmap_base.low,
+               (int)(set->bitmap_base.low + set->num_bits));
   #endif
-
   static int s_acknack_count = 1;
   // find the participant we are trying to talk to
   frudp_participant_t *part = frudp_participant_find(guid_prefix);

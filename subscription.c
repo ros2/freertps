@@ -20,7 +20,7 @@ void frudp_add_matched_reader(const frudp_matched_reader_t *match)
   g_frudp_num_matched_readers++;
   printf("add_matched_reader(");
   frudp_print_guid(&match->writer_guid);
-  printf(" => %08x)\n", htonl(match->reader_entity_id.u));
+  printf(" => %08x)\n", (unsigned)htonl(match->reader_entity_id.u));
 }
 
 void frudp_add_user_subscription(const char *topic_name,
