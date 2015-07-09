@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "freertps/freertps.h"
 #include <signal.h>
+#include "led.h"
 
 static bool g_done = false;
 void sigint_handler(int signum)
@@ -21,7 +22,6 @@ void chatter_cb(const void *msg)
 
 int main(int argc, char **argv)
 {
-  frudp_init();
   freertps_create_subscription("chatter", 
                                "simple_msgs::dds_::String_",
                                chatter_cb);

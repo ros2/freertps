@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "stm32f427xx.h"
+#include "stm32f746xx.h"
 //#include "watchdog.h"
 
 extern uint32_t _srelocate_flash, _srelocate, _erelocate, _ebss, _sbss;
@@ -59,7 +59,12 @@ void reset_vector()
   RCC->CFGR |= RCC_CFGR_SW_PLL; // select PLL as clock source
   while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) { } // wait for it...
   // hooray we're done! we're now running at 96 MHz.
-  main(); // jump to application main()
+  while (1)
+  {
+    led_toggle();
+    delay_ms(100);
+  }
+  //main(); // jump to application main()
   while (1) { } // hopefully we never get here...
 }
 
