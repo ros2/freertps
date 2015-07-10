@@ -1,8 +1,11 @@
 MEMORY
 {
-  flash (rx) : ORIGIN = 0x08020000, LENGTH = 512K
-  sram (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+  flash (rx) : ORIGIN = 0x08000000, LENGTH = 1024K 
+  /* for now, let's ignore the memory complexity and just use SRAM1 */
+  sram (rwx) : ORIGIN = 0x20010000, LENGTH =  240K
 }
+
+ENTRY(reset_vector)
 
 SECTIONS
 {

@@ -1,5 +1,5 @@
 #include "systime.h"
-#include "stm32f427xx.h"
+#include "stm32f746xx.h"
 #include "delay.h"
 
 void systime_init()

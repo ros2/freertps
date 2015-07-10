@@ -1,7 +1,7 @@
 #ifndef PIN_H
 #define PIN_H
 
-#include "stm32f427xx.h"
+#include "stm32f746xx.h"
 #include <stdbool.h>
 
 #define PIN_OUTPUT_TYPE_PUSH_PULL  0

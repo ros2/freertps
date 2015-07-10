@@ -13,6 +13,14 @@ void pin_enable_gpio(GPIO_TypeDef *gpio)
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
   else if (gpio == GPIOE)
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
+  else if (gpio == GPIOF)
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOFEN;
+  else if (gpio == GPIOG)
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;
+  else if (gpio == GPIOH)
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
+  else if (gpio == GPIOI)
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOIEN;
 }
 
 void pin_set_output_type(GPIO_TypeDef *gpio, 

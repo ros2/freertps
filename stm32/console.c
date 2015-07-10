@@ -1,28 +1,28 @@
 #include "console.h"
-#include "stm32f427xx.h"
+#include "stm32f746xx.h"
 #include "pin.h"
 #include <stdbool.h>
 
-// pin connections
-// PE0 = UART8 RX on AF8
-// PE1 = UART8 TX on AF8
+// pin connections for stm32f7-discovery board
+// PC6 = UART6 TX on AF8
+// PC7 = UART6 RX on AF8
 
-#define PORTE_RX_PIN 0
-#define PORTE_TX_PIN 1
+#define PORTC_TX_PIN 6
+#define PORTC_RX_PIN 7
 
 static volatile bool s_console_init_complete = false;
-static volatile USART_TypeDef * const s_console_usart = UART8; // todo
+static USART_TypeDef *s_console_usart = USART6;
 
 void console_init()
 {
   s_console_init_complete = true;
-  RCC->APB1ENR |= RCC_APB1ENR_UART8EN;
-  pin_set_alternate_function(GPIOE, PORTE_RX_PIN, 8);
-  pin_set_alternate_function(GPIOE, PORTE_TX_PIN, 8);
+  RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
+  pin_set_alternate_function(GPIOC, PORTC_RX_PIN, 8);
+  pin_set_alternate_function(GPIOC, PORTC_TX_PIN, 8);
   s_console_usart->CR1 &= ~USART_CR1_UE;
   s_console_usart->CR1 |=  USART_CR1_TE | USART_CR1_RE;
-  // we want 1 megabit. do this with mantissa=3 and fraction (sixteenths)=0
-  s_console_usart->BRR  = (((uint16_t)2) << 4) | 10;
+  // we want 1 megabit. do this with mantissa=5 and fraction (sixteenths)=4
+  s_console_usart->BRR  = (((uint16_t)5) << 4) | 4;
   s_console_usart->CR1 |=  USART_CR1_UE;
 }
 
@@ -32,9 +32,9 @@ void console_send_block(const uint8_t *buf, uint32_t len)
     console_init();
   for (uint32_t i = 0; i < len; i++)
   {
-    while (!(s_console_usart->SR & USART_SR_TXE)) { } // wait for tx buffer to clear
-    s_console_usart->DR = buf[i];
+    while (!(s_console_usart->ISR & USART_ISR_TXE)) { } // wait for tx buffer to clear
+    s_console_usart->TDR = buf[i];
   }
-  while (!(s_console_usart->SR & USART_SR_TC)) { } // wait for TX to finish
+  while (!(s_console_usart->ISR & USART_ISR_TC)) { } // wait for TX to finish
 }
 

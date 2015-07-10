@@ -1,26 +1,26 @@
 #include "led.h"
 #include "pin.h"
-#include "stm32f427xx.h"
+#include "stm32f746xx.h"
 
-#define PORTC_LED 2
+#define PORTI_LED 1
 
 void led_init()
 {
-  pin_set_output(GPIOC, PORTC_LED, 0);
+  pin_set_output(GPIOI, PORTI_LED, 0);
 }
 
 void led_on()
 {
-  pin_set_output_state(GPIOC, PORTC_LED, 1);
+  pin_set_output_state(GPIOI, PORTI_LED, 1);
 }
 
 void led_off()
 {
-  pin_set_output_state(GPIOC, PORTC_LED, 0);
+  pin_set_output_state(GPIOI, PORTI_LED, 0);
 }
 
 void led_toggle()
 {
-  GPIOC->ODR ^= 1 << PORTC_LED;
+  GPIOI->ODR ^= 1 << PORTI_LED;
 }
 

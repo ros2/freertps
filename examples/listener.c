@@ -2,6 +2,7 @@
 #include "freertps/freertps.h"
 #include <signal.h>
 #include "led.h"
+#include "delay.h"
 
 static bool g_done = false;
 void sigint_handler(int signum)
@@ -22,6 +23,17 @@ void chatter_cb(const void *msg)
 
 int main(int argc, char **argv)
 {
+  printf("hello, world!\r\n");
+  int i = 0;
+  while (1)
+  {
+    led_toggle();
+    delay_ms(100);
+    printf("hello %d\r\n", i);
+    i++;
+  }
+  /*
+  frudp_init();
   freertps_create_subscription("chatter", 
                                "simple_msgs::dds_::String_",
                                chatter_cb);
@@ -34,5 +46,6 @@ int main(int argc, char **argv)
   }
   frudp_fini();
   return 0;
+  */
 }
 

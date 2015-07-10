@@ -1,5 +1,5 @@
 #include "enet.h"
-#include "cmsis/stm32f427xx.h"
+#include "cmsis/stm32f746xx.h"
 #include <stdio.h>
 #include <string.h>
 #include "systime.h"
@@ -166,9 +166,11 @@ void enet_init()
   for (volatile int i = 0; i < 100000; i++) { } // wait for sysconfig ... (?)
 
   ETH->DMABMR |= ETH_DMABMR_SR;
+  /*
   for (volatile uint32_t i = 0; i < 100000; i++) { }
   while (ETH->DMABMR & ETH_DMABMR_SR) { } // wait for it to reset
   for (volatile uint32_t i = 0; i < 100000; i++) { }
+  */
   ETH->DMAOMR |= ETH_DMAOMR_FTF; // flush DMA
   while (ETH->DMAOMR & ETH_DMAOMR_FTF) { } // wait for it to flush
 
@@ -204,10 +206,8 @@ void enet_init()
   */
 
   // cycle through and read a bunch of PHY registers to make sure it's alive
-  /*
   for (int i = 0; i < 32; i++)
     printf("PHY reg %02d = 0x%04x\r\n", i, enet_read_phy_reg(i));
-  */
 
   ////////////////////////////////////////////////////////////////////////
   // set up ethernet TX descriptors
