@@ -8,22 +8,23 @@
 #include "led.h"
 #include "net_config.h"
 
-// declare the pin numbers
 #define PORTA_ETH_REFCLK 1
-#define PORTA_ETH_MDIO   2
-#define PORTA_PHY_RESET  4
 #define PORTA_ETH_CRSDV  7
-#define PORTB_ETH_TXEN   11
-#define PORTB_ETH_TXD0   12
-#define PORTB_ETH_TXD1   13
-#define PORTC_ETH_MDC    1
 #define PORTC_ETH_RXD0   4
 #define PORTC_ETH_RXD1   5
+#define PORTG_ETH_RXER   2
 
-#define PORTE_ETH_GREEN_LED  12
-#define PORTE_ETH_YELLOW_LED 13
+#define PORTG_ETH_TXEN  11
+#define PORTG_ETH_TXD0  13
+#define PORTG_ETH_TXD1  14
+
+#define PORTC_ETH_MDC    1
+#define PORTA_ETH_MDIO   2
+
 
 #define AF_ENET 11
+
+// PHY: LAN8742A-CZ
 
 // address is hard-wired on board
 #define ENET_PHY_ADDR 0x00
@@ -120,32 +121,23 @@ void enet_write_phy_reg(const uint8_t reg_idx, const uint16_t reg_val)
 void enet_init()
 {
   printf("enet_init()\r\n");
-  // set up the pins on port a
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN     |  // and all the i/o ports we
-                  RCC_AHB1ENR_GPIOBEN     |  // will be using to talk to
-                  RCC_AHB1ENR_GPIOCEN     |  // the ethernet PHY
-                  RCC_AHB1ENR_GPIOEEN     ;
 
+  // set up the pins on port a
   pin_set_alternate_function(GPIOA, PORTA_ETH_REFCLK, AF_ENET);
   pin_set_alternate_function(GPIOA, PORTA_ETH_MDIO  , AF_ENET);
   pin_set_alternate_function(GPIOA, PORTA_ETH_CRSDV , AF_ENET);
 
-  pin_set_alternate_function(GPIOB, PORTB_ETH_TXEN  , AF_ENET);
-  pin_set_alternate_function(GPIOB, PORTB_ETH_TXD0  , AF_ENET);
-  pin_set_alternate_function(GPIOB, PORTB_ETH_TXD1  , AF_ENET);
+  pin_set_alternate_function(GPIOG, PORTG_ETH_TXEN  , AF_ENET);
+  pin_set_alternate_function(GPIOG, PORTG_ETH_TXD0  , AF_ENET);
+  pin_set_alternate_function(GPIOG, PORTG_ETH_TXD1  , AF_ENET);
 
   pin_set_alternate_function(GPIOC, PORTC_ETH_MDC   , AF_ENET);
   pin_set_alternate_function(GPIOC, PORTC_ETH_RXD0  , AF_ENET);
   pin_set_alternate_function(GPIOC, PORTC_ETH_RXD1  , AF_ENET);
 
-  pin_set_output_speed(GPIOB, PORTB_ETH_TXEN, 3); // max beef
-  pin_set_output_speed(GPIOB, PORTB_ETH_TXD0, 3); // max beef
-  pin_set_output_speed(GPIOB, PORTB_ETH_TXD1, 3); // max beef
-
-  pin_set_output(GPIOA, PORTA_PHY_RESET, 1);
-
-  pin_set_output(GPIOE, PORTE_ETH_GREEN_LED, 0);
-  pin_set_output(GPIOE, PORTE_ETH_YELLOW_LED, 0);
+  pin_set_output_speed(GPIOG, PORTG_ETH_TXEN, 3); // max beef
+  pin_set_output_speed(GPIOG, PORTG_ETH_TXD0, 3); // max beef
+  pin_set_output_speed(GPIOG, PORTG_ETH_TXD1, 3); // max beef
 
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable the sysconfig block
   RCC->AHB1RSTR |= RCC_AHB1RSTR_ETHMACRST;
@@ -182,18 +174,21 @@ void enet_init()
                 ETH_MACCR_APCS;  // automatically remove pad+CRC from frames
   ETH->MACFFR |= ETH_MACFFR_RA; // for now, don't try to filter in hardware
   // generate a decent reset pulse now
+  /*
   pin_set_output_state(GPIOA, PORTA_PHY_RESET, 1);
   delay_ms(100);
   pin_set_output_state(GPIOA, PORTA_PHY_RESET, 0);
   delay_ms(200);
   pin_set_output_state(GPIOA, PORTA_PHY_RESET, 1);
   delay_ms(500);
+  */
+  delay_ms(10);
   // todo: only need to wait until registers read back something other
   // than 0xffff . then we don't have to wait as long.
   for (volatile uint32_t i = 0; i < 1000000; i++) { } // let it initialize
   printf("waiting for PHY to wake up...\r\n");
   while (enet_read_phy_reg(0) == 0xffff) { }
-  delay_ms(500);
+  delay_ms(100);
   //for (volatile uint32_t i = 0; i < 1000000; i++) { } // let it initialize
   printf("done with PHY reset.\r\n");
   //printf("setting software strap registers...\r\n");
@@ -535,7 +530,7 @@ uint_fast8_t enet_process_rx_ring()
 static bool eth_dispatch_eth(const uint8_t *data, const uint16_t len)
 {
   // dispatch according to protocol
-  pin_toggle_state(GPIOE, PORTE_ETH_YELLOW_LED);
+  //pin_toggle_state(GPIOE, PORTE_ETH_YELLOW_LED);
   const eth_eth_header_t *e = (const eth_eth_header_t *)data;
   switch (eth_htons(e->ethertype))
   {
