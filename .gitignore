@@ -29,3 +29,6 @@
 *.hex
 
 bin
+*.swp
+build
+build.stm32
