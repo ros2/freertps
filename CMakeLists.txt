@@ -24,7 +24,7 @@ else()
 endif()
 
 add_library(freertps STATIC discovery.c freertps.c id.c participant.c publisher.c sedp.c spdp.c subscription.c time.c udp.c)
-target_link_libraries(freertps ${plat_libs})
+#target_link_libraries(freertps ${plat_libs})
 #target_link_libraries(freertps metal stm32)
 
 add_subdirectory(examples)

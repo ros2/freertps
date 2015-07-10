@@ -3,6 +3,7 @@
 #include <signal.h>
 #include "led.h"
 #include "delay.h"
+#include "stm32f746xx.h"
 
 static bool g_done = false;
 void sigint_handler(int signum)
@@ -25,18 +26,20 @@ int main(int argc, char **argv)
 {
   printf("hello, world!\r\n");
   int i = 0;
-  while (1)
-  {
-    led_toggle();
-    delay_ms(100);
-    printf("hello %d\r\n", i);
-    i++;
-  }
-  /*
   frudp_init();
+  __enable_irq();
   freertps_create_subscription("chatter", 
                                "simple_msgs::dds_::String_",
                                chatter_cb);
+  while (1)
+  {
+    led_toggle();
+    //printf("idle %d\r\n", i);
+    i++;
+    frudp_listen(1000000);
+    frudp_discovery_tick();
+  }
+  /*
   signal(SIGINT, sigint_handler);
   while (!g_done)
   {

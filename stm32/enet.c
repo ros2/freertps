@@ -7,6 +7,8 @@
 #include "pin.h"
 #include "led.h"
 #include "net_config.h"
+#include "net.h"
+#include "freertps/udp.h"
 
 #define PORTA_ETH_REFCLK 1
 #define PORTA_ETH_CRSDV  7
@@ -71,8 +73,9 @@ static volatile eth_dma_desc_t *g_eth_dma_tx_next_desc = &g_eth_dma_tx_desc[0];
 
 #define ETH_RAM_RXPOOL_LEN  16384
 #define ETH_RAM_RXPOOL_NPTR   128
+#define ETH_RXPOOL_OFFSET 2
 static volatile uint8_t  g_eth_rxpool[ETH_RAM_RXPOOL_LEN] ALIGN4;
-static volatile uint16_t g_eth_rxpool_wpos = 0;
+static volatile uint16_t g_eth_rxpool_wpos = ETH_RXPOOL_OFFSET;
 static volatile uint8_t *g_eth_rxpool_start[ETH_RAM_RXPOOL_NPTR] ALIGN4;
 static volatile uint16_t g_eth_rxpool_len[ETH_RAM_RXPOOL_NPTR] ALIGN4;
 static volatile uint16_t g_eth_rxpool_ptrs_wpos = 0;
@@ -158,11 +161,9 @@ void enet_init()
   for (volatile int i = 0; i < 100000; i++) { } // wait for sysconfig ... (?)
 
   ETH->DMABMR |= ETH_DMABMR_SR;
-  /*
   for (volatile uint32_t i = 0; i < 100000; i++) { }
   while (ETH->DMABMR & ETH_DMABMR_SR) { } // wait for it to reset
   for (volatile uint32_t i = 0; i < 100000; i++) { }
-  */
   ETH->DMAOMR |= ETH_DMAOMR_FTF; // flush DMA
   while (ETH->DMAOMR & ETH_DMAOMR_FTF) { } // wait for it to flush
 
@@ -201,8 +202,10 @@ void enet_init()
   */
 
   // cycle through and read a bunch of PHY registers to make sure it's alive
+  /*
   for (int i = 0; i < 32; i++)
     printf("PHY reg %02d = 0x%04x\r\n", i, enet_read_phy_reg(i));
+  */
 
   ////////////////////////////////////////////////////////////////////////
   // set up ethernet TX descriptors
@@ -246,6 +249,7 @@ void enet_init()
   ETH->DMATDLAR = (uint32_t)&g_eth_dma_tx_desc[0]; // point TX DMA to first desc
   ETH->DMARDLAR = (uint32_t)&g_eth_dma_rx_desc[0]; // point RX DMA to first desc
   ETH->DMAOMR = ETH_DMAOMR_TSF; // enable store-and-forward mode
+  ETH->DMABMR |= ETH_DMABMR_AAB; // allow misaligned DMA start addrs
   /*
   ETH->DMABMR = ETH_DMABMR_AAB | ETH_DMABMR_USP |
                 ETH_DMABMR_RDP_1Beat | ETH_DMABMR_RTPR_1_1 |
@@ -269,22 +273,30 @@ void eth_vector()
     // we received one or more frames. spin through and find them...
     while (!(g_eth_dma_rx_next_desc->des0 & 0x80000000))
     {
+      // we want the ethernet payload 32-bit aligned, so we'll offset the
+      // writes into the rxpool buffer by 2 bytes (ETH_RXPOOL_OFFSET)
+
       // todo: check all of the error status bits in des0...
       const uint16_t rxn = (g_eth_dma_rx_next_desc->des0 & 0x3fff0000) >> 16;
       // see if this packet will run off the end of the buffer. if so, wrap.
-      if (g_eth_rxpool_wpos + rxn >= ETH_RAM_RXPOOL_LEN)
-        g_eth_rxpool_wpos = 0;
+      if (g_eth_rxpool_wpos + rxn + ETH_RXPOOL_OFFSET >= ETH_RAM_RXPOOL_LEN)
+        g_eth_rxpool_wpos = ETH_RXPOOL_OFFSET;
       const uint16_t wp = g_eth_rxpool_ptrs_wpos;
       g_eth_rxpool_start[wp] = &g_eth_rxpool[g_eth_rxpool_wpos];
       g_eth_rxpool_len[wp] = rxn;
-      memcpy((uint8_t *)&g_eth_rxpool[g_eth_rxpool_wpos],
+      memcpy((void *)g_eth_rxpool_start[wp], 
              (const uint8_t *)g_eth_dma_rx_next_desc->des2,
-             rxn);
-      //printf("ethernet rx %d into rxpool ptr %d\r\n", rxn, wp);
+             g_eth_rxpool_len[wp]);
+      //printf("ethernet rx %d into rxpool at 0x%08x\r\n", 
+      //       rxn, (unsigned)g_eth_rxpool_start[wp]);
       g_eth_rxpool_ptrs_wpos++;
       if (g_eth_rxpool_ptrs_wpos >= ETH_RAM_RXPOOL_NPTR)
         g_eth_rxpool_ptrs_wpos = 0;
-      g_eth_rxpool_wpos += rxn;
+
+      // make sure we end up with the rxpool write pointer on a 2-byte offset 
+      // address (to keep the ethernet payloads 4-byte aligned) by incrementing
+      // the pointer by a multiple of 4
+      g_eth_rxpool_wpos += ((rxn+3) & ~0x3);
 /*
       uint8_t *p = (uint8_t *)g_eth_rx_next_desc->des2;
       for (int i = 0; i < rxn; i++)
@@ -463,7 +475,7 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
   h->ip.ttl = 1; // not sure here...
   h->ip.proto = ETH_IP_PROTO_UDP;
   h->ip.checksum = 0; // will be filled by the ethernet TX machinery
-  h->ip.dest_addr = eth_htonl(dest_ip);
+  h->ip.dest_addr = dest_ip; //eth_htonl(dest_ip);
   h->ip.source_addr = eth_htonl(source_ip); //); // todo: something else
   h->dest_port = eth_htons(dest_port);
   h->source_port = eth_htons(source_port); //1234;
@@ -488,6 +500,7 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
 
 uint_fast8_t enet_process_rx_ring()
 {
+  //printf("enet_process_rx_ring()\r\n");
   uint_fast8_t num_pkts_rx = 0;
   while (g_eth_rxpool_ptrs_wpos != g_eth_rxpool_ptrs_rpos)
   {
@@ -518,9 +531,11 @@ uint_fast8_t enet_process_rx_ring()
       multicast_match = 0;
     //printf("  ucast_match = %d, bcast_match = %d, mcast_match = %d\r\n",
     //       unicast_match, broadcast_match, multicast_match);
-    //printf("dispatch @ %8u\r\n", (unsigned)SYSTIME);
     if (unicast_match || multicast_match || broadcast_match)
+    {
+      //printf("eth dispatch @ %8u\r\n", (unsigned)SYSTIME);
       num_pkts_rx += eth_dispatch_eth(start, len) ? 1 : 0;
+    }
     if (++g_eth_rxpool_ptrs_rpos >= ETH_RAM_RXPOOL_NPTR)
       g_eth_rxpool_ptrs_rpos = 0;
   }
@@ -530,9 +545,10 @@ uint_fast8_t enet_process_rx_ring()
 static bool eth_dispatch_eth(const uint8_t *data, const uint16_t len)
 {
   // dispatch according to protocol
-  //pin_toggle_state(GPIOE, PORTE_ETH_YELLOW_LED);
   const eth_eth_header_t *e = (const eth_eth_header_t *)data;
-  switch (eth_htons(e->ethertype))
+  const uint16_t ethertype = htons(e->ethertype);
+  //printf("eth dispatch ethertype 0x%04x\r\n", (unsigned)ethertype);
+  switch (ethertype)
   {
     case ETH_ETHERTYPE_IP:
       return eth_dispatch_ip(data, len);
@@ -621,23 +637,24 @@ static bool eth_dispatch_icmp(uint8_t *data, const uint16_t len)
 static bool eth_dispatch_arp(const uint8_t *data, const uint16_t len)
 {
   eth_arp_pkt_t *arp_pkt = (eth_arp_pkt_t *)data;
-  if (eth_htons(arp_pkt->hw_type) != ETH_ARP_HW_ETHERNET ||
-      eth_htons(arp_pkt->proto_type) != ETH_ARP_PROTO_IPV4)
+  if (htons(arp_pkt->hw_type) != ETH_ARP_HW_ETHERNET ||
+      htons(arp_pkt->proto_type) != ETH_ARP_PROTO_IPV4)
   {
     printf("unknown ARP hw type (0x%x) or protocol type (0x%0x)\r\n",
         eth_htons(arp_pkt->hw_type), eth_htons(arp_pkt->proto_type));
     return false; // this function only handles ARP for IPv4 over ethernet
   }
   uint16_t op = eth_htons(arp_pkt->operation);
+  //printf("ARP op = 0x%04x\r\n", (unsigned)op);
   if (op == ETH_ARP_OP_REQUEST)
   {
     int req_ip = eth_htonl(arp_pkt->target_proto_addr);
     if (req_ip != FRUDP_IP4_ADDR)
     {
-      //printf("ignoring ARP request for 0x%08x\r\n", req_ip);
+      printf("ignoring ARP request for 0x%08x\r\n", req_ip);
       return false;
     }
-    //printf("request for 0x%08x\r\n", req_ip);
+    //printf("ARP request for 0x%08x\r\n", req_ip);
     //const uint8_t *request_eth_addr = arp_pkt->sender_hw_addr;
     //const uint32_t *request_ip = htonl(arp_pkt->sender_proto_addr);
     eth_arp_pkt_t response;
@@ -706,74 +723,19 @@ static bool eth_dispatch_udp(const uint8_t *data, const uint16_t len)
   if (payload_len > len - sizeof(eth_udp_header_t))
     return false; // ignore fragmented UDP packets.
   //printf("dispatch udp @ %8u\r\n", (unsigned)SYSTIME);
-  //printf("dispatch udp: port = %d  payload_len = %d\r\n", port, payload_len);
-  /*
-  TODO:
-  frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
-           rxs->addr, rxs->port,
-           s_frudp_listen_buf, nbytes);
-  */
 
-
-  /*
-  for (int i = 0; i < payload_len; i++)
+  // todo: more efficient filtering
+  if (port == frudp_ucast_builtin_port() ||
+      port == frudp_mcast_builtin_port() ||
+      port == frudp_ucast_user_port()    ||
+      port == frudp_mcast_user_port())
   {
-    printf("  %02d: %02x\r\n", i, payload[i]);
+    frudp_rx(udp->ip.source_addr, htons(udp->source_port),
+             udp->ip.dest_addr, htons(udp->dest_port),
+             payload, payload_len);
+    return true;
   }
-  */
-#if 0
-  if (port == 11333 && payload_len > 0)
-  {
-    const uint8_t cmd = payload[0];
-    if (cmd == 1 && payload_len >= 3)
-    {
-      const uint8_t port = payload[1];
-      const uint8_t on = payload[2];
-      power_set(port, on);
-    }
-    else if (cmd == 2 && payload_len >= 6) // set dmxl registers
-    {
-      /*
-      const uint8_t port = payload[1];
-      const uint8_t id = payload[2];
-      const uint8_t start_addr = payload[3];
-      const uint8_t num_regs = payload[4];
-      const uint8_t *regs = &payload[5];
-      dmxl_set_regs(port, id, start_addr, num_regs, regs);
-      */
-    }
-#endif
-#if 0
-    //printf("  enet rx cmd = 0x%02x\r\n", cmd);
-    {
-      /*
-      printf("    modes: %d %d %d %d\r\n",
-             payload[1], payload[2], payload[3], payload[4]);
-      */
-      for (int i = 0; i < NUM_DMXL; i++)
-        dmxl_set_control_mode(i, (dmxl_control_mode_t)payload[1+i]);
-      delay_ms(1); // be sure they control mode messages get through
-      return true;
-    }
-    else if (cmd == 2 && payload_len >= 9)
-    {
-      uint16_t targets[NUM_DMXL];
-      for (int i = 0; i < NUM_DMXL; i++)
-        targets[i] = (payload[1+2*i] << 8) | payload[2+2*i];
-      /*
-      printf("targets: %06d %06d %06d %06d\r\n",
-             targets[0], targets[1], targets[2], targets[3]);
-      */
-      /*
-      for (int i = 0; i < NUM_DMXL; i++)
-        dmxl_set_control_target(i, targets[i]);
-      */
-      dmxl_set_all_control_targets(targets);
-      //dmxl_set_control_target(0, targets[0]); // debugging... just do #0
-      return true;
-    }
-#endif
-  // if we get here, we haven't handled this packet
+  printf("unhandled udp: port = %d  payload_len = %d\r\n", port, payload_len);
   return false;
 }
 

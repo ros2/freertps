@@ -1,5 +1,5 @@
 add_executable(listener listener.c)
-target_link_libraries(listener freertps)
+target_link_libraries(listener ${plat_libs} freertps ${plat_libs})
 
 if (stm32)
   add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/listener.bin

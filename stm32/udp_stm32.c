@@ -10,12 +10,14 @@
 
 bool frudp_init()
 {
+  enet_init();
   FREERTPS_INFO("stm32 udp init()\n");
   FREERTPS_INFO("using address %d.%d.%d.%d for unicast\n",
                 (FRUDP_IP4_ADDR >> 24) & 0xff,
                 (FRUDP_IP4_ADDR >> 16) & 0xff,
                 (FRUDP_IP4_ADDR >>  8) & 0xff,
                 (FRUDP_IP4_ADDR      ) & 0xff);
+  g_frudp_config.unicast_addr = htonl(FRUDP_IP4_ADDR);
   frudp_generic_init();
   // not sure about endianness here.
   g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
@@ -61,6 +63,7 @@ bool frudp_listen(const uint32_t max_usec)
     volatile uint32_t t = SYSTIME;
     if (t - t_start >= max_usec)
       break;
+    enet_process_rx_ring();
   }
   return true;
 }

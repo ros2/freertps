@@ -177,9 +177,9 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   printf("  HEARTBEAT   ");
   frudp_print_guid(&writer_guid);
   printf(" => 0x%08x  %d -> %d\n",
-         htonl(hb->reader_id.u),
-         hb->first_sn.low,
-         hb->last_sn.low);
+         (unsigned)htonl(hb->reader_id.u),
+         (unsigned)hb->first_sn.low,
+         (unsigned)hb->last_sn.low);
 #endif
   //frudp_print_matched_readers();
 
@@ -221,21 +221,21 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
     //g_frudp_subs[i].heartbeat_cb(rcvr, hb);
     if (match->reliable && !f)
     {
-      printf("acknack requested in heartbeat\n");
+      //printf("acknack requested in heartbeat\n");
       // we have to send an ACKNACK now
       frudp_sequence_number_set_32bits_t set;
       // todo: handle 64-bit sequence numbers
       set.bitmap_base.high = 0;
       if (match->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
       {
-        printf("hb up to date\n");
+        //printf("hb up to date\n");
         set.bitmap_base.low = hb->first_sn.low + 1;
         set.num_bits = 0;
         set.bitmap = 0xffffffff;
       }
       else
       {
-        printf("hb acknack'ing multiple samples\n");
+        //printf("hb acknack'ing multiple samples\n");
         set.bitmap_base.low = match->max_rx_sn.low + 1;
         set.num_bits = hb->last_sn.low - match->max_rx_sn.low - 1;
         if (set.num_bits > 31)
@@ -266,6 +266,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
 
 static bool frudp_rx_gap(RX_MSG_ARGS)
 {
+#ifdef VERBOSE_GAP
   frudp_submsg_gap_t *gap = (frudp_submsg_gap_t *)submsg;
   printf("  GAP 0x%08x => 0x%08x  %d -> %d\n",
          (unsigned)htonl(gap->writer_id.u),
@@ -273,6 +274,7 @@ static bool frudp_rx_gap(RX_MSG_ARGS)
          (int)gap->gap_start.low,
          (int)(gap->gap_end.bitmap_base.low +
                gap->gap_end.num_bits));
+#endif
   return true;
 }
 
@@ -289,6 +291,8 @@ static bool frudp_rx_info_ts(RX_MSG_ARGS)
   {
     rcvr->have_timestamp = true;
     // todo: care about alignment
+    //memcpy("
+    //printf("about to read %08x\r\n", (unsigned)submsg->contents);
     rcvr->timestamp = *((fr_time_t *)(submsg->contents));
     /*
     FREERTPS_INFO("info_ts rx timestamp %.6f\n",
@@ -542,7 +546,6 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
   return msg;
 }
 
-#define VERBOSE_TX_ACKNACK
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
                       const frudp_entity_id_t *reader_id,
                       const frudp_guid_t      *writer_guid,
