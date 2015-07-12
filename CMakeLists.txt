@@ -6,18 +6,26 @@ set(freertps_platforms x86_64-posix
                        stm32f7-metal)
 
 function(platform_arch platform arch)
-  string(REGEX MATCHALL "[A-Za-z0-9_]*-[A-Za-z0-9]*" platmatches ${platform})
-  list(GET platmaches 1 arch_ele)
+  string(REPLACE "-" ";" components ${platform})
+  list(GET components 0 arch_ele)
   set(${arch} ${arch_ele} PARENT_SCOPE)
 endfunction()
+
+function(platform_os platform os)
+  string(REPLACE "-" ";" components ${platform})
+  list(GET components 1 os_ele)
+  set(${os} ${os_ele} PARENT_SCOPE)
+endfunction()
+
 #set(posix_INCLUDES posix)
 #set(metal_INCLUDES metal)
 
 include_directories(include)
 
 foreach(platform IN LISTS freertps_platforms)
-  platform_arch(${platform}, arch)
-  message("creating library target for ${platform} which has arch ${arch}")
+  platform_arch("${platform}" arch)
+  platform_os("${platform}" os)
+  message("creating library target for ${platform} which has arch ${arch} and os ${os}")
   #add_library(freertps_${platform} STATIC discovery.c freertps.c id.c participant.c publisher.c sedp.c spdp.c subscription.c time.c udp.c)
 endforeach()
 
