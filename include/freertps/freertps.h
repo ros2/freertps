@@ -12,6 +12,8 @@
 #include "freertps/ports.h"
 #include "freertps/locator.h"
 #include "freertps/discovery.h"
+#include "freertps/bswap.h"
+#include "freertps/system.h"
 
 // maybe make this smarter someday
 #define FREERTPS_INFO(...) \

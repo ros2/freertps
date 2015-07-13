@@ -3,7 +3,7 @@
 #include "freertps/config.h"
 #include "freertps/id.h"
 #include "freertps/participant.h"
-#include "net.h"
+#include "freertps/bswap.h"
 #include <string.h>
 
 frudp_publisher_t g_frudp_pubs[FRUDP_MAX_PUBLISHERS];
@@ -104,7 +104,8 @@ void frudp_publish(frudp_publisher_t *pub, frudp_submsg_data_t *submsg)
   submsg_wpos += 4 + hb_submsg->header.len;
 
   int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
-  frudp_tx(htonl(FRUDP_DEFAULT_MCAST_GROUP), frudp_mcast_builtin_port(),
+  frudp_tx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+           frudp_mcast_builtin_port(),
            (const uint8_t *)msg, payload_len);
 
   /////////////////////////////////////////////////////////////

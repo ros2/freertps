@@ -5,8 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <inttypes.h>
-#include "net.h"
-//#include <arpa/inet.h>
+#include "freertps/bswap.h"
 #include "freertps/discovery.h"
 #include "freertps/participant.h"
 #include "freertps/subscription.h"
@@ -68,7 +67,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     }
     else if (pid == FRUDP_PID_VENDOR_ID)
     {
-      part->vid = htons(*((frudp_vid_t *)pval));
+      part->vid = freertps_htons(*((frudp_vid_t *)pval));
 #ifdef SPDP_VERBOSE
       FREERTPS_INFO("      spdp vendor_id 0x%04x = %s\n",
                     part->vid, frudp_vendor(part->vid));
@@ -326,7 +325,7 @@ static void frudp_spdp_bcast()
   /////////////////////////////////////////////////////////////
   frudp_encapsulation_scheme_t *scheme =
     (frudp_encapsulation_scheme_t *)(((uint8_t *)inline_qos_param) + 4);
-  scheme->scheme = htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
+  scheme->scheme = freertps_htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
   scheme->options = 0;
   /////////////////////////////////////////////////////////////
   frudp_parameter_list_item_t *param_list =
@@ -361,7 +360,7 @@ static void frudp_spdp_bcast()
   loc->kind = FRUDP_LOCATOR_KIND_UDPV4;
   loc->port = frudp_mcast_user_port();
   memset(loc->addr.udp4.zeros, 0, 12);
-  loc->addr.udp4.addr = htonl(FRUDP_DEFAULT_MCAST_GROUP);
+  loc->addr.udp4.addr = freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_METATRAFFIC_UNICAST_LOCATOR;
@@ -379,7 +378,7 @@ static void frudp_spdp_bcast()
   loc->kind = FRUDP_LOCATOR_KIND_UDPV4;
   loc->port = frudp_mcast_builtin_port();
   memset(loc->addr.udp4.zeros, 0, 12);
-  loc->addr.udp4.addr = htonl(FRUDP_DEFAULT_MCAST_GROUP);
+  loc->addr.udp4.addr = freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_PARTICIPANT_LEASE_DURATION;
@@ -430,7 +429,8 @@ static void frudp_spdp_bcast()
   //int payload_len = ((uint8_t *)param_list) - ((uint8_t *)msg->submsgs);
   //int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg->submsgs);
   int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg);
-  frudp_tx(htonl(FRUDP_DEFAULT_MCAST_GROUP), frudp_mcast_builtin_port(),
+  frudp_tx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+           frudp_mcast_builtin_port(),
            (const uint8_t *)msg, payload_len);
 }
 

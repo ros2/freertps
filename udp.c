@@ -3,10 +3,10 @@
 #include "freertps/discovery.h"
 #include "freertps/subscription.h"
 #include "freertps/publisher.h"
+#include "freertps/bswap.h"
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
-#include "net.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants
@@ -157,7 +157,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
   if (!pub)
   {
     printf("couldn't find pub for writer id 0x%08x\n",
-           (unsigned)htonl(m->writer_id.u));
+           (unsigned)freertps_htonl(m->writer_id.u));
     return true; // not sure what's happening.
   }
   else
@@ -259,7 +259,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
     printf("      couldn't find match for inbound heartbeat:\n");
     printf("         ");
     frudp_print_guid(&writer_guid);
-    printf(" => %08x\n", (unsigned)htonl(hb->reader_id.u));
+    printf(" => %08x\n", (unsigned)freertps_htonl(hb->reader_id.u));
   }
   return true;
 }
@@ -380,7 +380,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     }
     data_start = (uint8_t *)item; // after a PID_SENTINEL, this is correct
   }
-  const uint16_t scheme = ntohs(*((uint16_t *)data_start));
+  const uint16_t scheme = freertps_ntohs(*((uint16_t *)data_start));
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
   frudp_guid_t writer_guid;
@@ -455,7 +455,8 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
       printf("      writer = ");
       frudp_print_guid(&match->writer_guid);
-      printf(" => %08x\n", (unsigned)htonl(match->reader_entity_id.u));
+      printf(" => %08x\n", 
+             (unsigned)freertps_htonl(match->reader_entity_id.u));
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
@@ -471,9 +472,9 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
 bool frudp_generic_init()
 {
   FREERTPS_INFO("frudp_generic_init()\n");
-  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP),
+  frudp_add_mcast_rx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_builtin_port());
-  frudp_add_mcast_rx(htonl(FRUDP_DEFAULT_MCAST_GROUP),
+  frudp_add_mcast_rx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_user_port());
   frudp_add_ucast_rx(frudp_ucast_user_port());
   return true;

@@ -1,17 +1,34 @@
-default: posix
+SYSTEMS=native-posix               
+        #stm32f4_disco-metal        \
 
-posix:
-	mkdir -p build
-	cd build && cmake .. && make
-	ln -sf build/examples/listener .
+#				wandrr_rs485_router-metal
+#				stm32f7_disco-metal        \
 
-stm32:
-	mkdir -p build.stm32
-	cd build.stm32 && cmake -Dstm32=ON .. && make
+# combo meal is either (burger, fries, beverage) or (board, os)
+#generic_posix_COMBO = generic-posix
+#stm32f7_disco_COMBO = stm32f7_disco-metal
+#stm32f4_disco_COMBO = stm32f4_disco-metal
+#wandrr_power_router_COMBO = arm_cm4f-stm32f4-wandrr_power_router-metal
 
-.PHONY: posix stm32 clean
+#stm32f7_disco_CHIP = stm32f7
+#CORES=x86_64 arm_cm4f arm_cm7f
+#CHIPS=x86_64 stm32f4 stm32f7
+#OSES=posix metal
+
+#COMBO_DIRS=$(addprefix build., $(COMBOS))
+
+.PHONY: all clean $(SYSTEMS)
+all: $(SYSTEMS)
+
+$(SYSTEMS): %: build/%
+	@echo $@
+	cd build/$@ && cmake ../.. -DSYSTEM=$@ && make
+
+build/%:
+	mkdir -p $@
+
 clean:
-	-rm -rf build build.stm32
+	-rm -rf build* build.*
 
 OPENOCD=/usr/local/bin/openocd -f stm32/openocd/stlink-v2-1.cfg -f stm32/openocd/stm32f7-disco.cfg 
 #7-disco.cfg

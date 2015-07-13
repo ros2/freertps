@@ -6,8 +6,8 @@
 #include "freertps/participant.h"
 #include "freertps/subscription.h"
 #include "freertps/publisher.h"
-#include "net.h"
 #include "freertps/config.h"
+#include "freertps/bswap.h"
 #include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ void sedp_publish_subscription(frudp_subscription_t *sub)
   /////////////////////////////////////////////////////////////
   frudp_encapsulation_scheme_t *scheme =
     (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
-  scheme->scheme = htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
+  scheme->scheme = freertps_htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
   scheme->options = 0;
   /////////////////////////////////////////////////////////////
   frudp_parameter_list_item_t *param =
