@@ -1,5 +1,4 @@
 #include "freertps/bswap.h"
-#include "core_cmInstr.h"
 
 uint32_t freertps_htonl(uint32_t u) { return __REV(u); }
 uint32_t freertps_ntohl(uint32_t u) { return __REV(u); }

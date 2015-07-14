@@ -1,6 +1,7 @@
 #include "freertps/freertps.h"
 #include "freertps/udp.h"
 #include "freertps/discovery.h"
+#include "freertps/bswap.h"
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@ bool frudp_init()
                 (FRUDP_IP4_ADDR >> 16) & 0xff,
                 (FRUDP_IP4_ADDR >>  8) & 0xff,
                 (FRUDP_IP4_ADDR      ) & 0xff);
-  g_frudp_config.unicast_addr = htonl(FRUDP_IP4_ADDR);
+  g_frudp_config.unicast_addr = freertps_htonl(FRUDP_IP4_ADDR);
   frudp_generic_init();
   // not sure about endianness here.
   g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
