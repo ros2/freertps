@@ -1,5 +1,0 @@
-set(SYSTEM_CORE        "arm_cm4f")
-set(SYSTEM_CHIP        "stm32f407")
-set(SYSTEM_LIBS        "stm32_common stm32f4_discovery")
-set(stm32_common_DEFS  "-DHSE_VALUE=25000000")
-set(SYSTEM_APPS        "listener")
