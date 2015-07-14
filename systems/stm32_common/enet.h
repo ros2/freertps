@@ -6,6 +6,7 @@
 extern const uint8_t g_enet_mac[6];
 
 void enet_init();
+void enet_init_pins(); // provided in a board-specific file
 
 typedef enum { ENET_LINK_DOWN, ENET_LINK_UP } enet_link_status_t;
 enet_link_status_t enet_get_link_status();

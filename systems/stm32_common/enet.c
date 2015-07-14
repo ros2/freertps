@@ -1,5 +1,4 @@
 #include "enet.h"
-#include "cmsis/stm32f746xx.h"
 #include <stdio.h>
 #include <string.h>
 #include "systime.h"
@@ -7,47 +6,16 @@
 #include "pin.h"
 #include "led.h"
 #include "net_config.h"
-#include "net.h"
 #include "freertps/udp.h"
 
-#define PORTA_ETH_REFCLK 1
-#define PORTA_ETH_CRSDV  7
-#define PORTC_ETH_RXD0   4
-#define PORTC_ETH_RXD1   5
-#define PORTG_ETH_RXER   2
-
-#define PORTG_ETH_TXEN  11
-#define PORTG_ETH_TXD0  13
-#define PORTG_ETH_TXD1  14
-
-#define PORTC_ETH_MDC    1
-#define PORTA_ETH_MDIO   2
-
-
-#define AF_ENET 11
-
-// PHY: LAN8742A-CZ
-
-// address is hard-wired on board
-#define ENET_PHY_ADDR 0x00
+// address is typically hard-wired to zero
+#ifndef ENET_PHY_ADDR
+#  define ENET_PHY_ADDR 0x00
+#endif
 
 #define ETH_NBUF     2048
 #define ETH_DMA_NRXD   16
 #define ETH_DMA_NTXD    4
-
-// todo: find ways for this to be overridden on CPU's with built-ins for this
-uint16_t eth_htons(const uint16_t x)
-{
-  return ((x & 0xff) << 8) | ((x >> 8) & 0xff);
-}
-
-uint32_t eth_htonl(const uint32_t x)
-{
-  return ((x & 0x000000ff) << 24)  |
-         ((x & 0x0000ff00) << 8)   |
-         ((x & 0x00ff0000) >> 8)   |
-         ((x & 0xff000000) >> 24);
-}
 
 // todo: parameterize this nicely for a makefile
 const uint8_t g_enet_mac[6] = ENET_MAC;
@@ -125,23 +93,6 @@ void enet_init()
 {
   printf("enet_init()\r\n");
 
-  // set up the pins on port a
-  pin_set_alternate_function(GPIOA, PORTA_ETH_REFCLK, AF_ENET);
-  pin_set_alternate_function(GPIOA, PORTA_ETH_MDIO  , AF_ENET);
-  pin_set_alternate_function(GPIOA, PORTA_ETH_CRSDV , AF_ENET);
-
-  pin_set_alternate_function(GPIOG, PORTG_ETH_TXEN  , AF_ENET);
-  pin_set_alternate_function(GPIOG, PORTG_ETH_TXD0  , AF_ENET);
-  pin_set_alternate_function(GPIOG, PORTG_ETH_TXD1  , AF_ENET);
-
-  pin_set_alternate_function(GPIOC, PORTC_ETH_MDC   , AF_ENET);
-  pin_set_alternate_function(GPIOC, PORTC_ETH_RXD0  , AF_ENET);
-  pin_set_alternate_function(GPIOC, PORTC_ETH_RXD1  , AF_ENET);
-
-  pin_set_output_speed(GPIOG, PORTG_ETH_TXEN, 3); // max beef
-  pin_set_output_speed(GPIOG, PORTG_ETH_TXD0, 3); // max beef
-  pin_set_output_speed(GPIOG, PORTG_ETH_TXD1, 3); // max beef
-
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable the sysconfig block
   RCC->AHB1RSTR |= RCC_AHB1RSTR_ETHMACRST;
   for (volatile int i = 0; i < 1000; i++) { } // wait for sysconfig to come up
@@ -174,24 +125,12 @@ void enet_init()
                 ETH_MACCR_IPCO | // ipv4 checksum auto-generation for RX
                 ETH_MACCR_APCS;  // automatically remove pad+CRC from frames
   ETH->MACFFR |= ETH_MACFFR_RA; // for now, don't try to filter in hardware
-  // generate a decent reset pulse now
-  /*
-  pin_set_output_state(GPIOA, PORTA_PHY_RESET, 1);
-  delay_ms(100);
-  pin_set_output_state(GPIOA, PORTA_PHY_RESET, 0);
-  delay_ms(200);
-  pin_set_output_state(GPIOA, PORTA_PHY_RESET, 1);
-  delay_ms(500);
-  */
-  delay_ms(10);
-  // todo: only need to wait until registers read back something other
-  // than 0xffff . then we don't have to wait as long.
-  for (volatile uint32_t i = 0; i < 1000000; i++) { } // let it initialize
+  delay_ms(1);
   printf("waiting for PHY to wake up...\r\n");
   while (enet_read_phy_reg(0) == 0xffff) { }
-  delay_ms(100);
+  printf("PHY is ready.\r\n");
+  //delay_ms(100);
   //for (volatile uint32_t i = 0; i < 1000000; i++) { } // let it initialize
-  printf("done with PHY reset.\r\n");
   //printf("setting software strap registers...\r\n");
   /*
   enet_write_phy_reg(0x09, 0x7821); // enable auto MDIX,
