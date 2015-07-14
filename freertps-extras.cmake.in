@@ -1,7 +1,0 @@
-set(stm32 @stm32)
-
-macro (freertps_setup_compiler)
-  if (stm32)
-    include("${freertps_DIR}/stm32_toolchain.cmake")
-  endif()
-endmacro()
