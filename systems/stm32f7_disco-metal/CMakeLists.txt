@@ -1,5 +1,5 @@
 include_directories(../stm32_common)
-add_library(stm32f7_disco-metal STATIC console_init.c 
+add_library(stm32f7_disco-metal STATIC console.c 
                                        led.c 
                                        systime.c
                                        enet_init_pins.c

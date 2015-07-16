@@ -7,6 +7,6 @@
 #  define STACK_SIZE 0x4000
 #endif
 
-extern const uint8_t *g_stack_top;
+extern uint8_t g_stack[STACK_SIZE];
 
 #endif

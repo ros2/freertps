@@ -1,8 +1,8 @@
 SYSTEMS=native-posix               \
-        stm32f7_disco-metal        
+        stm32f7_disco-metal        \
+				stm32f4_disco-metal        \
 
 #				wandrr_rs485_router-metal
-#				stm32f4_disco-metal        \
 
 # combo meal is either (burger, fries, beverage) or (board, os)
 #generic_posix_COMBO = generic-posix

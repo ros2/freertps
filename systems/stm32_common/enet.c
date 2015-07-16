@@ -4,7 +4,6 @@
 #include "systime.h"
 #include "delay.h"
 #include "pin.h"
-#include "led.h"
 #include "net_config.h"
 #include "freertps/udp.h"
 
@@ -20,7 +19,7 @@
 // todo: parameterize this nicely for a makefile
 const uint8_t g_enet_mac[6] = ENET_MAC;
 //static uint8_t g_enet_master_mac[6] = {0};
-static bool g_enet_arp_valid = false;
+//static bool g_enet_arp_valid = false;
 
 typedef struct
 {
@@ -403,22 +402,22 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
     h->ip.eth.dest_addr[i] = dest_mac[i];
     h->ip.eth.source_addr[i] = g_enet_mac[i];
   }
-  h->ip.eth.ethertype = eth_htons(ETH_ETHERTYPE_IP);
+  h->ip.eth.ethertype = __REV16(ETH_ETHERTYPE_IP);
   h->ip.header_len = ETH_IP_HEADER_LEN;
   h->ip.version = ETH_IP_VERSION; // ipv4
   h->ip.ecn = 0;
   h->ip.diff_serv = 0;
-  h->ip.len = eth_htons(20 + 8 + payload_len);
+  h->ip.len = __REV16(20 + 8 + payload_len);
   h->ip.id = 0;
-  h->ip.flag_frag = eth_htons(ETH_IP_DONT_FRAGMENT);
+  h->ip.flag_frag = __REV16(ETH_IP_DONT_FRAGMENT);
   h->ip.ttl = 1; // not sure here...
   h->ip.proto = ETH_IP_PROTO_UDP;
   h->ip.checksum = 0; // will be filled by the ethernet TX machinery
   h->ip.dest_addr = dest_ip; //eth_htonl(dest_ip);
-  h->ip.source_addr = eth_htonl(source_ip); //); // todo: something else
-  h->dest_port = eth_htons(dest_port);
-  h->source_port = eth_htons(source_port); //1234;
-  h->len = eth_htons(8 + payload_len);
+  h->ip.source_addr = __REV(source_ip); //); // todo: something else
+  h->dest_port = __REV16(dest_port);
+  h->source_port = __REV16(source_port); //1234;
+  h->len = __REV16(8 + payload_len);
   h->checksum = 0; // will be filled by the ethernet TX machinery
   memcpy(g_eth_udpbuf + sizeof(eth_udp_header_t), payload, payload_len);
   eth_send_raw_packet(g_eth_udpbuf, sizeof(eth_udp_header_t) + payload_len);
@@ -485,7 +484,7 @@ static bool eth_dispatch_eth(const uint8_t *data, const uint16_t len)
 {
   // dispatch according to protocol
   const eth_eth_header_t *e = (const eth_eth_header_t *)data;
-  const uint16_t ethertype = htons(e->ethertype);
+  const uint16_t ethertype = __REV16(e->ethertype);
   //printf("eth dispatch ethertype 0x%04x\r\n", (unsigned)ethertype);
   switch (ethertype)
   {
@@ -505,13 +504,13 @@ static void enet_add_ip_header_checksum(eth_ip_header_t *ip)
   for (int word_idx = 0; word_idx < 10; word_idx++)
   {
     uint16_t word = *((uint16_t *)ip + sizeof(eth_eth_header_t)/2 + word_idx);
-    word = eth_htons(word);
+    word = __REV16(word);
     sum += word;
     //printf("word %d: 0x%02x\r\n", word_idx, word);
   }
   sum += (sum >> 16);
   sum &= 0xffff;
-  ip->checksum = (uint16_t)eth_htons(~sum);
+  ip->checksum = (uint16_t)__REV16(~sum);
   //printf("ip header checksum: 0x%04x\r\n", ip->ip_checksum);
 }
 
@@ -524,7 +523,7 @@ static bool eth_dispatch_icmp(uint8_t *data, const uint16_t len)
     return false;
   static const int ENET_ICMP_RESPONSE_MAX_LEN = 300; // i have no idea
   uint8_t icmp_response_buf[ENET_ICMP_RESPONSE_MAX_LEN];
-  uint16_t incoming_ip_len = eth_htons(icmp->ip.len);
+  uint16_t incoming_ip_len = __REV16(icmp->ip.len);
   uint16_t icmp_data_len = incoming_ip_len - 20 - 8; // everything after icmp
   if (icmp_data_len > ENET_ICMP_RESPONSE_MAX_LEN - sizeof(enet_icmp_header_t))
     icmp_data_len = ENET_ICMP_RESPONSE_MAX_LEN - sizeof(enet_icmp_header_t);
@@ -534,18 +533,18 @@ static bool eth_dispatch_icmp(uint8_t *data, const uint16_t len)
     icmp_response->ip.eth.dest_addr[i]   = icmp->ip.eth.source_addr[i];
     icmp_response->ip.eth.source_addr[i] = g_enet_mac[i];
   }
-  icmp_response->ip.eth.ethertype = eth_htons(ETH_ETHERTYPE_IP);
+  icmp_response->ip.eth.ethertype = __REV16(ETH_ETHERTYPE_IP);
   icmp_response->ip.header_len = ETH_IP_HEADER_LEN;
   icmp_response->ip.version = ETH_IP_VERSION;
   icmp_response->ip.ecn = 0;
   icmp_response->ip.diff_serv = 0;
-  icmp_response->ip.len = eth_htons(incoming_ip_len);
+  icmp_response->ip.len = __REV16(incoming_ip_len);
   icmp_response->ip.id = 0;
-  icmp_response->ip.flag_frag = eth_htons(ETH_IP_DONT_FRAGMENT);
+  icmp_response->ip.flag_frag = __REV16(ETH_IP_DONT_FRAGMENT);
   icmp_response->ip.ttl = icmp->ip.ttl;
   icmp_response->ip.proto = ETH_IP_PROTO_ICMP;
   icmp_response->ip.checksum = 0;
-  icmp_response->ip.source_addr = eth_htonl(FRUDP_IP4_ADDR);
+  icmp_response->ip.source_addr = __REV(FRUDP_IP4_ADDR);
   icmp_response->ip.dest_addr = icmp->ip.source_addr;
   icmp_response->type = ENET_ICMP_ECHO_REPLY;
   icmp_response->code = 0;
@@ -562,12 +561,12 @@ static bool eth_dispatch_icmp(uint8_t *data, const uint16_t len)
   {
     uint16_t word = *((uint16_t *)icmp_response + sizeof(eth_ip_header_t)/2 +
                       word_idx);
-    word = eth_htons(word);
+    word = __REV16(word);
     csum += word;
   }
   csum += (csum >> 16);
   csum &= 0xffff;
-  icmp_response->checksum = eth_htons(~csum);
+  icmp_response->checksum = __REV16(~csum);
   eth_send_raw_packet(icmp_response_buf,
                       sizeof(enet_icmp_header_t) + icmp_data_len);
   return true;
@@ -576,18 +575,19 @@ static bool eth_dispatch_icmp(uint8_t *data, const uint16_t len)
 static bool eth_dispatch_arp(const uint8_t *data, const uint16_t len)
 {
   eth_arp_pkt_t *arp_pkt = (eth_arp_pkt_t *)data;
-  if (htons(arp_pkt->hw_type) != ETH_ARP_HW_ETHERNET ||
-      htons(arp_pkt->proto_type) != ETH_ARP_PROTO_IPV4)
+  if (__REV16(arp_pkt->hw_type) != ETH_ARP_HW_ETHERNET ||
+      __REV16(arp_pkt->proto_type) != ETH_ARP_PROTO_IPV4)
   {
     printf("unknown ARP hw type (0x%x) or protocol type (0x%0x)\r\n",
-        eth_htons(arp_pkt->hw_type), eth_htons(arp_pkt->proto_type));
+           (unsigned)__REV16(arp_pkt->hw_type), 
+           (unsigned)__REV16(arp_pkt->proto_type));
     return false; // this function only handles ARP for IPv4 over ethernet
   }
-  uint16_t op = eth_htons(arp_pkt->operation);
+  uint16_t op = __REV16(arp_pkt->operation);
   //printf("ARP op = 0x%04x\r\n", (unsigned)op);
   if (op == ETH_ARP_OP_REQUEST)
   {
-    int req_ip = eth_htonl(arp_pkt->target_proto_addr);
+    int req_ip = __REV(arp_pkt->target_proto_addr);
     if (req_ip != FRUDP_IP4_ADDR)
     {
       printf("ignoring ARP request for 0x%08x\r\n", req_ip);
@@ -604,14 +604,14 @@ static bool eth_dispatch_arp(const uint8_t *data, const uint16_t len)
       response.sender_hw_addr[i]  = g_enet_mac[i];
       response.target_hw_addr[i]  = arp_pkt->sender_hw_addr[i];
     }
-    response.eth.ethertype = eth_htons(ETH_ETHERTYPE_ARP);
-    response.sender_proto_addr = eth_htonl(FRUDP_IP4_ADDR);
+    response.eth.ethertype = __REV16(ETH_ETHERTYPE_ARP);
+    response.sender_proto_addr = __REV(FRUDP_IP4_ADDR);
     response.target_proto_addr = arp_pkt->sender_proto_addr;
-    response.hw_type = eth_htons(ETH_ARP_HW_ETHERNET);
-    response.proto_type = eth_htons(ETH_ARP_PROTO_IPV4);
+    response.hw_type = __REV16(ETH_ARP_HW_ETHERNET);
+    response.proto_type = __REV16(ETH_ARP_PROTO_IPV4);
     response.hw_addr_len = 6; // ethernet address length
     response.proto_addr_len = 4; // IPv4 address length
-    response.operation = eth_htons(ETH_ARP_OP_RESPONSE);
+    response.operation = __REV16(ETH_ARP_OP_RESPONSE);
     eth_send_raw_packet((uint8_t *)&response, sizeof(response));
     return true;
   }
@@ -643,7 +643,7 @@ static bool eth_dispatch_ip(const uint8_t *data, const uint16_t len)
     return false;
   // if it's unicast, verify our IP address, otherwise ignore the packet
   if (ip->eth.dest_addr[0] == g_enet_mac[0]) // todo: smarter MAC filter.
-    if (ip->dest_addr != eth_htonl(FRUDP_IP4_ADDR))
+    if (ip->dest_addr != __REV(FRUDP_IP4_ADDR))
       return false;
   if (ip->proto == ETH_IP_PROTO_UDP)
     return eth_dispatch_udp(data, len);
@@ -655,8 +655,8 @@ static bool eth_dispatch_ip(const uint8_t *data, const uint16_t len)
 static bool eth_dispatch_udp(const uint8_t *data, const uint16_t len)
 {
   const eth_udp_header_t *udp = (const eth_udp_header_t *)data;
-  const uint16_t port = eth_htons(udp->dest_port);
-  const uint16_t payload_len = eth_htons(udp->len) - 8;
+  const uint16_t port = __REV16(udp->dest_port);
+  const uint16_t payload_len = __REV16(udp->len) - 8;
   const uint8_t *payload = data + sizeof(eth_udp_header_t);
   //printf("  udp len: %d\r\n", udp_payload_len);
   if (payload_len > len - sizeof(eth_udp_header_t))
@@ -669,8 +669,8 @@ static bool eth_dispatch_udp(const uint8_t *data, const uint16_t len)
       port == frudp_ucast_user_port()    ||
       port == frudp_mcast_user_port())
   {
-    frudp_rx(udp->ip.source_addr, htons(udp->source_port),
-             udp->ip.dest_addr, htons(udp->dest_port),
+    frudp_rx(udp->ip.source_addr, __REV(udp->source_port),
+             udp->ip.dest_addr, __REV(udp->dest_port),
              payload, payload_len);
     return true;
   }

@@ -1,3 +1,11 @@
+#include "stack.h"
+#include "startup.h"
+
+void unmapped_vector()
+{
+  while (1) { } // spin here to allow jtag trap
+}
+
 // declare weak symbols for all interrupt so they can be overridden easily
 #define WEAK_VECTOR __attribute__((weak, alias("unmapped_vector")))
 void nmi_vector() WEAK_VECTOR;

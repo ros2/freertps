@@ -1,9 +1,13 @@
 #include "stack.h"
+#include "startup.h"
 
 void unmapped_vector()
 {
   while (1) { } // spin here to allow jtag trap
 }
+
+// todo: these are copied straight from stm32f4_vectors. i'm sure there are
+// some new stm32f7 ones. need to figure that out and update this file.
 
 // declare weak symbols for all interrupt so they can be overridden easily
 #define WEAK_VECTOR __attribute__((weak, alias("unmapped_vector")))

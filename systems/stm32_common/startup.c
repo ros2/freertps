@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "stm32f746xx.h"
+//#include "stm32f746xx.h"
 #include "led.h"
 #include "delay.h"
 #include "systime.h"
@@ -71,6 +71,6 @@ void reset_vector()
   while (1) { } // hopefully we never get here...
 }
 
-#define STACK_SIZE 0x4000
-__attribute__((aligned(8),section(".stack"))) uint8_t g_stack[STACK_SIZE];
+//#define STACK_SIZE 0x4000
+//__attribute__((aligned(8),section(".stack"))) uint8_t g_stack[STACK_SIZE];
 

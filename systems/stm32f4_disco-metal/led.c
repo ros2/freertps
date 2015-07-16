@@ -1,6 +1,8 @@
 #include "led.h"
 #include "pin.h"
 
+// TODO: look up pin assignments on STM32f4-disco board
+
 #define PORTI_LED 1
 
 void led_init()

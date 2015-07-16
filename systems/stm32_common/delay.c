@@ -13,14 +13,14 @@ void delay_ns(uint32_t ns)
 void delay_us(uint32_t us)
 {
   // todo: care about wraparound
-  volatile uint32_t t_start = SYSTIME;
-  while (t_start + us > SYSTIME) { }
+  volatile uint32_t t_start = systime_usecs();
+  while (t_start + us > systime_usecs()) { }
 }
 
 void delay_ms(uint32_t ms)
 {
   // todo: care about wraparound
-  volatile uint32_t t_start = SYSTIME;
-  while (t_start + 1000 * ms > SYSTIME) { }
+  volatile uint32_t t_start = systime_usecs();
+  while (t_start + 1000 * ms > systime_usecs()) { }
 }
 
