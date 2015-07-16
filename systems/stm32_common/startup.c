@@ -1,9 +1,9 @@
 #include <stdint.h>
-//#include "stm32f746xx.h"
 #include "led.h"
 #include "delay.h"
 #include "systime.h"
 #include "console.h"
+#include "flash.h"
 //#include "watchdog.h"
 
 extern uint32_t _srelocate_flash, _srelocate, _erelocate, _ebss, _sbss;
@@ -36,10 +36,7 @@ void reset_vector()
   for (volatile uint32_t i = 0; 
        i < 0x5000 /*HSE_STARTUP_TIMEOUT*/ && !(RCC->CR & RCC_CR_HSERDY); i++)
   { } // wait for either timeout or HSE to spin up
-  FLASH->ACR = 0; // ensure the caches are turned off, so we can reset them
-  FLASH->ACR = FLASH_ACR_PRFTEN |  // enable flash prefetch
-               FLASH_ACR_ARTEN |   // enable ART (flash accelerator)
-               FLASH_ACR_LATENCY_5WS; // set 5-wait-state 
+  flash_init();
   if (!(RCC->CR & RCC_CR_HSERDY))
     startup_clock_init_fail(); // go there and spin forever. BUH BYE
   RCC->APB1ENR |= RCC_APB1ENR_PWREN; // clock up the power controller
