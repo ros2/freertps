@@ -1,8 +1,10 @@
-#ifndef FREERTPS_DISCOVERY_H
-#define FREERTPS_DISCOVERY_H
+#ifndef FREERTPS_DISCO_H
+#define FREERTPS_DISCO_H
+
+// this has a bunch of discovery-related debris
 
 #include <stdint.h>
-#include "freertps/participant.h"
+#include "freertps/part.h"
 
 #define FRUDP_PID_PAD                           0x0000
 #define FRUDP_PID_SENTINEL                      0x0001
@@ -42,17 +44,16 @@
 #define FRUDP_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_WRITER 0x00000400
 #define FRUDP_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_READER 0x00000800
 
-void frudp_discovery_init();
-void frudp_discovery_fini();
-void frudp_discovery_tick();
+void frudp_disco_init();
+void frudp_disco_fini();
+void frudp_disco_tick();
 
-#define FRUDP_DISCOVERY_TX_BUFLEN 4096
-extern uint8_t g_frudp_discovery_tx_buf[FRUDP_DISCOVERY_TX_BUFLEN];
-extern uint16_t g_frudp_discovery_tx_buf_wpos;
+#define FRUDP_DISCO_TX_BUFLEN 4096
+extern uint8_t g_frudp_disco_tx_buf[FRUDP_DISCO_TX_BUFLEN];
+extern uint16_t g_frudp_disco_tx_buf_wpos;
 
-#define FRUDP_DISCOVERY_MAX_PARTICIPANTS 20
-extern frudp_participant_t g_frudp_discovery_participants
-                                      [FRUDP_DISCOVERY_MAX_PARTICIPANTS];
-extern int g_frudp_discovery_num_participants;
+#define FRUDP_DISCO_MAX_PARTS 20
+extern frudp_part_t g_frudp_disco_parts[FRUDP_DISCO_MAX_PARTS];
+extern int g_frudp_disco_num_parts;
 
 #endif

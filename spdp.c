@@ -6,24 +6,14 @@
 #include <time.h>
 #include <inttypes.h>
 #include "freertps/bswap.h"
-#include "freertps/discovery.h"
-#include "freertps/participant.h"
-#include "freertps/subscription.h"
+#include "freertps/sub.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
-//static const frudp_entity_id_t spdp_writer_id = { .u = 0xc2000100 }; //s = { .key = { 0x00, 0x01, 0x00 }, .kind = 0xc2 } };
+static frudp_part_t g_frudp_spdp_rx_part; // just for rx buffer
 
-//#define SPDP_VERBOSE
-
-//#define FRUDP_MAX_PARTICIPANTS 10
-//static frudp_participant_t g_frudp_spdp_participants[FRUDP_MAX_PARTICIPANTS];
-//static int g_frudp_spdp_num_participants = 0;
-
-static frudp_participant_t g_frudp_spdp_rx_participant; // just for rx buffer
-
-const frudp_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
-const frudp_entity_id_t g_spdp_reader_id = { .u = 0xc7000100 };
+const frudp_eid_t g_spdp_writer_id = { .u = 0xc2000100 };
+const frudp_eid_t g_spdp_reader_id = { .u = 0xc7000100 };
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -44,7 +34,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     FREERTPS_ERROR("expected spdp data to be PL_CDR_LE. bailing...\n");
     return;
   }
-  frudp_participant_t *part = &g_frudp_spdp_rx_participant;
+  frudp_part_t *part = &g_frudp_spdp_rx_part;
   // todo: spin through this param list and save it
   frudp_parameter_list_item_t *item = (frudp_parameter_list_item_t *)data;
   while ((uint8_t *)item < submsg->contents + submsg->header.len)
@@ -151,10 +141,10 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
     else if (pid == FRUDP_PID_PARTICIPANT_GUID)
     {
       frudp_guid_t *guid = (frudp_guid_t *)pval;
-      memcpy(&part->guid_prefix, &guid->guid_prefix, FRUDP_GUID_PREFIX_LEN);
+      memcpy(&part->guid_prefix, &guid->prefix, FRUDP_GUID_PREFIX_LEN);
 
 #ifdef SPDP_VERBOSE
-      uint8_t *p = guid->guid_prefix.prefix;
+      uint8_t *p = guid->prefix.prefix;
       FREERTPS_INFO("      guid 0x%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x\n",
@@ -190,9 +180,9 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
   // now that we have stuff the "part" buffer, spin through our
   // participant list and see if we already have this one
   bool found = false;
-  for (int i = 0; !found && i < g_frudp_discovery_num_participants; i++)
+  for (int i = 0; !found && i < g_frudp_disco_num_parts; i++)
   {
-    frudp_participant_t *p = &g_frudp_discovery_participants[i];
+    frudp_part_t *p = &g_frudp_disco_parts[i];
     if (frudp_guid_prefix_identical(&p->guid_prefix,
                                     &part->guid_prefix))
     {
@@ -208,13 +198,13 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
 #ifdef SPDP_VERBOSE
     printf("didn't have this participant already.\n");
 #endif
-    if (g_frudp_discovery_num_participants < FRUDP_DISCOVERY_MAX_PARTICIPANTS)
+    if (g_frudp_disco_num_parts < FRUDP_DISCO_MAX_PARTS)
     {
-      const int p_idx = g_frudp_discovery_num_participants; // save typing
-      frudp_participant_t *p = &g_frudp_discovery_participants[p_idx];
+      const int p_idx = g_frudp_disco_num_parts; // save typing
+      frudp_part_t *p = &g_frudp_disco_parts[p_idx];
       *p = *part; // save everything plz
       //printf("    saved new participant in slot %d\n", p_idx);
-      g_frudp_discovery_num_participants++;
+      g_frudp_disco_num_parts++;
       sedp_add_builtin_endpoints(p);
     }
     else
@@ -229,15 +219,15 @@ void frudp_spdp_init()
   FREERTPS_INFO("sdp init\n");
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
-  frudp_matched_reader_t spdp_reader;
+  frudp_reader_t spdp_reader;
   spdp_reader.writer_guid = g_frudp_guid_unknown;
-  spdp_reader.reader_entity_id = g_spdp_reader_id;
+  spdp_reader.reader_eid = g_spdp_reader_id;
   spdp_reader.max_rx_sn.low = 0;
   spdp_reader.max_rx_sn.high = 0;
   spdp_reader.data_cb = frudp_spdp_rx_data;
   spdp_reader.msg_cb = NULL;
   spdp_reader.reliable = false;
-  frudp_add_matched_reader(&spdp_reader);
+  frudp_add_reader(&spdp_reader);
 
   /*
   frudp_subscribe(g_frudp_entity_id_unknown,
@@ -278,7 +268,7 @@ uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
 static void frudp_spdp_bcast()
 {
   //FREERTPS_INFO("spdp bcast\n");
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_discovery_tx_buf);
+  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_disco_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
 
@@ -301,7 +291,7 @@ static void frudp_spdp_bcast()
   data_submsg->header.len = 336; // need to compute this dynamically?
   data_submsg->extraflags = 0;
   data_submsg->octets_to_inline_qos = 16; // ?
-  data_submsg->reader_id = g_frudp_entity_id_unknown;
+  data_submsg->reader_id = g_frudp_eid_unknown;
   data_submsg->writer_id = g_spdp_writer_id;
   data_submsg->writer_sn.high = 0;
   //static uint32_t bcast_count = 0;
@@ -391,17 +381,17 @@ static void frudp_spdp_bcast()
   param_list->pid = FRUDP_PID_PARTICIPANT_GUID;
   param_list->len = 16;
   frudp_guid_t *guid = (frudp_guid_t *)param_list->value;
-  memcpy(&guid->guid_prefix, &g_frudp_config.guid_prefix,
+  memcpy(&guid->prefix, &g_frudp_config.guid_prefix,
          sizeof(frudp_guid_prefix_t));
-  guid->entity_id.s.key[0] = 0;
-  guid->entity_id.s.key[1] = 0;
-  guid->entity_id.s.key[2] = 1;
-  guid->entity_id.s.kind = 0xc1; // wtf
+  guid->eid.s.key[0] = 0;
+  guid->eid.s.key[1] = 0;
+  guid->eid.s.key[2] = 1;
+  guid->eid.s.kind = 0xc1; // wtf
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);
   param_list->pid = FRUDP_PID_BUILTIN_ENDPOINT_SET;
   param_list->len = 4;
-  uint32_t endpoint_set = 0x3b; // 0x3f;
+  uint32_t endpoint_set = 0x3f; //b; // 0x3f;
   memcpy(param_list->value, &endpoint_set, 4);
   /////////////////////////////////////////////////////////////
   PLIST_ADVANCE(param_list);

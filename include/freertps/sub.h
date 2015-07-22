@@ -15,9 +15,9 @@
 // with a #define switch somewhere to have it use more memory for string
 // buffers, etc.
 
-void frudp_add_user_subscription(const char *topic_name,
-                                 const char *type_name,
-                                 freertps_msg_cb_t msg_cb);
+void frudp_add_user_sub(const char *topic_name,
+                        const char *type_name,
+                        freertps_msg_cb_t msg_cb);
 
 // this is the private subscribe function used internally... should be hidden
 // eventually.
@@ -32,33 +32,33 @@ typedef struct
 {
   const char *topic_name;
   const char *type_name;
-  frudp_entity_id_t reader_entity_id;
+  frudp_eid_t reader_eid;
   frudp_rx_data_cb_t data_cb;
   freertps_msg_cb_t msg_cb;
   bool reliable;
-} frudp_subscription_t;
+} frudp_sub_t;
 
-void frudp_add_subscription(const frudp_subscription_t *s);
+void frudp_add_sub(const frudp_sub_t *s);
 
-extern frudp_subscription_t g_frudp_subscriptions[FRUDP_MAX_SUBSCRIPTIONS];
-extern uint32_t g_frudp_num_subscriptions;
+extern frudp_sub_t g_frudp_subs[FRUDP_MAX_SUBS];
+extern uint32_t g_frudp_num_subs;
 
 typedef struct
 {
   bool reliable;
   frudp_guid_t writer_guid;
-  frudp_entity_id_t reader_entity_id;
-  frudp_sequence_number_t max_rx_sn;
+  frudp_eid_t reader_eid;
+  frudp_sn_t max_rx_sn;
   frudp_rx_data_cb_t data_cb;
   freertps_msg_cb_t msg_cb;
-} frudp_matched_reader_t;
+} frudp_reader_t;
 
 // not great to have these freely available. someday hide these.
-extern frudp_matched_reader_t g_frudp_matched_readers[FRUDP_MAX_MATCHED_READERS];
-extern uint32_t g_frudp_num_matched_readers;
+extern frudp_reader_t g_frudp_readers[FRUDP_MAX_READERS];
+extern uint32_t g_frudp_num_readers;
 
-void frudp_add_matched_reader(const frudp_matched_reader_t *match);
+void frudp_add_reader(const frudp_reader_t *match);
 
-void frudp_print_matched_readers();
+void frudp_print_readers();
 
 #endif

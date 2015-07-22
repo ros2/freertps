@@ -1,8 +1,8 @@
 #include "freertps/udp.h"
 #include "freertps/spdp.h"
-#include "freertps/discovery.h"
-#include "freertps/subscription.h"
-#include "freertps/publisher.h"
+#include "freertps/disco.h"
+#include "freertps/sub.h"
+#include "freertps/pub.h"
 #include "freertps/bswap.h"
 #include <limits.h>
 #include <string.h>
@@ -10,9 +10,9 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants
-const frudp_entity_id_t g_frudp_entity_id_unknown = { .u = 0 };
+const frudp_eid_t g_frudp_eid_unknown = { .u = 0 };
 frudp_config_t g_frudp_config;
-const frudp_sequence_number_t g_frudp_sequence_number_unknown = { .high = -1, .low = 0 };
+const frudp_sn_t g_frudp_sn_unknown = { .high = -1, .low = 0 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -33,9 +33,9 @@ static bool frudp_rx_data          (RX_MSG_ARGS);
 static bool frudp_rx_data_frag     (RX_MSG_ARGS);
 
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
-                      const frudp_entity_id_t *reader_entity_id,
+                      const frudp_eid_t *reader_eid,
                       const frudp_guid_t *writer_guid,
-                      const frudp_sequence_number_set_t *set);
+                      const frudp_sn_set_t *set);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -153,7 +153,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
          (int)(m->reader_sn_state.bitmap_base.low +
                m->reader_sn_state.num_bits));
 #endif
-  frudp_publisher_t *pub = frudp_publisher_from_writer_id(m->writer_id);
+  frudp_pub_t *pub = frudp_pub_from_writer_id(m->writer_id);
   if (!pub)
   {
     printf("couldn't find pub for writer id 0x%08x\n",
@@ -161,7 +161,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
     return true; // not sure what's happening.
   }
   else
-    frudp_publisher_rx_acknack(pub, m, &rcvr->src_guid_prefix);
+    frudp_pub_rx_acknack(pub, m, &rcvr->src_guid_prefix);
   return true;
 }
 
@@ -181,37 +181,37 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
          (unsigned)hb->first_sn.low,
          (unsigned)hb->last_sn.low);
 #endif
-  //frudp_print_matched_readers();
+  //frudp_print_readers();
 
-  //printf("%d matched readers\n", (int)g_frudp_num_matched_readers);
-  frudp_matched_reader_t *match = NULL;
+  //printf("%d matched readers\n", (int)g_frudp_num_readers);
+  frudp_reader_t *match = NULL;
   // spin through subscriptions and see if we've already matched a reader
-  for (unsigned i = 0; !match && i < g_frudp_num_matched_readers; i++)
+  for (unsigned i = 0; !match && i < g_frudp_num_readers; i++)
   {
-    frudp_matched_reader_t *r = &g_frudp_matched_readers[i];
+    frudp_reader_t *r = &g_frudp_readers[i];
     if (frudp_guid_identical(&writer_guid, &r->writer_guid) &&
-        (hb->reader_id.u == r->reader_entity_id.u ||
+        (hb->reader_id.u == r->reader_eid.u ||
          hb->reader_id.u == 0))
       match = r;
   }
   // else, if we have a subscription for this, initialize a reader
   if (!match)
   {
-    for (unsigned i = 0; !match && i < g_frudp_num_subscriptions; i++)
+    for (unsigned i = 0; !match && i < g_frudp_num_subs; i++)
     {
-      frudp_subscription_t *sub = &g_frudp_subscriptions[i];
-      if (sub->reader_entity_id.u == hb->reader_id.u)
+      frudp_sub_t *sub = &g_frudp_subs[i];
+      if (sub->reader_eid.u == hb->reader_id.u)
       {
-        frudp_matched_reader_t r;
+        frudp_reader_t r;
         memcpy(&r.writer_guid, &writer_guid, sizeof(frudp_guid_t));
         r.reliable = sub->reliable;
-        r.reader_entity_id = hb->reader_id;
+        r.reader_eid = hb->reader_id;
         r.max_rx_sn.high = 0;
         r.max_rx_sn.low = 0;
         r.data_cb = sub->data_cb;
         r.msg_cb = sub->msg_cb;
         match = &r;
-        frudp_add_matched_reader(&r);
+        frudp_add_reader(&r);
       }
     }
   }
@@ -223,7 +223,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
     {
       //printf("acknack requested in heartbeat\n");
       // we have to send an ACKNACK now
-      frudp_sequence_number_set_32bits_t set;
+      frudp_sn_set_32bits_t set;
       // todo: handle 64-bit sequence numbers
       set.bitmap_base.high = 0;
       if (match->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
@@ -243,9 +243,9 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
         set.bitmap = 0xffffffff;
       }
       frudp_tx_acknack(&rcvr->src_guid_prefix,
-                       &match->reader_entity_id,
+                       &match->reader_eid,
                        &match->writer_guid,
-                       (frudp_sequence_number_set_t *)&set);
+                       (frudp_sn_set_t *)&set);
     }
     else
     {
@@ -399,9 +399,9 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   //  reader_id.u = 0xc7030000;
   // spin through subscriptions and see if anyone is listening
   int num_matches_found = 0;
-  for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
+  for (unsigned i = 0; i < g_frudp_num_readers; i++)
   {
-    frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
+    frudp_reader_t *match = &g_frudp_readers[i];
     /*
     printf("    sub %d: writer = ", (int)i); //%08x, reader = %08x\n",
     frudp_print_guid(&match->writer_guid);
@@ -413,8 +413,8 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     // with any GUID prefix and with either an unknown reader entity ID
     // or the unknown-reader entity ID
     bool spdp_match = data_submsg->writer_id.u  == g_spdp_writer_id.u &&
-                      (match->reader_entity_id.u == g_spdp_reader_id.u ||
-                       match->reader_entity_id.u == g_frudp_entity_id_unknown.u);
+                      (match->reader_eid.u == g_spdp_reader_id.u ||
+                       match->reader_eid.u == g_frudp_eid_unknown.u);
     if (!spdp_match &&
         !frudp_guid_identical(&writer_guid, &match->writer_guid))
         continue; // move along. no match here.
@@ -450,13 +450,13 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   {
     printf("    couldn't find a matched reader for this DATA\n");
     printf("    available readers:\n");
-    for (unsigned i = 0; i < g_frudp_num_matched_readers; i++)
+    for (unsigned i = 0; i < g_frudp_num_readers; i++)
     {
-      frudp_matched_reader_t *match = &g_frudp_matched_readers[i];
+      frudp_reader_t *match = &g_frudp_readers[i];
       printf("      writer = ");
       frudp_print_guid(&match->writer_guid);
       printf(" => %08x\n", 
-             (unsigned)freertps_htonl(match->reader_entity_id.u));
+             (unsigned)freertps_htonl(match->reader_eid.u));
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
@@ -543,14 +543,14 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
   memcpy(msg->header.guid_prefix.prefix,
          g_frudp_config.guid_prefix.prefix,
          FRUDP_GUID_PREFIX_LEN);
-  g_frudp_discovery_tx_buf_wpos = 0;
+  g_frudp_disco_tx_buf_wpos = 0;
   return msg;
 }
 
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
-                      const frudp_entity_id_t *reader_id,
-                      const frudp_guid_t      *writer_guid,
-                      const frudp_sequence_number_set_t *set)
+                      const frudp_eid_t         *reader_id,
+                      const frudp_guid_t        *writer_guid,
+                      const frudp_sn_set_t      *set)
 {
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",
@@ -559,13 +559,13 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
   #endif
   static int s_acknack_count = 1;
   // find the participant we are trying to talk to
-  frudp_participant_t *part = frudp_participant_find(guid_prefix);
+  frudp_part_t *part = frudp_part_find(guid_prefix);
   if (!part)
   {
     FREERTPS_ERROR("tried to acknack an unknown participant\n");
     return; // woah.
   }
-  frudp_msg_t *msg = (frudp_msg_t *)g_frudp_discovery_tx_buf;
+  frudp_msg_t *msg = (frudp_msg_t *)g_frudp_disco_tx_buf;
   frudp_init_msg(msg);
   //printf("    about to tx acknack\n");
   frudp_submsg_t *dst_submsg = (frudp_submsg_t *)&msg->submsgs[0];
@@ -581,7 +581,7 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
   frudp_submsg_acknack_t *acknack =
                             (frudp_submsg_acknack_t *)acknack_submsg->contents;
   acknack->reader_id = *reader_id;
-  acknack->writer_id = writer_guid->entity_id;
+  acknack->writer_id = writer_guid->eid;
   int sn_set_len = (set->num_bits + 31) / 32 * 4 + 12;
   memcpy(&acknack->reader_sn_state, set, sn_set_len);
   uint32_t *p_count = (uint32_t *)&acknack->reader_sn_state + sn_set_len / 4;

@@ -5,8 +5,8 @@
 
 unsigned g_frudp_next_user_entity_id = 1;
 
-const frudp_guid_t g_frudp_guid_unknown = { .guid_prefix = { .prefix = {0} },
-                                            .entity_id = { .u = 0 } };
+const frudp_guid_t g_frudp_guid_unknown = { .prefix = { .prefix = {0} },
+                                            .eid = { .u = 0 } };
 
 const char *frudp_vendor(const frudp_vid_t vid)
 {
@@ -45,10 +45,10 @@ bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
 bool frudp_guid_identical(const frudp_guid_t * const a,
                           const frudp_guid_t * const b)
 {
-  if (a->entity_id.u != b->entity_id.u)
+  if (a->eid.u != b->eid.u)
     return false;
   for (int i = 0; i < FRUDP_GUID_PREFIX_LEN; i++)
-    if (a->guid_prefix.prefix[i] != b->guid_prefix.prefix[i])
+    if (a->prefix.prefix[i] != b->prefix.prefix[i])
       return false;
   return true;
 }
@@ -72,14 +72,14 @@ void frudp_print_guid_prefix(const frudp_guid_prefix_t *p)
 
 void frudp_stuff_guid(frudp_guid_t *guid,
                       const frudp_guid_prefix_t *prefix,
-                      const frudp_entity_id_t *id)
+                      const frudp_eid_t *id)
 {
-  memcpy(&guid->guid_prefix, prefix, sizeof(frudp_guid_prefix_t));
-  guid->entity_id = *id;
+  memcpy(&guid->prefix, prefix, sizeof(frudp_guid_prefix_t));
+  guid->eid = *id;
 }
 
 void frudp_print_guid(const frudp_guid_t *guid)
 {
-  frudp_print_guid_prefix(&guid->guid_prefix);
-  printf(":%08x", (unsigned)freertps_htonl(guid->entity_id.u));
+  frudp_print_guid_prefix(&guid->prefix);
+  printf(":%08x", (unsigned)freertps_htonl(guid->eid.u));
 }

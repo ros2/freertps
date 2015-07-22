@@ -69,58 +69,58 @@ typedef struct
 {
   int32_t high;
   uint32_t low;
-} frudp_sequence_number_t;
-extern const frudp_sequence_number_t g_frudp_sequence_number_unknown;
+} frudp_sn_t; // sequence number
+extern const frudp_sn_t g_frudp_sn_unknown;
 
 typedef struct
 {
-  frudp_sequence_number_t bitmap_base;
+  frudp_sn_t bitmap_base;
   uint32_t num_bits;
   uint32_t bitmap[];
-} frudp_sequence_number_set_t;
+} frudp_sn_set_t;
 
 typedef struct
 {
-  frudp_sequence_number_t bitmap_base;
+  frudp_sn_t bitmap_base;
   uint32_t num_bits;
   uint32_t bitmap;
-} frudp_sequence_number_set_32bits_t;
+} frudp_sn_set_32bits_t;
 
 typedef struct
 {
   frudp_submsg_header_t header;
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
-  frudp_entity_id_t reader_id;
-  frudp_entity_id_t writer_id;
-  frudp_sequence_number_t writer_sn;
+  frudp_eid_t reader_id;
+  frudp_eid_t writer_id;
+  frudp_sn_t writer_sn;
   uint8_t data[];
 } __attribute__((packed)) frudp_submsg_data_t;
 
 typedef struct
 {
   frudp_submsg_header_t header;
-  frudp_entity_id_t reader_id;
-  frudp_entity_id_t writer_id;
-  frudp_sequence_number_t first_sn;
-  frudp_sequence_number_t last_sn;
+  frudp_eid_t reader_id;
+  frudp_eid_t writer_id;
+  frudp_sn_t first_sn;
+  frudp_sn_t last_sn;
   uint32_t count;
 } __attribute__((packed)) frudp_submsg_heartbeat_t;
 
 typedef struct
 {
   frudp_submsg_header_t header;
-  frudp_entity_id_t reader_id;
-  frudp_entity_id_t writer_id;
-  frudp_sequence_number_t gap_start;
-  frudp_sequence_number_set_t gap_end;
+  frudp_eid_t reader_id;
+  frudp_eid_t writer_id;
+  frudp_sn_t gap_start;
+  frudp_sn_set_t gap_end;
 } __attribute__((packed)) frudp_submsg_gap_t;
 
 typedef struct
 {
-  frudp_entity_id_t reader_id;
-  frudp_entity_id_t writer_id;
-  frudp_sequence_number_set_t reader_sn_state;
+  frudp_eid_t reader_id;
+  frudp_eid_t writer_id;
+  frudp_sn_set_t reader_sn_state;
   // the "count" field that goes here is impossible to declare in legal C
 } __attribute__((packed)) frudp_submsg_acknack_t;
 

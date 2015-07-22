@@ -28,18 +28,19 @@ foreach(syslib ${SYSTEM_EXTRA_LIBS})
 endforeach()
 
 # build the portable library
-add_library(freertps STATIC discovery.c 
+add_library(freertps STATIC disco.c 
                             freertps.c 
                             id.c 
-                            participant.c 
-                            publisher.c 
-                            sedp.c 
+                            part.c 
                             spdp.c 
-                            subscription.c 
+                            sedp.c 
+                            sub.c 
+                            pub.c 
                             time.c 
                             udp.c)
 
 # build the applications for this system
+string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
 foreach(app ${SYSTEM_APPS})
   add_subdirectory(apps/${app})
 endforeach()

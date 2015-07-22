@@ -14,13 +14,13 @@ int main(int argc, char **argv)
 {
   printf("hello, world!\r\n");
   freertps_system_init();
-  freertps_create_subscription("chatter", 
-                               "simple_msgs::dds_::String_",
-                               chatter_cb);
+  freertps_create_sub("chatter", 
+                      "std_interfaces::msg::dds_::String_",
+                      chatter_cb);
   while (freertps_system_ok())
   {
     frudp_listen(1000000);
-    frudp_discovery_tick();
+    frudp_disco_tick();
   }
   frudp_fini();
   return 0;

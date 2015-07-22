@@ -1,30 +1,30 @@
 #include <stdio.h>
-#include "freertps/publisher.h"
+#include "freertps/pub.h"
 #include "freertps/config.h"
 #include "freertps/id.h"
-#include "freertps/participant.h"
+#include "freertps/part.h"
 #include "freertps/bswap.h"
 #include <string.h>
 
-frudp_publisher_t g_frudp_pubs[FRUDP_MAX_PUBLISHERS];
+frudp_pub_t g_frudp_pubs[FRUDP_MAX_PUBS];
 int g_frudp_num_pubs = 0;
-static uint8_t g_publisher_tx_buf[2048] = {0}; // just for now... so bad...
+static uint8_t g_pub_tx_buf[2048] = {0}; // just for now... so bad...
 
-frudp_publisher_t *frudp_create_publisher(const char *topic_name,
-                                          const char *type_name,
-                                          const frudp_entity_id_t writer_id,
-                                          frudp_submsg_data_t **data_submsgs,
-                                          const uint32_t num_data_submsgs)
+frudp_pub_t *frudp_create_pub(const char *topic_name,
+                              const char *type_name,
+                              const frudp_eid_t writer_id,
+                              frudp_submsg_data_t **data_submsgs,
+                              const uint32_t num_data_submsgs)
 {
-  //printf("create publisher 0x%08x\n", htonl(writer_id.u));
-  if (g_frudp_num_pubs >= FRUDP_MAX_PUBLISHERS)
+  //printf("create pub 0x%08x\n", htonl(writer_id.u));
+  if (g_frudp_num_pubs >= FRUDP_MAX_PUBS)
     return NULL; // no room. sorry
-  frudp_publisher_t *p = &g_frudp_pubs[g_frudp_num_pubs];
+  frudp_pub_t *p = &g_frudp_pubs[g_frudp_num_pubs];
   p->topic_name = topic_name;
   p->type_name = type_name;
   p->data_submsgs = data_submsgs;
   p->num_data_submsgs = num_data_submsgs;
-  if (writer_id.u == g_frudp_entity_id_unknown.u)
+  if (writer_id.u == g_frudp_eid_unknown.u)
   {
     p->writer_id.s.kind = FRUDP_ENTITY_KIND_USER_WRITER_NO_KEY;
     p->writer_id.s.key[0] = g_frudp_next_user_entity_id++;
@@ -40,9 +40,17 @@ frudp_publisher_t *frudp_create_publisher(const char *topic_name,
   return p;
 }
 
-void frudp_publish(frudp_publisher_t *pub, frudp_submsg_data_t *submsg)
+frudp_pub_t *
+frudp_create_user_pub(const char *topic_name,
+                      const char *type_name)
 {
-  // (todo: allow people to stuff the message directly in the publisher and
+  printf("create_user_pub(%s, %s)\r\n", topic_name, type_name);
+  return 0;
+}
+
+void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
+{
+  // (todo: allow people to stuff the message directly in the pub and
   // call this function with sample set to NULL to indicate this)
 
   // find first place we can buffer this sample
@@ -50,12 +58,14 @@ void frudp_publish(frudp_publisher_t *pub, frudp_submsg_data_t *submsg)
   frudp_submsg_data_t *pub_submsg = pub->data_submsgs[pub->next_submsg_idx];
 
   *pub_submsg = *submsg;
-  if (submsg->writer_sn.low == g_frudp_sequence_number_unknown.low) // todo: 64
+  if (submsg->writer_sn.low == g_frudp_sn_unknown.low) // todo: 64 bits
   {
     pub_submsg->writer_sn = pub->next_sn;
     pub->next_sn.low++; // todo: > 32 bits
   }
-  memcpy(pub_submsg->data, submsg->data, submsg->header.len - sizeof(frudp_submsg_data_t) + 4);
+  memcpy(pub_submsg->data, 
+         submsg->data, 
+         submsg->header.len - sizeof(frudp_submsg_data_t) + 4);
   //pub_sample->data_len = sample->data_len;
   // TODO: now, send DATA and HEARTBEAT submessages
   printf("frudp publish %d bytes, seq num %d\n",
@@ -73,7 +83,7 @@ void frudp_publish(frudp_publisher_t *pub, frudp_submsg_data_t *submsg)
   frudp_tx(inet_addr("239.255.0.1"), frudp_mcast_builtin_port(),
            (const uint8_t *)msg, payload_len);
 */
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_publisher_tx_buf);
+  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
 
@@ -127,12 +137,12 @@ void frudp_publish(frudp_publisher_t *pub, frudp_submsg_data_t *submsg)
   //int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg->submsgs);
 }
 
-frudp_publisher_t *frudp_publisher_from_writer_id(const frudp_entity_id_t id)
+frudp_pub_t *frudp_pub_from_writer_id(const frudp_eid_t id)
 {
   //printf("pub from writer id 0x%08x\n", htonl(id.u));
   for (int i = 0; i < g_frudp_num_pubs; i++)
   {
-    frudp_publisher_t *p = &g_frudp_pubs[i];
+    frudp_pub_t *p = &g_frudp_pubs[i];
     //printf("  comp %d: 0x%08x ?= 0x%08x\n",
     //       i, htonl(id.u), htonl(p->writer_id.u));
     if (id.u == p->writer_id.u)
@@ -141,7 +151,7 @@ frudp_publisher_t *frudp_publisher_from_writer_id(const frudp_entity_id_t id)
   return NULL;
 }
 
-void frudp_publisher_rx_acknack(frudp_publisher_t *pub,
+void frudp_pub_rx_acknack(frudp_pub_t *pub,
                                 frudp_submsg_acknack_t *acknack,
                                 frudp_guid_prefix_t *guid_prefix)
 {
@@ -165,14 +175,14 @@ void frudp_publisher_rx_acknack(frudp_publisher_t *pub,
         //printf("\n");
 
         // look up the GUID prefix of this reader, so we can call them back
-        frudp_participant_t *part = frudp_participant_find(guid_prefix);
+        frudp_part_t *part = frudp_part_find(guid_prefix);
         if (!part)
         {
           printf("      woah there partner. you from around these parts?\n");
           return;
         }
 
-        frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_publisher_tx_buf);
+        frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
         fr_time_t t = fr_time_now();
         uint16_t submsg_wpos = 0;
 

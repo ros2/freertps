@@ -12,14 +12,14 @@ typedef union
     uint8_t kind;
   } s;
   uint32_t u;
-} __attribute__((packed)) frudp_entity_id_t;
+} __attribute__((packed)) frudp_eid_t; // entity ID
 
 #define FRUDP_ENTITY_KIND_USER_WRITER_WITH_KEY 0x02
 #define FRUDP_ENTITY_KIND_USER_WRITER_NO_KEY   0x03
 #define FRUDP_ENTITY_KIND_USER_READER_NO_KEY   0x04
 #define FRUDP_ENTITY_KIND_USER_READER_WITH_KEY 0x07
 
-extern const frudp_entity_id_t g_frudp_entity_id_unknown;
+extern const frudp_eid_t g_frudp_eid_unknown;
 
 #define FRUDP_GUID_PREFIX_LEN 12
 typedef struct
@@ -29,8 +29,8 @@ typedef struct
 
 typedef struct
 {
-  frudp_guid_prefix_t guid_prefix;
-  frudp_entity_id_t entity_id;
+  frudp_guid_prefix_t prefix;
+  frudp_eid_t eid;
 } __attribute__((packed)) frudp_guid_t;
 extern const frudp_guid_t g_frudp_guid_unknown;
 
@@ -42,7 +42,7 @@ bool frudp_guid_identical(const frudp_guid_t * const a,
 
 void frudp_stuff_guid(frudp_guid_t *guid,
                       const frudp_guid_prefix_t *prefix,
-                      const frudp_entity_id_t *id);
+                      const frudp_eid_t *id);
 
 /////////////////////////////////////////////////////////////////////////
 // VENDOR ID STUFF

@@ -1,6 +1,6 @@
 #include "freertps/freertps.h"
 #include "freertps/udp.h"
-#include "freertps/discovery.h"
+#include "freertps/disco.h"
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -111,7 +111,7 @@ bool frudp_init()
   // 4 bytes left. let's use the POSIX process ID
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
   memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
-  frudp_discovery_init();
+  frudp_disco_init();
   return true;
 }
 
@@ -135,7 +135,7 @@ bool frudp_init_participant_id()
 
 void frudp_fini()
 {
-  frudp_discovery_fini();
+  frudp_disco_fini();
   FREERTPS_INFO("udp fini\n");
   for (int i = 0; i < g_frudp_rx_socks_used; i++)
   {

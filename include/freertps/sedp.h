@@ -1,17 +1,18 @@
 #ifndef FREERTPS_SEDP_H
 #define FREERTPS_SEDP_H
 
-#include "freertps/publisher.h"
-#include "freertps/subscription.h"
-#include "freertps/participant.h"
+#include "freertps/pub.h"
+#include "freertps/sub.h"
+#include "freertps/part.h"
 
 void frudp_sedp_init();
 void frudp_sedp_fini();
 void frudp_sedp_tick();
 
-extern frudp_publisher_t *g_sedp_subscription_pub;
-void sedp_publish_subscription(frudp_subscription_t *sub);
+extern frudp_pub_t *g_sedp_sub_pub;
+void sedp_publish_sub(frudp_sub_t *sub);
+void sedp_publish_pub(frudp_pub_t *pub);
 
-void sedp_add_builtin_endpoints(frudp_participant_t *part);
+void sedp_add_builtin_endpoints(frudp_part_t *part);
 
 #endif
