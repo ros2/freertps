@@ -300,6 +300,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
   scheme->options = 0;
   uint8_t *outbound_payload = (uint8_t *)(&d->data[4]);
   // todo: bounds checking
+  /*
   printf("copying in payload:\n");
   for (int j = 0; j < payload_len; j++)
   {
@@ -310,6 +311,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       printf("\n");
   }
   printf("\n");
+  */
 
   memcpy(outbound_payload, payload, payload_len);
 

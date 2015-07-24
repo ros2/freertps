@@ -180,26 +180,30 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
     frudp_pub_t *pub = &g_frudp_pubs[i];
     if (!pub->topic_name || !pub->type_name)
       continue; // sanity check. some built-ins don't have names.
-    if (!strcmp(pub->topic_name, info->topic_name) &&
-        !strcmp(pub->type_name, info->type_name))
+    if (strcmp(pub->topic_name, info->topic_name))
+      continue; // not the same topic. move along.
+    if (strcmp(pub->type_name, info->type_name))
     {
-      printf("    hooray! heard a request for a topic we publish: [%s]\n",
-             pub->topic_name);
-      // see if we already have a writer for this subscriber
-      bool found = false;
-      for (unsigned j = 0; !found && j < g_frudp_num_writers; j++)
-      {
-        frudp_writer_t *w = &g_frudp_writers[j];
-        if (frudp_guid_identical(&w->reader_guid, &info->guid))
-          found = true;
-      }
-      if (!found)
-      {
-        frudp_writer_t w;
-        w.reader_guid = info->guid;
-        w.writer_eid = pub->writer_eid;
-        frudp_add_writer(&w);
-      }
+      printf("    type mismatch: [%s] != [%s]\n",
+             pub->type_name, info->type_name);
+      continue;
+    }
+    printf("    hooray! heard a request for a topic we publish: [%s]\n",
+           pub->topic_name);
+    // see if we already have a writer for this subscriber
+    bool found = false;
+    for (unsigned j = 0; !found && j < g_frudp_num_writers; j++)
+    {
+      frudp_writer_t *w = &g_frudp_writers[j];
+      if (frudp_guid_identical(&w->reader_guid, &info->guid))
+        found = true;
+    }
+    if (!found)
+    {
+      frudp_writer_t w;
+      w.reader_guid = info->guid;
+      w.writer_eid = pub->writer_eid;
+      frudp_add_writer(&w);
     }
   }
 }
