@@ -28,22 +28,18 @@ void frudp_add_user_sub(const char *topic_name,
                         freertps_msg_cb_t msg_cb)
 {
   printf("frudp_add_user_sub(%s, %s)\n", topic_name, type_name);
-  frudp_eid_t sub_eid;
-  sub_eid.s.kind = FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
-  sub_eid.s.key[0] = 0;
-  sub_eid.s.key[1] = 0; // todo: >8 bit ID's
-  sub_eid.s.key[2] = g_frudp_next_user_entity_id++;
-  frudp_sub_t req;
+  frudp_eid_t sub_eid = frudp_create_user_id();
+  frudp_sub_t sub;
   // for now, just copy the pointers. maybe in the future we can/should have
   // an option for storage of various kind (static, malloc, etc.) for copies.
-  req.topic_name = topic_name;
-  req.type_name = type_name;
-  req.reader_eid = sub_eid;
-  req.msg_cb = msg_cb;
-  req.data_cb = NULL;
-  req.reliable = false;
-  frudp_add_sub(&req);
-  sedp_publish_sub(&req);
+  sub.topic_name = topic_name;
+  sub.type_name = type_name;
+  sub.reader_eid = sub_eid;
+  sub.msg_cb = msg_cb;
+  sub.data_cb = NULL;
+  sub.reliable = false;
+  frudp_add_sub(&sub);
+  sedp_publish_sub(&sub);
 }
 
 void frudp_add_sub(const frudp_sub_t *s)

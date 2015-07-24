@@ -143,7 +143,8 @@ typedef struct
   uint16_t options;
 } __attribute__((packed)) frudp_encapsulation_scheme_t;
 
-#define FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE 0x0003
+#define FRUDP_SCHEME_CDR_LE    0x0001
+#define FRUDP_SCHEME_PL_CDR_LE 0x0003
 
 typedef void (*frudp_rx_data_cb_t)(frudp_receiver_state_t *rcvr,
                                    const frudp_submsg_t *submsg,

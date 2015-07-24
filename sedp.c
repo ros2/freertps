@@ -37,7 +37,7 @@ frudp_pub_t *g_sedp_pub_pub = NULL; // SEDP publication publication
 #define SEDP_MSG_BUF_LEN 1024
 //static uint8_t frudp_pub_sample_t[SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_sub_writer_data_buf[SEDP_MSG_BUF_LEN * FRUDP_MAX_SUBS];
-static uint8_t g_sedp_pub_writer_data_buf[SEDP_MSG_BUF_LEN * FRUDP_MAX_SUBS];
+static uint8_t g_sedp_pub_writer_data_buf[SEDP_MSG_BUF_LEN * FRUDP_MAX_PUBS];
 static frudp_submsg_data_t *g_sedp_sub_writer_data_submsgs[FRUDP_MAX_SUBS];
 static frudp_submsg_data_t *g_sedp_pub_writer_data_submsgs[FRUDP_MAX_PUBS];
 //sizeof [MAX_SUBS][SEDP_MSG_BUF_LEN];
@@ -50,15 +50,15 @@ void frudp_sedp_init()
   {
     frudp_submsg_data_t *d = 
       (frudp_submsg_data_t *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    g_sedp_sub_writer_data_submsgs[i] = d;
     d->writer_sn = g_frudp_sn_unknown;
+    g_sedp_sub_writer_data_submsgs[i] = d;
   }
   for (int i = 0; i < FRUDP_MAX_PUBS; i++)
   {
     frudp_submsg_data_t *d = 
       (frudp_submsg_data_t *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    g_sedp_pub_writer_data_submsgs[i] = d;
     d->writer_sn = g_frudp_sn_unknown;
+    g_sedp_pub_writer_data_submsgs[i] = d;
   }
   g_sedp_sub_pub = frudp_create_pub
                      (NULL, // no topic name
@@ -85,7 +85,6 @@ void frudp_sedp_init()
 
   frudp_sub_t sedp_pub_sub; // subscribe to the publisher announcers
   sedp_pub_sub.topic_name = NULL;
-  sedp_pub_sub.topic_name = NULL;
   sedp_pub_sub.type_name = NULL;
   sedp_pub_sub.reader_eid = g_sedp_pub_reader_id;
   sedp_pub_sub.data_cb = frudp_sedp_rx_pub_data;
@@ -109,8 +108,7 @@ void frudp_sedp_tick()
   }
 }
 
-//#define SEDP_VERBOSE
-#define SEDP_PRINT_TOPICS
+//#define SEDP_PRINT_TOPICS
 static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
                                    const frudp_submsg_t *submsg,
                                    const uint16_t scheme,
@@ -137,6 +135,7 @@ static sedp_topic_info_t g_topic_info;
 
 static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
 {
+  printf("sedp pub: [%s]\n", info->topic_name ? info->topic_name : "");
   // look to see if we are subscribed to this topic
   for (unsigned i = 0; i < g_frudp_num_subs; i++)
   {
@@ -174,8 +173,7 @@ static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
 
 static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
 {
-  printf("rx sub info\n");
-  #if 0
+  printf("sedp sub: [%s]\n", info->topic_name ? info->topic_name : "");
   // look to see if we publish this topic
   for (unsigned i = 0; i < g_frudp_num_pubs; i++)
   {
@@ -187,31 +185,23 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
     {
       printf("    hooray! heard a request for a topic we publish: [%s]\n",
              pub->topic_name);
-      // see if we already have a matched writer for this reader
+      // see if we already have a writer for this subscriber
       bool found = false;
-      /*
-      for (unsigned j = 0; !found && j < g_frudp_num_matched_writers; j++)
+      for (unsigned j = 0; !found && j < g_frudp_num_writers; j++)
       {
-        frudp_matched_writer_t *match = &g_frudp_matched_writers[j];
-        if (frudp_guid_identical(&match->reader_guid, &info->guid))
+        frudp_writer_t *w = &g_frudp_writers[j];
+        if (frudp_guid_identical(&w->reader_guid, &info->guid))
           found = true;
       }
       if (!found)
       {
-        frudp_matched_writer_t mr;
-        mr.writer_guid = info->guid;
-        mr.reader_entity_id = sub->reader_entity_id;
-        mr.max_rx_sn.high = 0;
-        mr.max_rx_sn.low = 0;
-        mr.data_cb = sub->data_cb;
-        mr.msg_cb = sub->msg_cb;
-        mr.reliable = sub->reliable;
-        frudp_add_matched_reader(&mr);
+        frudp_writer_t w;
+        w.reader_guid = info->guid;
+        w.writer_eid = pub->writer_eid;
+        frudp_add_writer(&w);
       }
-      */
     }
   }
-#endif
 }
 
 static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
@@ -223,7 +213,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
 #ifdef SEDP_VERBOSE
   printf("  sedp_writer data rx\n");
 #endif
-  if (scheme != FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE)
+  if (scheme != FRUDP_SCHEME_PL_CDR_LE)
   {
     FREERTPS_ERROR("expected sedp data to be PL_CDR_LE. bailing...\n");
     return;
@@ -372,7 +362,7 @@ static void sedp_publish(const char *topic_name,
   /////////////////////////////////////////////////////////////
   frudp_encapsulation_scheme_t *scheme =
     (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
-  scheme->scheme = freertps_htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
+  scheme->scheme = freertps_htons(FRUDP_SCHEME_PL_CDR_LE);
   scheme->options = 0;
   /////////////////////////////////////////////////////////////
   frudp_parameter_list_item_t *param =
@@ -460,7 +450,7 @@ void sedp_publish_pub(frudp_pub_t *pub)
   sedp_publish(pub->topic_name,
                pub->type_name,
                g_sedp_pub_pub,
-               pub->writer_id);
+               pub->writer_eid);
 }
 
 void sedp_add_builtin_endpoints(frudp_part_t *part)
@@ -469,7 +459,7 @@ void sedp_add_builtin_endpoints(frudp_part_t *part)
   frudp_print_guid_prefix(&part->guid_prefix);
   printf("\n");
 
-  frudp_reader_t pub_reader;
+  frudp_reader_t pub_reader; // this reads the remote peer's publications
   pub_reader.writer_guid = g_frudp_guid_unknown;
   frudp_stuff_guid(&pub_reader.writer_guid,
                    &part->guid_prefix,
@@ -481,6 +471,19 @@ void sedp_add_builtin_endpoints(frudp_part_t *part)
   pub_reader.msg_cb = NULL;
   pub_reader.reliable = true;
   frudp_add_reader(&pub_reader);
+
+  frudp_reader_t sub_reader; // this reads the remote peer's subscriptions
+  sub_reader.writer_guid = g_frudp_guid_unknown;
+  frudp_stuff_guid(&sub_reader.writer_guid,
+                   &part->guid_prefix,
+                   &g_sedp_sub_writer_id);
+  sub_reader.reader_eid = g_sedp_sub_reader_id;
+  sub_reader.max_rx_sn.low = 0;
+  sub_reader.max_rx_sn.high = 0;
+  sub_reader.data_cb = frudp_sedp_rx_sub_data;
+  sub_reader.msg_cb = NULL;
+  sub_reader.reliable = true;
+  frudp_add_reader(&sub_reader);
 }
 
 

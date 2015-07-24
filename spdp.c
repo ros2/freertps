@@ -29,7 +29,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
 #ifdef SPDP_VERBOSE
   FREERTPS_INFO("    spdp_rx\n");
 #endif
-  if (scheme != FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE)
+  if (scheme != FRUDP_SCHEME_PL_CDR_LE)
   {
     FREERTPS_ERROR("expected spdp data to be PL_CDR_LE. bailing...\n");
     return;
@@ -315,7 +315,7 @@ static void frudp_spdp_bcast()
   /////////////////////////////////////////////////////////////
   frudp_encapsulation_scheme_t *scheme =
     (frudp_encapsulation_scheme_t *)(((uint8_t *)inline_qos_param) + 4);
-  scheme->scheme = freertps_htons(FRUDP_ENCAPSULATION_SCHEME_PL_CDR_LE);
+  scheme->scheme = freertps_htons(FRUDP_SCHEME_PL_CDR_LE);
   scheme->options = 0;
   /////////////////////////////////////////////////////////////
   frudp_parameter_list_item_t *param_list =

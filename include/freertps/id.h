@@ -51,9 +51,9 @@ void frudp_stuff_guid(frudp_guid_t *guid,
 typedef uint16_t frudp_vid_t;
 const char *frudp_vendor(const frudp_vid_t vid);
 
-extern unsigned g_frudp_next_user_entity_id;
-
 void frudp_print_guid_prefix(const frudp_guid_prefix_t *guid_prefix);
 void frudp_print_guid(const frudp_guid_t *guid);
+
+frudp_eid_t frudp_create_user_id();
 
 #endif

@@ -13,6 +13,7 @@ void freertps_perish_if(bool b, const char *msg)
   }
 }
 
+// todo: return something
 void freertps_create_sub(const char *topic_name,
                          const char *type_name,
                          freertps_msg_cb_t msg_cb)
@@ -36,5 +37,6 @@ bool freertps_publish(frudp_pub_t *pub,
                       const uint8_t *msg,
                       const uint32_t msg_len)
 {
-  return true;
+  // todo: other physical layers...
+  return frudp_publish_user_msg(pub, msg, msg_len);
 }

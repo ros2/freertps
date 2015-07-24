@@ -57,7 +57,7 @@ typedef struct
 extern frudp_reader_t g_frudp_readers[FRUDP_MAX_READERS];
 extern uint32_t g_frudp_num_readers;
 
-void frudp_add_reader(const frudp_reader_t *match);
+void frudp_add_reader(const frudp_reader_t *reader);
 
 void frudp_print_readers();
 

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "freertps/bswap.h"
 
-unsigned g_frudp_next_user_entity_id = 1;
+static unsigned g_frudp_next_user_eid = 1;
 
 const frudp_guid_t g_frudp_guid_unknown = { .prefix = { .prefix = {0} },
                                             .eid = { .u = 0 } };
@@ -82,4 +82,15 @@ void frudp_print_guid(const frudp_guid_t *guid)
 {
   frudp_print_guid_prefix(&guid->prefix);
   printf(":%08x", (unsigned)freertps_htonl(guid->eid.u));
+}
+
+frudp_eid_t frudp_create_user_id()
+{
+  printf("frudp_create_user_id()\n");
+  frudp_eid_t eid;
+  eid.s.kind = FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
+  eid.s.key[0] = 0;
+  eid.s.key[1] = 0; // todo: >8 bit ID's
+  eid.s.key[2] = g_frudp_next_user_eid++;
+  return eid;
 }
