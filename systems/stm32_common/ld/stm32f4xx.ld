@@ -87,7 +87,7 @@ SECTIONS
   .stack (NOLOAD):
   {
     . = ALIGN(8);
-    *(.stack .stack.*)
+    KEEP(*(.stack .stack.*))
   } > sram
 
   . = ALIGN(4);

@@ -14,6 +14,7 @@ typedef fr_time_t fr_duration_t;
 fr_time_t     fr_time_now();
 fr_duration_t fr_time_diff(const fr_time_t *start, const fr_time_t *end);
 double fr_time_double(const fr_time_t *t);
+double fr_time_now_double(); // convenience function
 double fr_duration_double(const fr_duration_t *t);
 
 #endif

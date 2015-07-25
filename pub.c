@@ -65,7 +65,8 @@ frudp_pub_t *frudp_create_user_pub(const char *topic_name,
   printf("create_user_pub(%s, %s)\r\n", topic_name, type_name);
   frudp_pub_t *pub = frudp_create_pub(topic_name,
                                       type_name,
-                                      frudp_create_user_id(),
+                                      frudp_create_user_id
+                                        (FRUDP_ENTITY_KIND_USER_WRITER_NO_KEY),
                                       NULL,
                                       0);
   sedp_publish_pub(pub);
@@ -292,7 +293,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
                     FRUDP_FLAGS_DATA_PRESENT;
   d->header.len = sizeof(frudp_submsg_data_t) /*+ 4*/ + payload_len;
   d->extraflags = 0;
-  d->octets_to_inline_qos = 0; // ?
+  d->octets_to_inline_qos = 16;
   d->writer_sn = pub->next_sn;
   frudp_encapsulation_scheme_t *scheme =
     (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
@@ -325,8 +326,6 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
   hb->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
   hb->header.flags = 0x3; // todo: spell this out
   hb->header.len = 28;
-  hb->reader_id = d->reader_id;
-  hb->writer_id = d->writer_id;
   hb->first_sn.low = 1; // todo
   hb->first_sn.high = 0; // todo
   hb->last_sn = d->writer_sn;
@@ -353,8 +352,12 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       frudp_part_t *part = frudp_part_find(&w->reader_guid.prefix);
       if (!part)
         continue; // shouldn't happen; this implies inconsistency somewhere
+      // also, update the reader/writer ID's for the heartbeat submsg
+      hb->reader_id = d->reader_id;
+      hb->writer_id = d->writer_id;
       //frudp_locator_t *loc = part->default_unicast_locator;
       // todo: more than ipv4
+      /*
       printf("tx %d bytes\n", udp_payload_len);
       for (int j = 0; j < udp_payload_len; j++)
       {
@@ -365,6 +368,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
           printf("\n");
       }
       printf("\n");
+      */
       frudp_tx(part->default_unicast_locator.addr.udp4.addr,
                part->default_unicast_locator.port,
                (const uint8_t *)msg,

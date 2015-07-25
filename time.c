@@ -45,3 +45,9 @@ double fr_duration_double(const fr_duration_t *t)
   else
     return t->seconds - t->fraction / (double)UINT_MAX;
 }
+
+double fr_time_now_double()
+{
+  fr_time_t t = fr_time_now();
+  return fr_duration_double(&t);
+}

@@ -1,6 +1,6 @@
 #include "freertps/freertps.h"
 #include "freertps/udp.h"
-#include "freertps/discovery.h"
+#include "freertps/disco.h"
 #include "freertps/bswap.h"
 #include <stdint.h>
 #include <string.h>
@@ -28,7 +28,7 @@ bool frudp_init()
   // todo: init ethernet PHY. after PHY link is up,
   // store system time in the guid_prefix.
   //memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
-  frudp_discovery_init();
+  frudp_disco_init();
   return true;
 }
 
@@ -51,7 +51,7 @@ bool frudp_init_participant_id()
 
 void frudp_fini()
 {
-  frudp_discovery_fini();
+  frudp_disco_fini();
   FREERTPS_INFO("udp_stm32 fini\n");
 }
 

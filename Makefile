@@ -1,5 +1,5 @@
 SYSTEMS=native-posix               \
-        #stm32f7_disco-metal        \
+        stm32f7_disco-metal        \
 				stm32f4_disco-metal        
 
 APPS=listener talker

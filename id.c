@@ -84,11 +84,11 @@ void frudp_print_guid(const frudp_guid_t *guid)
   printf(":%08x", (unsigned)freertps_htonl(guid->eid.u));
 }
 
-frudp_eid_t frudp_create_user_id()
+frudp_eid_t frudp_create_user_id(const uint8_t entity_kind)
 {
   printf("frudp_create_user_id()\n");
   frudp_eid_t eid;
-  eid.s.kind = FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
+  eid.s.kind = entity_kind; // entity kind must be set by caller of this functionmust be overwritten by FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
   eid.s.key[0] = 0;
   eid.s.key[1] = 0; // todo: >8 bit ID's
   eid.s.key[2] = g_frudp_next_user_eid++;

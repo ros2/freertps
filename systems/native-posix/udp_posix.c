@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <math.h>
 
 // tragedy this didn't get into POSIX...
 #ifndef NI_MAXHOST
@@ -233,41 +234,49 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
 bool frudp_listen(const uint32_t max_usec)
 {
   static uint8_t s_frudp_listen_buf[FU_RX_BUFSIZE]; // haha
-  fd_set rdset;
-  FD_ZERO(&rdset);
-  int max_fd = 0;
-  for (int i = 0; i < g_frudp_rx_socks_used; i++)
+  double t_start = fr_time_now_double();
+  double t_now = t_start;
+  while (t_now - t_start < 1.0e-6 * max_usec)
   {
-    const int s = g_frudp_rx_socks[i].sock;
-    FD_SET(s, &rdset);
-    if (s > max_fd)
-      max_fd = s;
-  }
-  struct timeval timeout;
-  timeout.tv_sec = max_usec / 1000000;
-  timeout.tv_usec = max_usec - timeout.tv_sec * 1000000;
-  int rv = select(max_fd+1, &rdset, NULL, NULL, &timeout);
-  if (rv < 0)
-    return false; // badness
-  else if (rv == 0)
-    return true;  // nothing to do, boring
-  // now, find out which of our rx socks had something exciting happen
-  for (int i = 0; i < g_frudp_rx_socks_used; i++)
-  {
-    frudp_rx_sock_t *rxs = &g_frudp_rx_socks[i];
-    if (FD_ISSET(rxs->sock, &rdset))
+    fd_set rdset;
+    FD_ZERO(&rdset);
+    int max_fd = 0;
+    for (int i = 0; i < g_frudp_rx_socks_used; i++)
     {
-      struct sockaddr_in src_addr;
-      int addrlen = sizeof(src_addr);
-      int nbytes = recvfrom(rxs->sock,
-                            s_frudp_listen_buf, sizeof(s_frudp_listen_buf),
-                            0,
-                            (struct sockaddr *)&src_addr,
-                            (socklen_t *)&addrlen);
-      frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
-               rxs->addr, rxs->port,
-               s_frudp_listen_buf, nbytes);
+      const int s = g_frudp_rx_socks[i].sock;
+      FD_SET(s, &rdset);
+      if (s > max_fd)
+        max_fd = s;
     }
+    double t_elapsed = t_now - t_start;
+    double t_remaining = (max_usec * 1.0e-6) - t_elapsed;
+    struct timeval timeout;
+    timeout.tv_sec = floor(t_remaining);// max_usec / 1000000;
+    timeout.tv_usec = (t_remaining - timeout.tv_sec) * 1000000;  /*max_usec - timeout.tv_sec * 1000000*/;
+    int rv = select(max_fd+1, &rdset, NULL, NULL, &timeout);
+    if (rv < 0)
+      return false; // badness
+    else if (rv == 0)
+      return true;  // nothing to do, boring
+    // now, find out which of our rx socks had something exciting happen
+    for (int i = 0; i < g_frudp_rx_socks_used; i++)
+    {
+      frudp_rx_sock_t *rxs = &g_frudp_rx_socks[i];
+      if (FD_ISSET(rxs->sock, &rdset))
+      {
+        struct sockaddr_in src_addr;
+        int addrlen = sizeof(src_addr);
+        int nbytes = recvfrom(rxs->sock,
+                              s_frudp_listen_buf, sizeof(s_frudp_listen_buf),
+                              0,
+                              (struct sockaddr *)&src_addr,
+                              (socklen_t *)&addrlen);
+        frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
+                 rxs->addr, rxs->port,
+                 s_frudp_listen_buf, nbytes);
+      }
+    }
+    t_now = fr_time_now_double();
   }
   return true;
 }

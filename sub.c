@@ -28,7 +28,8 @@ void frudp_add_user_sub(const char *topic_name,
                         freertps_msg_cb_t msg_cb)
 {
   printf("frudp_add_user_sub(%s, %s)\n", topic_name, type_name);
-  frudp_eid_t sub_eid = frudp_create_user_id();
+  frudp_eid_t sub_eid = frudp_create_user_id
+                          (FRUDP_ENTITY_KIND_USER_READER_NO_KEY);
   frudp_sub_t sub;
   // for now, just copy the pointers. maybe in the future we can/should have
   // an option for storage of various kind (static, malloc, etc.) for copies.

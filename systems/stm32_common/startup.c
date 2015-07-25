@@ -4,6 +4,7 @@
 #include "systime.h"
 #include "console.h"
 #include "flash.h"
+#include "stack.h"
 //#include "watchdog.h"
 
 extern uint32_t _srelocate_flash, _srelocate, _erelocate, _ebss, _sbss;
@@ -14,6 +15,9 @@ void startup_clock_init_fail() { while (1) { } }
 void reset_vector()
 {
   //watchdog_reset_counter();
+  g_stack[0] = 0; // need to put a reference in here to the stack array
+                  // to make sure the linker brings it in. I'm sure there
+                  // is a more elegant way to do this, but this seems to work
   // set up data segment
   uint32_t *pSrc = &_srelocate_flash;
   uint32_t *pDest = &_srelocate;

@@ -54,6 +54,6 @@ const char *frudp_vendor(const frudp_vid_t vid);
 void frudp_print_guid_prefix(const frudp_guid_prefix_t *guid_prefix);
 void frudp_print_guid(const frudp_guid_t *guid);
 
-frudp_eid_t frudp_create_user_id();
+frudp_eid_t frudp_create_user_id(const uint8_t entity_kind);
 
 #endif

@@ -7,6 +7,6 @@
 #  define STACK_SIZE 0x4000
 #endif
 
-extern uint8_t g_stack[STACK_SIZE];
+extern volatile uint8_t g_stack[STACK_SIZE];
 
 #endif
