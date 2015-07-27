@@ -11,6 +11,7 @@ all: $(SYSTEMS)
 
 BUILT_SYSTEMS:=$(shell ls build)
 BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(SYSTEM).$(APP)))
+PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), $(APP)-program)
 
 $(SYSTEMS): %: build/%
 	@echo $@
@@ -27,19 +28,31 @@ OPENOCD=/usr/local/bin/openocd -f stm32/openocd/stlink-v2-1.cfg -f stm32/openocd
 IMAGE=build.stm32/examples/listener.bin
 IMAGE_START=0x08000000
 
+list-apps:
+	@echo $(PROGRAM_TARGETS)
 #$(BUILT_APPS)
 
-program:
-	$(OPENOCD) -c "init; sleep 100; halt; sleep 100; flash write_image erase $(IMAGE) $(IMAGE_START); verify_image $(IMAGE) $(IMAGE_START); sleep 100; reset run; sleep 100; shutdown"
+#.PHONY: $(PROGRAM_TARGETS)
+$(BUILT_APPS) : 
+	SYSTEM=$(firstword $(subst ., ,$@)); PROG=$(word 2,$(subst ., ,$@)); echo $$PROG
+#	PROG=$(firstword $(subst $*,"."," ")); @echo $(PROG)
 
-dump_flash:
-	$(OPENOCD) -c "init; halt; flash banks; dump_image dump.bin $(IMAGE_START) 0x1000; reset run; shutdown"
+#: build/$(firstword 
 
-gdb_server:
-	$(OPENOCD) -c "init; halt"
+#%-program:
+#	@echo $*
 
-gdb:
-	arm-none-eabi-gdb build.stm32/examples/listener.elf -x stm32/openocd/gdb_init_commands
+#program:
+#	$(OPENOCD) -c "init; sleep 100; halt; sleep 100; flash write_image erase $(IMAGE) $(IMAGE_START); verify_image $(IMAGE) $(IMAGE_START); sleep 100; reset run; sleep 100; shutdown"
 
-reset:
-	$(OPENOCD) -c "init; sleep 100; halt; sleep 100; reset run; sleep 100; shutdown"
+#dump_flash:
+#	$(OPENOCD) -c "init; halt; flash banks; dump_image dump.bin $(IMAGE_START) 0x1000; reset run; shutdown"
+
+#gdb_server:
+#	$(OPENOCD) -c "init; halt"
+
+#gdb:
+#	arm-none-eabi-gdb build.stm32/examples/listener.elf -x stm32/openocd/gdb_init_commands
+
+#reset:
+#	$(OPENOCD) -c "init; sleep 100; halt; sleep 100; reset run; sleep 100; shutdown"
