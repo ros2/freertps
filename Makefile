@@ -1,17 +1,16 @@
 SYSTEMS=native-posix               \
         stm32f7_disco-metal        \
 				stm32f4_disco-metal        
+#				wandrr_rs485_router-metal
 
 APPS=listener talker
-
-#				wandrr_rs485_router-metal
 
 .PHONY: all clean $(SYSTEMS)
 all: $(SYSTEMS)
 
 BUILT_SYSTEMS:=$(shell ls build)
-BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(SYSTEM).$(APP)))
-PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), $(APP)-program)
+BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(SYSTEM)-$(APP)))
+PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), program-$(APP))
 
 $(SYSTEMS): %: build/%
 	@echo $@
@@ -24,17 +23,19 @@ clean:
 	-rm -rf build* build.*
 
 OPENOCD=/usr/local/bin/openocd -f stm32/openocd/stlink-v2-1.cfg -f stm32/openocd/stm32f7-disco.cfg 
-#7-disco.cfg
 IMAGE=build.stm32/examples/listener.bin
 IMAGE_START=0x08000000
 
 list-apps:
 	@echo $(PROGRAM_TARGETS)
+
 #$(BUILT_APPS)
 
-#.PHONY: $(PROGRAM_TARGETS)
-$(BUILT_APPS) : 
-	SYSTEM=$(firstword $(subst ., ,$@)); PROG=$(word 2,$(subst ., ,$@)); echo $$PROG
+.PHONY: $(PROGRAM_TARGETS)
+$(PROGRAM_TARGETS) : 
+	scripts/program $(subst program-,,$@)
+
+#	SYSTEM=$(firstword $(subst ., ,$@)); PROGRAM=$(word 3,$(subst -, ,$(subst ., ,$@))); ACTION=$(suffix $(subst -,.,$@)); echo $$PROGRAM task: $$ACTION
 #	PROG=$(firstword $(subst $*,"."," ")); @echo $(PROG)
 
 #: build/$(firstword 
