@@ -69,7 +69,7 @@ void tim8trg_tim14_vector() WEAK_VECTOR;
 void tim8cc_vector() WEAK_VECTOR;
 void dma1_stream7_vector() WEAK_VECTOR;
 void fsmc_vector() WEAK_VECTOR;
-void sdio_vector() WEAK_VECTOR;
+void sdmmc1_vector() WEAK_VECTOR;
 void tim5_vector() WEAK_VECTOR;
 void spi3_vector() WEAK_VECTOR;
 void uart4_vector() WEAK_VECTOR;
@@ -108,9 +108,16 @@ void spi4_vector() WEAK_VECTOR;
 void spi5_vector() WEAK_VECTOR;
 void spi6_vector() WEAK_VECTOR;
 void sai1_vector() WEAK_VECTOR;
-void ltdc_vector() WEAK_VECTOR;
-void ltdc_er_vector() WEAK_VECTOR;
+void lcd_tft_vector() WEAK_VECTOR;
+void lcd_tft_error_vector() WEAK_VECTOR;
 void dma2d_vector() WEAK_VECTOR;
+void sai2_vector() WEAK_VECTOR;
+void qspi_vector() WEAK_VECTOR;
+void lp_timer1_vector() WEAK_VECTOR;
+void hdmi_cec_vector() WEAK_VECTOR;
+void i2c4_ev_vector() WEAK_VECTOR;
+void i2c4_er_vector() WEAK_VECTOR;
+void spdif_rx_vector() WEAK_VECTOR;
 
 void dummy_reset_vector() { }
 
@@ -170,7 +177,7 @@ volatile __attribute__((used,section(".vectors"))) vector_func_t g_vectors[] =
     usart1_vector,
     usart2_vector,
     usart3_vector,
-    exti15_10_vector,
+    exti15_10_vector, // 40
     rtc_alarm_vector,
     otg_fs_wkup_vector,
     tim8brk_tim12_vector,
@@ -179,8 +186,8 @@ volatile __attribute__((used,section(".vectors"))) vector_func_t g_vectors[] =
     tim8cc_vector,
     dma1_stream7_vector,
     fsmc_vector,
-    sdio_vector,
-    tim5_vector,
+    sdmmc1_vector,
+    tim5_vector, // 50
     spi3_vector,
     uart4_vector,
     uart5_vector,
@@ -190,7 +197,7 @@ volatile __attribute__((used,section(".vectors"))) vector_func_t g_vectors[] =
     dma2_stream1_vector,
     dma2_stream2_vector,
     dma2_stream3_vector,
-    dma2_stream4_vector,
+    dma2_stream4_vector, // 60
     eth_vector,
     eth_wkup_vector,
     can2_tx_vector,
@@ -200,7 +207,7 @@ volatile __attribute__((used,section(".vectors"))) vector_func_t g_vectors[] =
     otg_fs_vector,
     dma2_stream5_vector,
     dma2_stream6_vector,
-    dma2_stream7_vector,
+    dma2_stream7_vector, // 70
     usart6_vector,
     i2c3_ev_vector,
     i2c3_er_vector,
@@ -210,7 +217,7 @@ volatile __attribute__((used,section(".vectors"))) vector_func_t g_vectors[] =
     otg_hs_vector,
     dcmi_vector,
     cryp_vector,
-    hash_rng_vector,
+    hash_rng_vector, // 80
     fpu_vector,
     uart7_vector,
     uart8_vector,
@@ -218,7 +225,14 @@ volatile __attribute__((used,section(".vectors"))) vector_func_t g_vectors[] =
     spi5_vector,
     spi6_vector,
     sai1_vector,
-    ltdc_vector,
-    ltdc_er_vector,
-    dma2d_vector
+    lcd_tft_vector,
+    lcd_tft_error_vector,
+    dma2d_vector, // 90
+    sai2_vector,
+    qspi_vector,
+    lp_timer1_vector,
+    hdmi_cec_vector,
+    i2c4_ev_vector,
+    i2c4_er_vector,
+    spdif_rx_vector
 };

@@ -11,6 +11,7 @@ all: $(SYSTEMS)
 BUILT_SYSTEMS:=$(shell ls build)
 BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(SYSTEM)-$(APP)))
 PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), program-$(APP))
+RESET_TARGETS:=$(foreach APP, $(BUILT_APPS), reset-$(APP))
 
 $(SYSTEMS): %: build/%
 	@echo $@
@@ -31,9 +32,12 @@ list-apps:
 
 #$(BUILT_APPS)
 
-.PHONY: $(PROGRAM_TARGETS)
+.PHONY: $(PROGRAM_TARGETS) $(RESET_TARGETS)
 $(PROGRAM_TARGETS) : 
 	scripts/task_runner program $(subst program-,,$@)
+
+$(RESET_TARGETS) : 
+	scripts/task_runner reset $(subst reset-,,$@)
 
 #	SYSTEM=$(firstword $(subst ., ,$@)); PROGRAM=$(word 3,$(subst -, ,$(subst ., ,$@))); ACTION=$(suffix $(subst -,.,$@)); echo $$PROGRAM task: $$ACTION
 #	PROG=$(firstword $(subst $*,"."," ")); @echo $(PROG)

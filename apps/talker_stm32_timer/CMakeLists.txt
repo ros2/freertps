@@ -1,0 +1,1 @@
+freertps_add_executable(talker_stm32_timer talker_stm32_timer.c)

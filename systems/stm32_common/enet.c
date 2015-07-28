@@ -273,19 +273,10 @@ void eth_send_raw_packet(uint8_t *pkt, uint16_t pkt_len)
 {
   if (g_eth_dma_tx_next_desc->des0 & 0x80000000) // check the OWN bit
   {
-    //printf("dma ring full. aborting transmission. dmasr = 0x%08lu\r\n",
+    printf("dma ring full. aborting transmission.\r\n");// dmasr = 0x%08lu\r\n",
     //        (uint32_t)ETH->DMASR);
     return; // if it's set, then we have run out of ringbuffer room. can't tx.
   }
-  /*
-  printf("sending using TX descriptor %08x status 0x%08x\r\n",
-         (unsigned)g_eth_tx_next_desc,
-         (unsigned)g_eth_tx_next_desc->control);
- */
-  //printf("%d eth tx %d\r\n", (int)systime_usecs(), pkt_len);
-  //printf("%d\r\n", (int)systime_usecs());
-  //volatile uint32_t garbage = systime_usecs();
-  //delay_ms(1000);
   uint8_t *buf = (uint8_t *)g_eth_dma_tx_next_desc->des2;
   if (pkt_len > ETH_NBUF)
     pkt_len = ETH_NBUF; // let's not blow through our packet buffer
@@ -293,18 +284,15 @@ void eth_send_raw_packet(uint8_t *pkt, uint16_t pkt_len)
   g_eth_dma_tx_next_desc->des1  = pkt_len;
   g_eth_dma_tx_next_desc->des0 |= 0x30000000 | // LS+FS = single-buffer packet
                                   0x80000000 ; // give ownership to eth DMA
+  delay_ns(1); // for unknown reasons, we need to have a function call here
+               // to waste enough time for the DMA descriptor to synchronize 
+               // i thought the d-cache was turned off by default, but who knows
+               // what's going on here.
   // see if DMA is stuck because it wasn't transmitting (which will almost
   // always be the case). if it's stuck, kick it into motion again
   const volatile uint32_t tps = ETH->DMASR & ETH_DMASR_TPS;
   if (tps == ETH_DMASR_TPS_Suspended)
-  {
-    //ETH->DMASR = ETH_DMASR_TBUS; // clear the buffer-unavailable flag
     ETH->DMATPDR = 0; // transmit poll demand = kick it moving again
-  }
-  else
-  {
-    printf("unexpected tps = 0x%08x\r\n", tps);
-  }
   g_eth_dma_tx_next_desc = (eth_dma_desc_t *)g_eth_dma_tx_next_desc->des3;
 }
 

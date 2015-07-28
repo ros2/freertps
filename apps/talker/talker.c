@@ -12,7 +12,7 @@ int main(int argc, char **argv)
   int pub_count = 0;
   while (freertps_system_ok())
   {
-    frudp_listen(1000000);
+    frudp_listen(500000);
     frudp_disco_tick();
     //usleep(500000);
     char msg[256] = {0};
