@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include "pin.h"
+#include "delay.h"
 
 // TODO: look up pin assignments on STM32f4-disco board
 
 #define PORTA_ETH_REFCLK 1
+#define PORTE_PHY_RESET  2
+
 #define PORTA_ETH_CRSDV  7
 #define PORTC_ETH_RXD0   4
 #define PORTC_ETH_RXD1   5
@@ -39,13 +42,10 @@ void enet_init_pins()
   pin_set_output_speed(GPIOB, PORTB_ETH_TXD0, 3); // max beef
   pin_set_output_speed(GPIOB, PORTB_ETH_TXD1, 3); // max beef
 
-  // some boards need a reset pulse... if so, generate one now
-  /*
-  pin_set_output_state(GPIOA, PORTA_PHY_RESET, 1);
+  pin_set_output(GPIOE, PORTE_PHY_RESET, 1);
   delay_ms(100);
-  pin_set_output_state(GPIOA, PORTA_PHY_RESET, 0);
-  delay_ms(200);
-  pin_set_output_state(GPIOA, PORTA_PHY_RESET, 1);
-  delay_ms(500);
-  */
+  pin_set_output_state(GPIOE, PORTE_PHY_RESET, 0);
+  delay_ms(100);
+  pin_set_output_state(GPIOE, PORTE_PHY_RESET, 1);
+  delay_ms(100);
 }
