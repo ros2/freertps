@@ -23,10 +23,10 @@ const uint8_t g_enet_mac[6] = ENET_MAC;
 
 typedef struct
 {
-  uint32_t des0;
-  uint32_t des1;
-  uint32_t des2;
-  uint32_t des3;
+  volatile uint32_t des0;
+  volatile uint32_t des1;
+  volatile uint32_t des2;
+  volatile uint32_t des3;
 } eth_dma_desc_t;
 
 #define ALIGN4 __attribute__((aligned(4)));
@@ -290,19 +290,22 @@ void eth_send_raw_packet(uint8_t *pkt, uint16_t pkt_len)
   if (pkt_len > ETH_NBUF)
     pkt_len = ETH_NBUF; // let's not blow through our packet buffer
   memcpy(buf, pkt, pkt_len);
-  g_eth_dma_tx_next_desc->des1 = pkt_len;
-  g_eth_dma_tx_next_desc->des0 |= 0x30000000; // LS+FS = single-buffer packet
-  g_eth_dma_tx_next_desc->des0 |= 0x80000000; // give ownership to ethernet DMA
+  g_eth_dma_tx_next_desc->des1  = pkt_len;
+  g_eth_dma_tx_next_desc->des0 |= 0x30000000 | // LS+FS = single-buffer packet
+                                  0x80000000 ; // give ownership to eth DMA
   // see if DMA is stuck because it wasn't transmitting (which will almost
   // always be the case). if it's stuck, kick it into motion again
-  if ((ETH->DMASR & ETH_DMASR_TPS) == ETH_DMASR_TPS_Suspended)
+  const volatile uint32_t tps = ETH->DMASR & ETH_DMASR_TPS;
+  if (tps == ETH_DMASR_TPS_Suspended)
   {
-    ETH->DMASR = ETH_DMASR_TBUS; // clear the buffer-unavailable flag
+    //ETH->DMASR = ETH_DMASR_TBUS; // clear the buffer-unavailable flag
     ETH->DMATPDR = 0; // transmit poll demand = kick it moving again
   }
+  else
+  {
+    printf("unexpected tps = 0x%08x\r\n", tps);
+  }
   g_eth_dma_tx_next_desc = (eth_dma_desc_t *)g_eth_dma_tx_next_desc->des3;
-  //uint16_t r = enet_read_phy_reg(0x17);
-  //printf(" rmii status = 0x%04x\r\n", (unsigned)r);
 }
 
 #define ETH_MAC_LEN 6

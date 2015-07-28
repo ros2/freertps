@@ -20,4 +20,10 @@ function(make_bin exe elf bin)
                      DEPENDS ${elf}
                      COMMENT "creating ${bin}")
   add_custom_target(${exe}_bin ALL DEPENDS ${bin})
+
+  add_custom_command(OUTPUT ${elf}.objdump
+                     COMMAND arm-none-eabi-objdump -S -d ${elf} > ${elf}.objdump
+                     DEPENDS ${elf}
+                     COMMENT "disassembling ${elf}")
+  add_custom_target(${exe}_objdump ALL DEPENDS ${elf}.objdump)
 endfunction()
