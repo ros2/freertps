@@ -33,7 +33,7 @@ list-apps:
 
 .PHONY: $(PROGRAM_TARGETS)
 $(PROGRAM_TARGETS) : 
-	scripts/program $(subst program-,,$@)
+	scripts/task_runner program $(subst program-,,$@)
 
 #	SYSTEM=$(firstword $(subst ., ,$@)); PROGRAM=$(word 3,$(subst -, ,$(subst ., ,$@))); ACTION=$(suffix $(subst -,.,$@)); echo $$PROGRAM task: $$ACTION
 #	PROG=$(firstword $(subst $*,"."," ")); @echo $(PROG)

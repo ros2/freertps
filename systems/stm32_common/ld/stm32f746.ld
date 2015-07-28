@@ -5,7 +5,7 @@ MEMORY
   sram (rwx) : ORIGIN = 0x20010000, LENGTH =  240K
 }
 
-ENTRY(reset_vector)
+ENTRY(dummy_reset_vector)
 
 SECTIONS
 {

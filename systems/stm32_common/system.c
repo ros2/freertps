@@ -9,6 +9,6 @@ void freertps_system_init()
 
 bool freertps_system_ok()
 {
-    return true;
+  return true;
 }
 

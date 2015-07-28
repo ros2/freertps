@@ -91,6 +91,7 @@ void enet_write_phy_reg(const uint8_t reg_idx, const uint16_t reg_val)
 void enet_init()
 {
   printf("enet_init()\r\n");
+  enet_init_pins();
 
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable the sysconfig block
   RCC->AHB1RSTR |= RCC_AHB1RSTR_ETHMACRST;
@@ -270,7 +271,6 @@ static bool enet_master_mac_valid()
 
 void eth_send_raw_packet(uint8_t *pkt, uint16_t pkt_len)
 {
-  //printf("eth tx %d\r\n", pkt_len);
   if (g_eth_dma_tx_next_desc->des0 & 0x80000000) // check the OWN bit
   {
     //printf("dma ring full. aborting transmission. dmasr = 0x%08lu\r\n",
@@ -282,6 +282,10 @@ void eth_send_raw_packet(uint8_t *pkt, uint16_t pkt_len)
          (unsigned)g_eth_tx_next_desc,
          (unsigned)g_eth_tx_next_desc->control);
  */
+  //printf("%d eth tx %d\r\n", (int)systime_usecs(), pkt_len);
+  //printf("%d\r\n", (int)systime_usecs());
+  //volatile uint32_t garbage = systime_usecs();
+  //delay_ms(1000);
   uint8_t *buf = (uint8_t *)g_eth_dma_tx_next_desc->des2;
   if (pkt_len > ETH_NBUF)
     pkt_len = ETH_NBUF; // let's not blow through our packet buffer
@@ -410,7 +414,7 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
   h->ip.len = __REV16(20 + 8 + payload_len);
   h->ip.id = 0;
   h->ip.flag_frag = __REV16(ETH_IP_DONT_FRAGMENT);
-  h->ip.ttl = 1; // not sure here...
+  h->ip.ttl = 10; // not sure here... probably will be used just for LAN, but...
   h->ip.proto = ETH_IP_PROTO_UDP;
   h->ip.checksum = 0; // will be filled by the ethernet TX machinery
   h->ip.dest_addr = dest_ip; //eth_htonl(dest_ip);

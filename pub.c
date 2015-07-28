@@ -268,7 +268,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
                             const uint8_t *payload,
                             const uint32_t payload_len)
 {
-  printf("publish user msg %d bytes\n", (int)payload_len);
+  //printf("publish user msg %d bytes\n", (int)payload_len);
   if (pub->reliable)
   {
     // shouldn't be hard to push this through the reliable-comms machinery 
@@ -336,7 +336,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
 
   const int udp_payload_len = 
     (uint8_t *)&msg->submsgs[submsg_wpos] - (uint8_t *)msg;
-  printf("rtps udp payload = %d bytes\n", (int)udp_payload_len);
+  //printf("rtps udp payload = %d bytes\n", (int)udp_payload_len);
 
   // now, iterate through all matched-writers and send the message as needed
   for (int i = 0; i < g_frudp_num_writers; i++)
@@ -358,7 +358,6 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       //frudp_locator_t *loc = part->default_unicast_locator;
       // todo: more than ipv4
       /*
-      printf("tx %d bytes\n", udp_payload_len);
       for (int j = 0; j < udp_payload_len; j++)
       {
         printf("%02x", (int)(((uint8_t *)msg)[j]));
@@ -369,6 +368,13 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       }
       printf("\n");
       */
+      /*
+      printf("tx %d bytes to ", 
+             udp_payload_len);
+      frudp_print_guid(&w->reader_guid);
+      printf("\r\n");
+      */
+      //printf("tx 
       frudp_tx(part->default_unicast_locator.addr.udp4.addr,
                part->default_unicast_locator.port,
                (const uint8_t *)msg,
