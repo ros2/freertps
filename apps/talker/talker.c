@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     frudp_disco_tick();
     //usleep(500000);
     char msg[256] = {0};
-    snprintf(&msg[4], sizeof(msg), "Hello World: %d", pub_count++);
+    snprintf(&msg[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
     uint32_t rtps_string_len = strlen(&msg[4]) + 1;
     *((uint32_t *)msg) = rtps_string_len;
     freertps_publish(pub, (uint8_t *)msg, rtps_string_len + 4);

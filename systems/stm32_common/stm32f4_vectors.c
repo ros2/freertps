@@ -109,6 +109,8 @@ void ltdc_vector() WEAK_VECTOR;
 void ltdc_er_vector() WEAK_VECTOR;
 void dma2d_vector() WEAK_VECTOR;
 
+void dummy_reset_vector() { }
+
 typedef void (*vector_func_t)();
 __attribute__((section(".vectors"))) vector_func_t g_vectors[] =
 {
