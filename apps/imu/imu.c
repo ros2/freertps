@@ -1,35 +1,37 @@
 #include <stdio.h>
 #include "freertps/freertps.h"
 #include <string.h>
-#include "imu.h"
+#include "sensors/imu.h"
+#include "freertps/timer.h"
 
 frudp_pub_t *g_pub = NULL;
 
-void tim5_vector()
+void timer_cb()
 {
-  TIM5->SR &= ~TIM_SR_UIF; // clear the update flag
+  float xyz[3];
+  if (!imu_poll_accels(xyz))
+  {
+    printf("woah! couldn't poll the imu!\r\n");
+    return;
+  }
+  printf("imu: [%+8.3f, %+8.3f, %+8.3f]\r\n",
+         xyz[0], xyz[1], xyz[2]);
   if (!g_pub)
     return;
+  /*
   static char __attribute__((aligned(4))) msg[256] = {0};
   static int pub_count = 0;
-  snprintf(&msg[4], sizeof(msg), "Hello World: %d", pub_count++);
+  snprintf(&msg[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
   uint32_t rtps_string_len = strlen(&msg[4]) + 1;
   *((uint32_t *)msg) = rtps_string_len;
   freertps_publish(g_pub, (uint8_t *)msg, rtps_string_len + 4);
+  */
 }
 
 int main(int argc, char **argv)
 {
   imu_init();
-  // set up TIM5 to be our tx timer
-  RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-  TIM5->PSC = 168000000 / 2 / 1000000 - 1; // microsecond resolution
-  TIM5->ARR = 1000 - 1; // auto-reload @ 1000 Hz
-  TIM5->EGR = TIM_EGR_UG; // load PSC immediately
-  TIM5->CR1 = TIM_CR1_CEN; // start it counting
-  TIM5->DIER = TIM_DIER_UIE; // enable update interrupt
-  NVIC_SetPriority(TIM5_IRQn, 2);
-  NVIC_EnableIRQ(TIM5_IRQn);
+  freertps_timer_set_freq(10, timer_cb);
 
   printf("hello, world!\r\n");
   freertps_system_init();

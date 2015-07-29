@@ -1,4 +1,5 @@
 #include "freertps/freertps.h"
+#include "freertps/timer.h"
 #include "freertps/udp.h"
 #include "freertps/disco.h"
 #include <stdint.h>
@@ -20,6 +21,10 @@
 #endif
 
 #define FRUDP_MAX_RX_SOCKS 10
+
+static freertps_timer_cb_t g_timer_cb = NULL;
+static double g_timer_period = -1;
+static double g_timer_last_t = 0;
 
 typedef struct
 {
@@ -250,33 +255,51 @@ bool frudp_listen(const uint32_t max_usec)
     }
     double t_elapsed = t_now - t_start;
     double t_remaining = (max_usec * 1.0e-6) - t_elapsed;
+    if (g_timer_period > 0)
+    {
+      double t_until_timeout = g_timer_last_t + g_timer_period - t_now;
+      if (t_until_timeout < 0)
+        t_remaining = 0;
+      else if (t_until_timeout < t_remaining)
+        t_remaining = t_until_timeout;
+    }
     struct timeval timeout;
     timeout.tv_sec = floor(t_remaining);// max_usec / 1000000;
     timeout.tv_usec = (t_remaining - timeout.tv_sec) * 1000000;  /*max_usec - timeout.tv_sec * 1000000*/;
     int rv = select(max_fd+1, &rdset, NULL, NULL, &timeout);
     if (rv < 0)
       return false; // badness
-    else if (rv == 0)
-      return true;  // nothing to do, boring
-    // now, find out which of our rx socks had something exciting happen
-    for (int i = 0; i < g_frudp_rx_socks_used; i++)
+    if (rv > 0)
     {
-      frudp_rx_sock_t *rxs = &g_frudp_rx_socks[i];
-      if (FD_ISSET(rxs->sock, &rdset))
+      // find out which of our rx socks had something exciting happen
+      for (int i = 0; i < g_frudp_rx_socks_used; i++)
       {
-        struct sockaddr_in src_addr;
-        int addrlen = sizeof(src_addr);
-        int nbytes = recvfrom(rxs->sock,
-                              s_frudp_listen_buf, sizeof(s_frudp_listen_buf),
-                              0,
-                              (struct sockaddr *)&src_addr,
-                              (socklen_t *)&addrlen);
-        frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
-                 rxs->addr, rxs->port,
-                 s_frudp_listen_buf, nbytes);
+        frudp_rx_sock_t *rxs = &g_frudp_rx_socks[i];
+        if (FD_ISSET(rxs->sock, &rdset))
+        {
+          struct sockaddr_in src_addr;
+          int addrlen = sizeof(src_addr);
+          int nbytes = recvfrom(rxs->sock,
+                                s_frudp_listen_buf, sizeof(s_frudp_listen_buf),
+                                0,
+                                (struct sockaddr *)&src_addr,
+                                (socklen_t *)&addrlen);
+          frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
+                   rxs->addr, rxs->port,
+                   s_frudp_listen_buf, nbytes);
+        }
       }
     }
     t_now = fr_time_now_double();
+    if (g_timer_period > 0)
+    {
+      double t_until_timeout = g_timer_last_t + g_timer_period - t_now;
+      if (t_until_timeout <= 0)
+      {
+        g_timer_last_t = t_now;
+        g_timer_cb();
+      }
+    }
   }
   return true;
 }
@@ -296,4 +319,10 @@ bool frudp_tx(const in_addr_t dst_addr,
     return true;
   else
     return false;
+}
+
+void freertps_timer_set_freq(uint32_t freq, freertps_timer_cb_t cb)
+{
+  g_timer_period = 1.0 / (double)freq;
+  g_timer_cb = cb;
 }
