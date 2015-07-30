@@ -41,6 +41,8 @@ void imu_init()
   delay_us(100);
   uint8_t info1 = accel_read_reg(0x0d);
   printf("info1 = 0x%02x\r\n", (unsigned)info1);
+  float test_accel[3] = {0};
+  imu_poll_accels(test_accel);
 }
 
 static uint8_t accel_read_reg(const uint8_t reg)
@@ -73,6 +75,18 @@ static void accel_read_regs(const uint8_t start_reg,
 
 bool imu_poll_accels(float *xyz)
 {
+  uint8_t raw_read[6];
+  accel_read_regs(0x28, 6, &raw_read);
+  printf("raw read: %02x%02x  %02x%02x  %02x%02x\r\n",
+         raw_read[0], raw_read[1],
+         raw_read[2], raw_read[3],
+         raw_read[4], raw_read[5]);
+  int16_t raw_accel[3];
+  for (int i = 0; i < 3; i++)
+    raw_accel[i] = raw_read[i*2] | ((int16_t)raw_read[i*2+1]);
+  printf("raw accel: [%d %d %d]\n",
+         raw_accel[0], raw_accel[1], raw_accel[2]);
+
   // TODO: actually use the hardware
   xyz[0] = 1;
   xyz[1] = 2;
