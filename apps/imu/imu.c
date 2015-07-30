@@ -14,8 +14,10 @@ void timer_cb()
     printf("woah! couldn't poll the imu!\r\n");
     return;
   }
+  /*
   printf("imu: [%+8.3f, %+8.3f, %+8.3f]\r\n",
          xyz[0], xyz[1], xyz[2]);
+  */
   if (!g_pub)
     return;
   /*
