@@ -6,8 +6,8 @@ if len(sys.argv) != 3:
   sys.exit(1)
 verb = sys.argv[1]
 sys_tokens = string.split(sys.argv[2], '-')
-program = sys_tokens[-1]
-system = string.join(sys_tokens[0:-1], ('-'))
+program = sys_tokens[0]
+system = string.join(sys_tokens[1:], ('-'))
 print "application: [%s]   system: [%s]" % (program, system)
 openocd = "/usr/local/bin/openocd -f systems/%s/openocd.cfg" % system
 image = "build/%s/apps/%s/%s.bin" % ( system, program, program )

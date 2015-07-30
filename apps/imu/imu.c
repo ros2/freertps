@@ -33,7 +33,7 @@ void timer_cb()
 int main(int argc, char **argv)
 {
   imu_init();
-  freertps_timer_set_freq(10, timer_cb);
+  freertps_timer_set_freq(1, timer_cb);
 
   printf("hello, world!\r\n");
   freertps_system_init();

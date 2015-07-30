@@ -9,7 +9,7 @@ APPS=listener talker
 all: $(SYSTEMS)
 
 BUILT_SYSTEMS:=$(shell ls build)
-BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(SYSTEM)-$(APP)))
+BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(APP)-$(SYSTEM)))
 PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), program-$(APP))
 RESET_TARGETS:=$(foreach APP, $(BUILT_APPS), reset-$(APP))
 
