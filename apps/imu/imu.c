@@ -43,18 +43,14 @@ typedef struct
 
 void timer_cb()
 {
-  /*
   float xyz[3];
   if (!imu_poll_accels(xyz))
   {
     printf("woah! couldn't poll the imu!\r\n");
     return;
   }
-  */
-  /*
   printf("imu: [%+8.3f, %+8.3f, %+8.3f]\r\n",
          xyz[0], xyz[1], xyz[2]);
-  */
   if (!g_pub)
     return;
   static char __attribute__((aligned(4))) msg[1024] = {0};

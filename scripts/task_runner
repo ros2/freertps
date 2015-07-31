@@ -11,11 +11,16 @@ system = string.join(sys_tokens[1:], ('-'))
 print "application: [%s]   system: [%s]" % (program, system)
 openocd = "/usr/local/bin/openocd -f systems/%s/openocd.cfg" % system
 image = "build/%s/apps/%s/%s.bin" % ( system, program, program )
+elf = "build/%s/apps/%s/%s.elf" % ( system, program, program )
 
 if verb == 'program':
   cmd = "%s -c \"init; sleep 100; halt; sleep 100; flash write_image erase %s 0x08000000; verify_image %s 0x08000000; sleep 100; reset run; sleep 100; shutdown\"" % (openocd, image, image)
 elif verb == 'reset':
   cmd = "%s -c \"init; sleep 100; halt; sleep 100; reset run; sleep 100; shutdown\"" % openocd
+elif verb == 'gdb_server':
+  cmd = "%s -c \"init; halt\"" % openocd
+elif verb == 'gdb':
+  cmd = "arm-none-eabi-gdb %s -x systems/stm32_common/openocd/gdb_init_commands" % elf
 else:
   print "unknown verb: [%s]" % verb
   sys.exit(1)

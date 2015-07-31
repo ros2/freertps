@@ -6,18 +6,20 @@
 // stm32f4-disco has an ST LIS3DSH, connected as follows:
 // CS   = PE3
 // SCLK = PA5 = SPI1 SCLK on AF5
-// MOSI = PA7 = SPI1 MOSI on AF5
+// MOSI = PA7 = SPI1 MOSI on AF5. other option (via cut trace, jumper): PB5
 // MISO = PA6 = SPI1 MISO on AF5
 
 #define PORTE_CS   3
 #define PORTA_SCLK 5
 #define PORTA_MISO 6
-#define PORTA_MOSI 7
+#define PORTB_MOSI 5
 
-static void accel_read_regs(const uint8_t start_reg, 
-                            const uint8_t num_regs_to_read,
-                            uint8_t *regs);
+static void accel_txrx(const uint8_t start_reg, 
+                       const uint8_t num_regs,
+                       uint8_t *rx,
+                       const uint8_t *tx);
 static uint8_t accel_read_reg(const uint8_t reg);
+static void accel_write_reg(const uint8_t reg, const uint8_t val); 
 
 void imu_init()
 {
@@ -26,9 +28,9 @@ void imu_init()
   pin_set_output(GPIOE, PORTE_CS, 1);
   pin_set_alternate_function(GPIOA, PORTA_SCLK, 5);
   pin_set_alternate_function(GPIOA, PORTA_MISO, 5);
-  pin_set_alternate_function(GPIOA, PORTA_MOSI, 5);
+  pin_set_alternate_function(GPIOB, PORTB_MOSI, 5);
   pin_set_output_speed(GPIOA, PORTA_SCLK, 3);
-  pin_set_output_speed(GPIOA, PORTA_MOSI, 3);
+  pin_set_output_speed(GPIOB, PORTB_MOSI, 3);
   pin_set_output_speed(GPIOE, PORTE_CS  , 3);
   SPI1->CR1 = SPI_CR1_SSM  | // software slave select management
               SPI_CR1_SSI  | // assert software select state
@@ -39,8 +41,8 @@ void imu_init()
               SPI_CR1_BR_1 | // ditto
               SPI_CR1_SPE  ; // enable SPI
   delay_us(100);
-  uint8_t info1 = accel_read_reg(0x0d);
-  printf("info1 = 0x%02x\r\n", (unsigned)info1);
+  //uint8_t info1 = accel_read_reg(0x0d);
+  //printf("info1 = 0x%02x\r\n", (unsigned)info1);
   float test_accel[3] = {0};
   for (int i = 0; i < 10; i++)
   {
@@ -49,28 +51,38 @@ void imu_init()
   }
 }
 
+static void accel_write_reg(const uint8_t reg, const uint8_t val)
+{
+  accel_txrx(reg, 1, NULL, &val);
+  return 
+}
+
 static uint8_t accel_read_reg(const uint8_t reg)
 {
   uint8_t reg_val = 0;
-  accel_read_regs(reg, 1, &reg_val);
+  accel_txrx(reg, 1, &reg_val, NULL);
   return reg_val;
 }
 
-static void accel_read_regs(const uint8_t start_reg, 
-                            const uint8_t num_regs_to_read,
-                            uint8_t *regs)
+static void accel_txrx(const uint8_t start_reg, 
+                       const uint8_t num_regs,
+                       uint8_t *rx,
+                       const uint8_t *tx)
 {
   pin_set_output_low(GPIOE, PORTE_CS);
   volatile uint8_t __attribute__((unused)) rxd = SPI1->DR; // flush first!
-  SPI1->DR = 0x80 | start_reg;
+  SPI1->DR = (tx == NULL ? 0x80 : 0x00) | start_reg; // tx = NULL during reads
   while (!(SPI1->SR & SPI_SR_RXNE)) { } // wait for it...
   rxd = SPI1->DR; // flush garbage (first inbound byte)
-  for (int i = 0; i < num_regs_to_read; i++)
+  for (int i = 0; i < num_regs; i++)
   {
     while (!(SPI1->SR & SPI_SR_TXE)) { }
-    SPI1->DR = 0; // start SPI txrx
+    SPI1->DR = tx ? tx[i] : 0; // start SPI txrx
     while (!(SPI1->SR & SPI_SR_RXNE)) { } // wait for it...
-    regs[i] = SPI1->DR; // save the data byte that we received
+    if (rx)
+      rx[i] = SPI1->DR; // save the data byte that we received
+    else
+      SPI1->DR; // drain buffer anyway
   }
   while (SPI1->SR & SPI_SR_BSY) { }
   delay_ns(10); // burn a few cycles (TODO: is this needed? scope it sometime.)
@@ -79,8 +91,9 @@ static void accel_read_regs(const uint8_t start_reg,
 
 bool imu_poll_accels(float *xyz)
 {
+  printf("\n\nimu_poll_accels\r\n");
   uint8_t raw_read[6];
-  accel_read_regs(0x28, 6, raw_read);
+  accel_txrx(0x28, 6, raw_read, NULL);
   printf("raw read: %02x%02x  %02x%02x  %02x%02x\r\n",
          raw_read[0], raw_read[1],
          raw_read[2], raw_read[3],

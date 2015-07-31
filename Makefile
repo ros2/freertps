@@ -11,7 +11,9 @@ all: $(SYSTEMS)
 BUILT_SYSTEMS:=$(shell ls build)
 BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(APP)-$(SYSTEM)))
 PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), program-$(APP))
+GDB_TARGETS:=$(foreach APP, $(BUILT_APPS), gdb-$(APP))
 RESET_TARGETS:=$(foreach APP, $(BUILT_APPS), reset-$(APP))
+GDB_SERVER_TARGETS:=$(foreach APP, $(BUILT_APPS), gdb_server-$(APP))
 
 $(SYSTEMS): %: build/%
 	@echo $@
@@ -30,25 +32,30 @@ IMAGE_START=0x08000000
 list-apps:
 	@echo $(PROGRAM_TARGETS)
 
-#$(BUILT_APPS)
-
-.PHONY: $(PROGRAM_TARGETS) $(RESET_TARGETS)
+.PHONY: $(PROGRAM_TARGETS) $(RESET_TARGETS) $(GDB_SERVER_TARGETS) $(GDB_TARGETS)
 $(PROGRAM_TARGETS) : 
 	scripts/task_runner program $(subst program-,,$@)
 
-$(RESET_TARGETS) : 
+$(RESET_TARGETS) :
 	scripts/task_runner reset $(subst reset-,,$@)
 
-#	SYSTEM=$(firstword $(subst ., ,$@)); PROGRAM=$(word 3,$(subst -, ,$(subst ., ,$@))); ACTION=$(suffix $(subst -,.,$@)); echo $$PROGRAM task: $$ACTION
-#	PROG=$(firstword $(subst $*,"."," ")); @echo $(PROG)
+$(GDB_SERVER_TARGETS) :
+	scripts/task_runner gdb_server $(subst gdb_server-,,$@)
+
+$(GDB_TARGETS) :
+	# this is really ugly. but we want to run gdb inside Make rather than 
+	# through  task_runner (for now, at least) so the console works right
+	PROGRAM=$(firstword $(subst -, ,$(subst gdb-,,$@))); SYSTEM=$(word 2,$(subst -, ,$(subst gdb-,,$@))); OS=$(word 3,$(subst -, ,$(subst gdb-,,$@))); echo $$SYSTEM-$$OS; arm-none-eabi-gdb build/$$SYSTEM-$$OS/apps/$$PROGRAM/$$PROGRAM.elf -x systems/stm32_common/openocd/gdb_init_commands
+	
+# echo $$SYSTEM
+	
+#$(echo $$SYSTEM
+#scripts/task_runner gdb $(subst gdb-,,$@)
 
 #: build/$(firstword 
 
 #%-program:
 #	@echo $*
-
-#program:
-#	$(OPENOCD) -c "init; sleep 100; halt; sleep 100; flash write_image erase $(IMAGE) $(IMAGE_START); verify_image $(IMAGE) $(IMAGE_START); sleep 100; reset run; sleep 100; shutdown"
 
 #dump_flash:
 #	$(OPENOCD) -c "init; halt; flash banks; dump_image dump.bin $(IMAGE_START) 0x1000; reset run; shutdown"
