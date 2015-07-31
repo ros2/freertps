@@ -41,6 +41,8 @@ void imu_init()
               SPI_CR1_BR_1 | // ditto
               SPI_CR1_SPE  ; // enable SPI
   delay_us(100);
+  accel_write_reg(0x20, 0x87); // set max beef (1600 Hz)
+  delay_us(100); // wake up plz
   //uint8_t info1 = accel_read_reg(0x0d);
   //printf("info1 = 0x%02x\r\n", (unsigned)info1);
   float test_accel[3] = {0};
@@ -54,7 +56,6 @@ void imu_init()
 static void accel_write_reg(const uint8_t reg, const uint8_t val)
 {
   accel_txrx(reg, 1, NULL, &val);
-  return 
 }
 
 static uint8_t accel_read_reg(const uint8_t reg)
@@ -100,14 +101,12 @@ bool imu_poll_accels(float *xyz)
          raw_read[4], raw_read[5]);
   int16_t raw_accel[3];
   for (int i = 0; i < 3; i++)
-    raw_accel[i] = (raw_read[i*2] << 8) | raw_read[i*2+1];
+  {
+    raw_accel[i] = raw_read[i*2] | (raw_read[i*2+1] << 8);
+    xyz[i] = raw_accel[i] / 16384.0f;
+  }
   printf("raw accel: [%d %d %d]\n",
          raw_accel[0], raw_accel[1], raw_accel[2]);
-
-  // TODO: actually use the hardware
-  xyz[0] = 1;
-  xyz[1] = 2;
-  xyz[2] = 3;
   return true;
 }
 
