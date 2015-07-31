@@ -1,0 +1,1 @@
+freertps_add_executable(cam_dm_130 cam_dm_130.c)

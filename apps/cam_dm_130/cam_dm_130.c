@@ -11,8 +11,8 @@ int main(){
     for(i=0;i<100000000;i++){
     }
       printf("toggling led\r\n");
-      printf("%d\r\n",DCMI->DR);
-      printf("%d\r\n",I2C1->RXDR);
+//      printf("%d\r\n",DCMI->DR);
+//      printf("%d\r\n",I2C1->RXDR);
     led_toggle();
   }
 }

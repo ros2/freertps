@@ -9,7 +9,9 @@ void camera_init(){
   printf("camera_init()\r\n");
   camera_init_pins();
 
-//  i2c_init();
+  i2c_init();
+  camera_reset_regs();
+
   dcmi_init();
 
   printf("Camera init done\r\n");
@@ -32,9 +34,17 @@ void camera_set_mode(camera_mode_t mode){
   camera_write_register(regAddr, value);
 }
 void camera_write_register(uint32_t regAddr, uint32_t value){
+
 }
 uint32_t camera_read_register(uint32_t regAddr){
-  
+    // check if register exists on camera
+    if(camera_registers(regAddr) == NULL){
+        printf("register %d doesnt exist on this camera",regAddr)
+    }
+    i2c_request_data(DeviceAddr, RegAddr);
   return 0;
 }
 
+void camera_reset_regs(){
+    
+}
