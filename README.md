@@ -8,7 +8,7 @@ To build it, just type "make" and it will spin CMake up a few times to build fre
 Then, to try it out on the STM32F7-Discovery board, you can do this (providing that you have the latest source (not release) of OpenOCD, and have cherry-picked a few patches floating around the mailing list to add support for STM32F7:
 
 ```
-make program-stm32f7_disco-metal-listener
+make program-listener-stm32f7_disco-metal
 ```
 
 that will start the board with an RTPS listener that will just `printf` anything that comes to the `chatter` topic to USART6 @ 1 Mbps, which you would then need to bring back to your workstation via a 3.3v UART-to-USB cable (e.g., from FTDI).
@@ -16,7 +16,7 @@ that will start the board with an RTPS listener that will just `printf` anything
 You can also flash the board with the 'talker' program:
 
 ```
-make program-stm32f7_disco-metal-talker
+make program-talker-stm32f7_disco-metal
 ```
 
 That will transmit "hello, world" strings on the `chatter` topic at 2 Hz.
@@ -24,7 +24,7 @@ That will transmit "hello, world" strings on the `chatter` topic at 2 Hz.
 To test fast-moving stuff, you can do this:
 
 ```
-make program-stm32f7_disco-metal-talker_stm32_timer
+make program-talker_stm32_timer-stm32f7_disco-metal
 ```
 
 That will use a hardware timer to send "hello, world" messages at exactly 1 kHz.
