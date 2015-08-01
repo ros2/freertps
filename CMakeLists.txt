@@ -11,7 +11,6 @@ function(freertps_add_executable exe srcs)
   endif()
 endfunction()
 
-set(SYSTEM "SYSTEM" CACHE STRING "generic-posix")
 message("system: ${SYSTEM}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -O2")
