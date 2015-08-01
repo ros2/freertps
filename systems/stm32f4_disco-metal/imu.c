@@ -92,21 +92,23 @@ static void accel_txrx(const uint8_t start_reg,
 
 bool imu_poll_accels(float *xyz)
 {
-  printf("\n\nimu_poll_accels\r\n");
   uint8_t raw_read[6];
   accel_txrx(0x28, 6, raw_read, NULL);
-  printf("raw read: %02x%02x  %02x%02x  %02x%02x\r\n",
-         raw_read[0], raw_read[1],
-         raw_read[2], raw_read[3],
-         raw_read[4], raw_read[5]);
   int16_t raw_accel[3];
   for (int i = 0; i < 3; i++)
   {
     raw_accel[i] = raw_read[i*2] | (raw_read[i*2+1] << 8);
     xyz[i] = raw_accel[i] / 16384.0f;
   }
+#ifdef VERBOSE_ACCEL
+  printf("\n\nimu_poll_accels\r\n");
+  printf("raw read: %02x%02x  %02x%02x  %02x%02x\r\n",
+         raw_read[0], raw_read[1],
+         raw_read[2], raw_read[3],
+         raw_read[4], raw_read[5]);
   printf("raw accel: [%d %d %d]\n",
          raw_accel[0], raw_accel[1], raw_accel[2]);
+#endif
   return true;
 }
 
