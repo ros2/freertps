@@ -32,7 +32,9 @@
 
 void camera_init_pins()
 {
+  #ifdef DEBUG
   printf("camera_init_pins()\r\n");
+  #endif
 
   pin_set_alternate_function(GPIOA, PORTA_DCMI_PIXCLK, AF_DCMI);
 
@@ -66,13 +68,25 @@ void camera_init_pins()
   pin_set_alternate_function(GPIOB, PORTB_DCMI_SCL, AF_I2C);
   pin_set_alternate_function(GPIOB, PORTB_DCMI_SDA, AF_I2C);
 
+  // set speed i2c
+  pin_set_output_type(GPIOB, PORTB_DCMI_SCL, PIN_OUTPUT_TYPE_OPEN_DRAIN);
+  pin_set_output_type(GPIOB, PORTB_DCMI_SDA, PIN_OUTPUT_TYPE_OPEN_DRAIN);
+  pin_set_output_speed(GPIOB, PORTB_DCMI_SCL, 0);
+  pin_set_output_speed(GPIOB, PORTB_DCMI_SDA, 0);
+
   pin_set_output_state(GPIOH,PORTH_DCMI_PWR_EN,1); // turn on camera
 }
 
-void power_up_camera(){
-  pin_set_output_state(DCMI_PWR_IOBANK,DCMI_PWR_PIN,1);
+void camera_power_up(){
+  #ifdef DEBUG
+  printf("power_up_camera\r\n");
+  #endif
+  pin_set_output_high(DCMI_PWR_IOBANK,DCMI_PWR_PIN);
 }
 
-void power_down_camera(){
-  pin_set_output_state(DCMI_PWR_IOBANK,DCMI_PWR_PIN,0);
+void camera_power_down(){
+  #ifdef DEBUG
+  printf("power_down_camera\r\n");
+  #endif
+  pin_set_output_low(DCMI_PWR_IOBANK,DCMI_PWR_PIN);
 }

@@ -4,7 +4,6 @@
 #include "dcmi.h"
 #include "i2c.h"
 #include "sensors/ov9655_from_ds.h"
-#include "ov9655.h"
 
 typedef enum{CAMERA_MODE_SNAPSHOT,CAMERA_MODE_CONTINUOUS} camera_mode_t;
 typedef enum{DATA_8_BITS,DATA_10_BITS,DATA_12_BITS,DATA_14_BITS} dcmi_data_width_t;

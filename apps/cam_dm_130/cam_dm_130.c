@@ -3,16 +3,21 @@
 
 int main(){
 
-  int i=0;
+  int i=0, inc=0;
+  printf("\r\n\r\n");
   led_init();
   camera_init();
-  while(1)
+
+  printf("ISR %d\r\n",I2C1->ISR);
+  uint8_t devId = 0;
+  uint8_t globalbuf[0x7F];
+  led_toggle();
+
+  while(inc < 0xC6)
   {
-    for(i=0;i<100000000;i++){
+    for(i=0;i<1000000;i++){
     }
-      printf("toggling led\r\n");
-//      printf("%d\r\n",DCMI->DR);
-//      printf("%d\r\n",I2C1->RXDR);
-    led_toggle();
+      camera_write_register(0x12,0x80);
+      camera_reset();
   }
 }

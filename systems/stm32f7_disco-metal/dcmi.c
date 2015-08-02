@@ -7,6 +7,7 @@ void dcmi_init(){
   /************************
    ** DCMI CONFIGURATION***
    ************************/
+  printf("dcmi_init()\r\n");
   RCC->AHB2ENR |= RCC_AHB2ENR_DCMIEN;// Enable DCMI clock
   RCC->AHB2RSTR |= RCC_AHB2RSTR_DCMIRST; // Reset DCMI
   // wait ?
