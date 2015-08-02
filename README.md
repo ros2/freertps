@@ -3,6 +3,10 @@ a free, portable, minimalist RTPS implementation
 
 extremely high awesome factor
 
+## WARNING WARNING WARNING
+This code is extremely experimental. It is an abomination. Approximately everything is expected to change rapidly as features are added and cleaned up.
+## WARNING WARNING WARNING
+
 To build it, just type "make" and it will spin CMake up a few times to build freertps for a few different systems.
 
 Then, to try it out on the STM32F7-Discovery board, you can do this (providing that you have the latest source (not release) of OpenOCD, and have cherry-picked a few patches floating around the mailing list to add support for STM32F7:

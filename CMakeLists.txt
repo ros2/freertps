@@ -11,10 +11,9 @@ function(freertps_add_executable exe srcs)
   endif()
 endfunction()
 
-set(SYSTEM "SYSTEM" CACHE STRING "generic-posix")
 message("system: ${SYSTEM}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -g -O2")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -O2")
 
 # set up the toolchain for this system
 include(systems/${SYSTEM}/toolchain.cmake)

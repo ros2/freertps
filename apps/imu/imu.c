@@ -43,14 +43,14 @@ typedef struct
 
 void timer_cb()
 {
-  float xyz[3];
+  static float xyz[3];
   if (!imu_poll_accels(xyz))
   {
     printf("woah! couldn't poll the imu!\r\n");
     return;
   }
-  printf("imu: [%+8.3f, %+8.3f, %+8.3f]\r\n",
-         xyz[0], xyz[1], xyz[2]);
+  //printf("imu: [%+8.3f, %+8.3f, %+8.3f]\r\n",
+  //       xyz[0], xyz[1], xyz[2]);
   if (!g_pub)
     return;
   static char __attribute__((aligned(4))) msg[1024] = {0};
@@ -58,7 +58,7 @@ void timer_cb()
   header->stamp.sec = 1234;
   header->stamp.nanosec = 5678;
   static const char *frame_id = "imu_frame12";
-  header->frame_id_len_ = strlen(frame_id);
+  header->frame_id_len_ = strlen(frame_id) + 1;
   memcpy(header->frame_id, frame_id, header->frame_id_len_);
   static sensor_interfaces__imu_t imu;
   static int pub_count = 0;
@@ -70,20 +70,20 @@ void timer_cb()
   imu.angular_velocity.x = 5;
   imu.angular_velocity.y = 6;
   imu.angular_velocity.z = 7;
-  imu.linear_acceleration.x = 8;
-  imu.linear_acceleration.x = 9;
-  imu.linear_acceleration.x = 10;
+  imu.linear_acceleration.x = xyz[0];
+  imu.linear_acceleration.y = xyz[1];
+  imu.linear_acceleration.z = xyz[2];
   for (int i = 0; i < 9; i++)
   {
     imu.orientation_covariance[i] = 11 + i;
     imu.angular_velocity_covariance[i] = 20 + i;
     imu.linear_acceleration_covariance[i] = 29 + i;
   }
-  uint8_t *wpos = (uint8_t *)(header->frame_id) + header->frame_id_len_ + 1;
+  uint8_t *wpos = (uint8_t *)(header->frame_id) + header->frame_id_len_; // + 1;
   memcpy(wpos, &imu, sizeof(imu));
   uint32_t header_len = (wpos - (uint8_t *)msg);
   uint32_t cdr_len = sizeof(imu) + header_len;
-  printf("cdr len = %d header_len = %d\n", cdr_len, header_len);
+  //printf("cdr len = %d header_len = %d\n", (int)cdr_len, (int)header_len);
   freertps_publish(g_pub, (uint8_t *)msg, cdr_len);
   /*
   static char __attribute__((aligned(4))) msg[256] = {0};
@@ -98,7 +98,7 @@ void timer_cb()
 int main(int argc, char **argv)
 {
   imu_init();
-  freertps_timer_set_freq(1, timer_cb);
+  freertps_timer_set_freq(1000, timer_cb);
 
   printf("hello, world!\r\n");
   freertps_system_init();
