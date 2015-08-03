@@ -1,20 +1,12 @@
 #include "i2c.h"
-#define APB_MHZ 42
 
 // assuming rising time 700n and falling time 100n
-// if clk is 42MHz
-  
-// if clk == 50MHz
-
 
 void i2c_init(I2C_TypeDef *i2c){
 
   //#ifdef DEBUG
   printf("i2c_init()\r\n");
   //#endif
-//  /***********************
-//   ** I2C CONFIGURATION***
-//   ***********************/
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
   RCC->APB1ENR  |= RCC_APB1ENR_I2C1EN;
   RCC->APB1RSTR |= RCC_APB1RSTR_I2C1RST;    // Reset i2c
@@ -42,7 +34,7 @@ void i2c_init(I2C_TypeDef *i2c){
 }
 
 
-void i2c_write_data(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t RegSizeByte, uint8_t data){
+void i2c_write(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t RegSizeByte, uint8_t* data){
   while((i2c->ISR & I2C_ISR_BUSY)!= 0);          // check I2C bus status
   while((i2c->CR2 & I2C_CR2_START)!=0){
   }
@@ -60,7 +52,7 @@ void i2c_write_data(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uin
   i2c->CR2 = temp;
   while(!(i2c->ISR & I2C_ISR_TXIS));       // wait transmit successful
   
-  printf("%X",data);
+//  printf("%X",data);
   // send the data
   for(uint16_t i=0;i<RegSizeByte+1;i++){
     if(i==0){
@@ -71,12 +63,12 @@ void i2c_write_data(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uin
     }
     else{
     //#ifdef DEBUG
-//      printf("sending byte %d, value to write %X\r\n",i-1,data);
+//      printf("sending byte %d, value to write %X\r\n",i-1,data[i-1]);
     //#endif
-      i2c->TXDR = data & I2C_TXDR_TXDATA;
+      i2c->TXDR = data[i-1] & I2C_TXDR_TXDATA;
     }
-    while(!(i2c->ISR & I2C_ISR_TXIS)){
-      if((i2c->ISR & I2C_ISR_TC) != 0){
+    while(!(i2c->ISR & I2C_ISR_TXIS)){              // if TX successful interrupt, end transmission and exit function
+      if((i2c->ISR & I2C_ISR_TC) != 0){             // if Transmission Complete interrupt, exit function
         i2c->CR2 &= ~I2C_CR2_START;
         i2c->CR2 |=  I2C_CR2_STOP;
         break;
@@ -85,8 +77,10 @@ void i2c_write_data(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uin
   }
 }
 
-uint8_t i2c_read_data(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t RegSizeByte){
-  uint8_t res=0;
+//uint8_t i2c_read_byte(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t RegSizeByte){
+void i2c_read(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t RegSizeByte,uint8_t* buffer){
+//  uint8_t res=0;
+
   //Enable interrupts
   uint32_t temp=0;
   while((i2c->ISR & I2C_ISR_BUSY)!= 0);          // check I2C bus status
@@ -106,10 +100,11 @@ uint8_t i2c_read_data(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, u
   for(int rcvByte=0;rcvByte<RegSizeByte;rcvByte++){
     while((i2c->ISR & I2C_ISR_RXNE)==0){
     }
-    res = i2c->RXDR & 0xFF;
-    printf("{%X,%X},",RegAddr, res);
+//    res = i2c->RXDR & 0xFF;
+    buffer[rcvByte] = i2c->RXDR & 0xFF;
+//    printf("{%X,%X},",RegAddr, res);
   }
-  return res;
+//  return res;
 }
 
   //TODO call NVIC functions according to I2C_Typedef provided

@@ -1,15 +1,17 @@
 #include "dcmi.h"
 // This file implements init function for dcmi and dma mo,dules to talk to a camera
+#include <stdlib.h>
 
 // buffsize = 1/2 frame, if resolution VGA: 640*480/2 = 0x2580
 #define BUFFER_SIZE 0x2850
 static uint32_t aDST_Buffer[BUFFER_SIZE];
 
+static image_cb_t g_image_cb = NULL;
 // Assume VGA for everything
 
 void dma_init();
 
-void dcmi_init(){
+void dcmi_init(image_cb_t cb){
   /************************
    ** DCMI CONFIGURATION***
    ************************/
@@ -39,11 +41,11 @@ void dcmi_init(){
 
   DCMI->CR &= ~DCMI_CR_ESS;             // Hardware synchronisation 
 //  //Enable interrupts
-  DCMI->IER |=  DCMI_IER_FRAME_IE   |     //Frame interrupt
-                DCMI_IER_OVF_IE     |     //Overflow interrupt
-                DCMI_IER_ERR_IE     |     //Error interrupt
-                DCMI_IER_VSYNC_IE   |     //VSYNC interrupt
-                DCMI_IER_LINE_IE    ;     //Line interrupt
+  DCMI->IER |=  DCMI_IER_FRAME_IE   ;//|     //Frame interrupt
+//                DCMI_IER_OVF_IE     |     //Overflow interrupt
+//                DCMI_IER_ERR_IE     |     //Error interrupt
+//                DCMI_IER_VSYNC_IE   |     //VSYNC interrupt
+//                DCMI_IER_LINE_IE    ;     //Line interrupt
 
   NVIC_SetPriority(DCMI_IRQn,6);
   NVIC_EnableIRQ(DCMI_IRQn);
@@ -53,10 +55,8 @@ void dcmi_init(){
   while(!(DCMI->CR & DCMI_CR_ENABLE));
 
   dma_init();
+  g_image_cb = cb;
   DCMI->CR |= DCMI_CR_CAPTURE;
-}
-
-void dcmi_take_snapshot(){
 }
 
 void dma_init(){
@@ -102,9 +102,9 @@ RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
   DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_1 ; // idem
 
   DMA2_Stream1->CR |=   DMA_SxCR_TCIE     ;//| // Enable DMA Interrupts
-                        DMA_SxCR_HTIE     | // Idem
-                        DMA_SxCR_TEIE     | // Idem
-                        DMA_SxCR_DMEIE    ; // Idem
+//                        DMA_SxCR_HTIE     | // Idem
+//                        DMA_SxCR_TEIE     | // Idem
+//                        DMA_SxCR_DMEIE    ; // Idem
   DMA2_Stream1->NDTR = BUFFER_SIZE        ;
   //Enable IRQs
   NVIC_SetPriority(DMA2_Stream1_IRQn,2);
@@ -115,44 +115,52 @@ RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
 }
 
 void dma2_stream1_vector(){
-  if((DMA2->LISR & DMA_LISR_TCIF1)!=0){
+//  if((DMA2->LISR & DMA_LISR_TCIF1)!=0){
     DMA2->LIFCR |= DMA_LIFCR_CTCIF1;
-    printf("Transmit complete, %X\r\n",(DMA2->LISR & DMA_LISR_TCIF1));
-  }
+//    printf("Transmit complete, %X\r\n",(DMA2->LISR & DMA_LISR_TCIF1));
+//  }
 }
 
 void dcmi_vector(){
-  if((DCMI->RISR & DCMI_RISR_FRAME_RIS) != 0){
-    printf("frame interrupt received\r\n,%X",DCMI->DR);
+//  if((DCMI->RISR & DCMI_RISR_FRAME_RIS) != 0){
+//    printf("frame interrupt received\r\n");
     DCMI->ICR |= DCMI_ICR_FRAME_ISC;
-    for(int i=0; i<BUFFER_SIZE;i++){
-      printf("%X,",aDST_Buffer[i]);
+    if(g_image_cb){
+//      printf("launching user defined callback\r\n");
+      g_image_cb();
     }
-    delay_ms(1000);
-    DCMI->CR |= DCMI_CR_CAPTURE;
-  }
-  if((DCMI->RISR & DCMI_RISR_OVF_RIS) != 0){
-    printf("overrun interrupt received\r\n");
-    DCMI->ICR |= DCMI_ICR_OVF_ISC;
-    delay_ms(1000);
-//    while(1);
-  }
-  if((DCMI->RISR & DCMI_RISR_ERR_RIS) != 0){
-    printf("Error interrupt received\r\n");
-    DCMI->ICR |= DCMI_ICR_ERR_ISC;
-  }
-  if((DCMI->RISR & DCMI_RISR_VSYNC_RIS) != 0){
-//    printf("VSYNC interrupt received,");
-//    printf("vsyn, 0x%X,0x%X\r\n",DCMI->DR,aDST_Buffer[0]);
-//    printf("vsyn, 0x%X\r\n",DCMI->DR);
-    DCMI->ICR |= DCMI_ICR_VSYNC_ISC;
-  }
-  if((DCMI->RISR & DCMI_RISR_LINE_RIS) != 0){
-//    printf("Line interrupt received\r\n");
-//    printf("line, 0x%X,0x%X\r\n",DCMI->DR,DCMI->SR);
-//    printf("line%X,\r\n",DCMI->DR);
-    DCMI->ICR |= DCMI_ICR_LINE_ISC;
-  }
+////    else{
+////      for(int i=0; i<BUFFER_SIZE;i++){
+////  //      printf("%2X,",(aDST_Buffer[i]>>24)&0xFF); // print first byte
+////        printf("%2X,",(aDST_Buffer[i]&0x00FF0000)>>16); // print second byte
+////  //      printf("%2X,",(aDST_Buffer[i]&0xFF00)>>8); // print third byte
+////      }
+////    }
+////    delay_ms(1000);
+////    DCMI->CR |= DCMI_CR_CAPTURE;
+//  }
+//  if((DCMI->RISR & DCMI_RISR_OVF_RIS) != 0){
+//    printf("overrun interrupt received\r\n");
+//    DCMI->ICR |= DCMI_ICR_OVF_ISC;
+//    delay_ms(1000);
+////    while(1);
+//  }
+//  if((DCMI->RISR & DCMI_RISR_ERR_RIS) != 0){
+//    printf("Error interrupt received\r\n");
+//    DCMI->ICR |= DCMI_ICR_ERR_ISC;
+//  }
+//  if((DCMI->RISR & DCMI_RISR_VSYNC_RIS) != 0){
+////    printf("VSYNC interrupt received,");
+////    printf("vsyn, 0x%X,0x%X\r\n",DCMI->DR,aDST_Buffer[0]);
+////    printf("vsyn, 0x%X\r\n",DCMI->DR);
+//    DCMI->ICR |= DCMI_ICR_VSYNC_ISC;
+//  }
+//  if((DCMI->RISR & DCMI_RISR_LINE_RIS) != 0){
+////    printf("Line interrupt received\r\n");
+////    printf("line, 0x%X,0x%X\r\n",DCMI->DR,DCMI->SR);
+////    printf("line%X,\r\n",DCMI->DR);
+//    DCMI->ICR |= DCMI_ICR_LINE_ISC;
+//  }
 }
 
 

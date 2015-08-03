@@ -1,10 +1,13 @@
 #include <stdio.h>
+#include "sensors/camera.h"
 //#include "freertps/freertps.h"
-//#include "camera.h"
+static int img_count;
+void image_cb(){
+//  printf("in user defined cb \r\n");
+//  camera_take_snapshot(); 
+  img_count++;
+}
 
-//typedef enum{CAMERA_RESOLUTION_VGA,CAMERA_RESOLUTION_QVGA,CAMERA_RESOLUTION_QQVGA} camera_resolution_t;
-//typedef enum{CAMERA_MODE_SNAPSHOT,CAMERA_MODE_CONTINUOUS} camera_mode_t;
-//typedef enum{DATA_8_BITS,DATA_10_BITS,DATA_12_BITS,DATA_14_BITS} dcmi_data_width_t;
 
 int main(){
   #ifdef CAMERA_WRITE_ADDRESS
@@ -13,20 +16,24 @@ int main(){
 //  IRQn_Type b;
 //  dcmi_data_width_t a;
   int i=0, inc=0;
-//  camera_resolution_t a;
+  img_count =0;
+  //camera_resolution_t a;
   printf("\r\n\r\n");
   led_init();
-  camera_init();
-
+  camera_init(image_cb);
+  camera_set_mode(CAMERA_MODE_CONTINUOUS);
 //  printf("ISR %d\r\n",I2C1->ISR);
 //  uint8_t devId = 0;
 //  uint8_t globalbuf[0x7F];
 
+//  camera_set_resolution(CAMERA_RESOLUTION_VGA);
   while(1)
   {
-    for(i=0;i<100000000;i++){
+    for(i=0;i<180000000;i++){
     }
 //    printf("%X,\r\n",DCMI->DR);
+    printf("count: %d",img_count);
+    img_count = 0;
     led_toggle();
 //      camera_write_register(0x12,0x80);
 //    camera_set_resolution(1);
