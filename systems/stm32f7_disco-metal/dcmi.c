@@ -7,11 +7,13 @@
 static uint32_t aDST_Buffer[BUFFER_SIZE];
 
 static image_cb_t g_image_cb = NULL;
+static image_cb_t g_dma_cb = NULL;
 // Assume VGA for everything
 
 void dma_init();
 
-void dcmi_init(image_cb_t cb){
+//void dcmi_init(image_cb_t cb){
+void dcmi_init(image_cb_t cb, image_cb_t dma_cb){
   /************************
    ** DCMI CONFIGURATION***
    ************************/
@@ -56,8 +58,82 @@ void dcmi_init(image_cb_t cb){
 
   dma_init();
   g_image_cb = cb;
+  g_dma_cb = dma_cb;
   DCMI->CR |= DCMI_CR_CAPTURE;
 }
+
+
+/*Experimental DMA config*/
+//void dma_init(){
+//
+////uint32_t Length = 0x2850;
+//  /***********************
+//   ** DMA CONFIGURATION***
+//   ***********************/
+////  DCMI_DR address (uint32_t)(DCMI_BASE + 0x28);
+//  RCC->AHB1ENR  |= RCC_AHB1ENR_DMA2EN   ;  // enable DMA2 clock
+//  RCC->AHB1RSTR |= RCC_AHB1RSTR_DMA2RST ;  // reset DMA2 controller
+//  // wait ?
+//  RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
+//
+//  //configure DMA2 (Stream1, Channel 1)
+//  DMA2_Stream1->CR &= ~DMA_SxCR_EN      ;
+//  while(DMA2_Stream1->CR & DMA_SxCR_EN) ;  // be sure that DMA disabled
+//
+//  // Set addresses 
+//  DMA2_Stream1->PAR = (uint32_t)(DCMI_BASE + 0x28); // DCMI DR register address
+//  //DMA2_Stream1->PAR = DCMI->DR            ;
+//  DMA2_Stream1->M0AR = LTDC_Layer1->CLUTWR  ;
+//
+//  DMA2_Stream1->CR &= ~DMA_SxCR_CHSEL_1 & // Select Channel 1
+//                      ~DMA_SxCR_CHSEL_2 ; // Idem
+//  DMA2_Stream1->CR |=  DMA_SxCR_CHSEL_0 | // Idem
+//                       //DMA_SxCR_DBM     | // Double buffer mode
+//                       DMA_SxCR_CIRC    | // Use a circular buffer
+//                       DMA_SxCR_PL_1    ; // DMA priority High
+//  DMA2_Stream1->CR &= ~DMA_SxCR_PL_0    & // Idem
+//                      ~DMA_SxCR_DIR     & // Periph to memory mode
+//                      ~DMA_SxCR_PINC    & // Always read at same periph adress
+//                      ~DMA_SxCR_DBM     &
+//                      ~DMA_SxCR_MINC    ; // Inc memory adress eachtime
+//  DMA2_Stream1->CR &= ~DMA_SxCR_PSIZE_0 ; // Use Word size (32-bit )
+//  DMA2_Stream1->CR |=  DMA_SxCR_PSIZE_1 ; // idem
+////  DMA2_Stream1->CR &= ~DMA_SxCR_MSIZE_0 ; // Use Word size (32-bit )
+////  DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_1 ; // idem
+//  DMA2_Stream1->CR &= ~DMA_SxCR_MSIZE_1 ; // Use Half-Word size (16-bit)
+//  DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_0 ; // idem
+//
+//  // FIFO config
+//  DMA2_Stream1->FCR |= DMA_SxFCR_FTH  |
+//                         DMA_SxFCR_DMDIS;
+//
+//  DMA2_Stream1->CR |=   DMA_SxCR_TCIE     ;//| // Enable DMA Interrupts
+//  DMA2_Stream1->NDTR = 1; 
+//  //Enable IRQs
+//  NVIC_SetPriority(DMA2_Stream1_IRQn,2);
+//  NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+//
+//  DMA2_Stream1->CR|= DMA_SxCR_EN          ; //Finally enable DMA
+//  while(!(DMA2_Stream1->CR & DMA_SxCR_EN));
+//}
+//
+//void dma2_stream1_vector(){
+//    DMA2->LIFCR |= DMA_LIFCR_CTCIF1;
+////    printf("DMA transmission complete\r\n");
+////    g_dma_cb();
+//}
+//
+//void dcmi_vector(){
+//    DCMI->ICR |= DCMI_ICR_FRAME_ISC;
+//    if(g_image_cb)
+//      g_image_cb();
+////  printf("%X,",aDST_Buffer[0]);
+//
+//}
+
+
+
+/*DMA config WORKING !!*/
 
 void dma_init(){
 
@@ -82,8 +158,12 @@ RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
 
   // Set addresses 
   DMA2_Stream1->PAR = (uint32_t)(DCMI_BASE + 0x28); // DCMI DR register address
-  //DMA2_Stream1->PAR = DCMI->DR            ;
-  DMA2_Stream1->M0AR = aDST_Buffer        ;
+// LCD address
+//  DMA2_Stream1->M0AR =  (uint32_t)&LTDC_Layer1->CFBAR;
+//  printf("working adress:0x%X, LCD address:%X",aDST_Buffer,(uint32_t)(LTDC_Layer1_BASE + 0xC4));
+  //RAM Working
+// using a RAM random address while debugging LCD
+  DMA2_Stream1->M0AR =  aDST_Buffer        ;
 
   DMA2_Stream1->CR &= ~DMA_SxCR_CHSEL_1 & // Select Channel 1
                       ~DMA_SxCR_CHSEL_2 ; // Idem
@@ -94,18 +174,22 @@ RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
   DMA2_Stream1->CR &= ~DMA_SxCR_PL_0    & // Idem
                       ~DMA_SxCR_DIR     & // Periph to memory mode
                       ~DMA_SxCR_PINC    ; // Always read at same periph adress
-                      ~DMA_SxCR_DBM     ;
+//                      ~DMA_SxCR_DBM     ;
   DMA2_Stream1->CR |=  DMA_SxCR_MINC    ; // Inc memory adress eachtime
   DMA2_Stream1->CR &= ~DMA_SxCR_PSIZE_0 ; // Use Word size (32-bit )
   DMA2_Stream1->CR |=  DMA_SxCR_PSIZE_1 ; // idem
-  DMA2_Stream1->CR &= ~DMA_SxCR_MSIZE_0 ; // Use Word size (32-bit )
-  DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_1 ; // idem
+//  DMA2_Stream1->CR &= ~DMA_SxCR_MSIZE_0 ; // Use Word size (32-bit )
+//  DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_1 ; // idem
+////  DMA2_Stream1->CR &= ~DMA_SxCR_MSIZE_0 ; // Use Word size (32-bit )
+////  DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_1 ; // idem
+  DMA2_Stream1->CR &= ~DMA_SxCR_MSIZE_1 ; // Use Half-Word size (16-bit)
+  DMA2_Stream1->CR |=  DMA_SxCR_MSIZE_0 ; // idem
 
   DMA2_Stream1->CR |=   DMA_SxCR_TCIE     ;//| // Enable DMA Interrupts
 //                        DMA_SxCR_HTIE     | // Idem
 //                        DMA_SxCR_TEIE     | // Idem
 //                        DMA_SxCR_DMEIE    ; // Idem
-  DMA2_Stream1->NDTR = BUFFER_SIZE        ;
+  DMA2_Stream1->NDTR = 1;//BUFFER_SIZE        ;
   //Enable IRQs
   NVIC_SetPriority(DMA2_Stream1_IRQn,2);
   NVIC_EnableIRQ(DMA2_Stream1_IRQn);
@@ -116,8 +200,11 @@ RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
 
 void dma2_stream1_vector(){
 //  if((DMA2->LISR & DMA_LISR_TCIF1)!=0){
+    //printf("Transmit complete, %X\r\n",(DMA2->LISR & DMA_LISR_TCIF1));
+    g_dma_cb();
+//    printf("%8X\r\n",LTDC_Layer1->CFBAR[0]);
+    printf("%8X\r\n",aDST_Buffer[0]);
     DMA2->LIFCR |= DMA_LIFCR_CTCIF1;
-//    printf("Transmit complete, %X\r\n",(DMA2->LISR & DMA_LISR_TCIF1));
 //  }
 }
 
@@ -129,16 +216,16 @@ void dcmi_vector(){
 //      printf("launching user defined callback\r\n");
       g_image_cb();
     }
-////    else{
-////      for(int i=0; i<BUFFER_SIZE;i++){
-////  //      printf("%2X,",(aDST_Buffer[i]>>24)&0xFF); // print first byte
-////        printf("%2X,",(aDST_Buffer[i]&0x00FF0000)>>16); // print second byte
-////  //      printf("%2X,",(aDST_Buffer[i]&0xFF00)>>8); // print third byte
-////      }
-////    }
-////    delay_ms(1000);
-////    DCMI->CR |= DCMI_CR_CAPTURE;
-//  }
+    else{
+      for(int i=0; i<BUFFER_SIZE;i++){
+  //      printf("%2X,",(aDST_Buffer[i]>>24)&0xFF); // print first byte
+        printf("%2X,",(aDST_Buffer[i]&0x00FF0000)>>16); // print second byte
+  //      printf("%2X,",(aDST_Buffer[i]&0xFF00)>>8); // print third byte
+      }
+    }
+//    delay_ms(1000);
+//    DCMI->CR |= DCMI_CR_CAPTURE;
+  }
 //  if((DCMI->RISR & DCMI_RISR_OVF_RIS) != 0){
 //    printf("overrun interrupt received\r\n");
 //    DCMI->ICR |= DCMI_ICR_OVF_ISC;
@@ -161,7 +248,7 @@ void dcmi_vector(){
 ////    printf("line%X,\r\n",DCMI->DR);
 //    DCMI->ICR |= DCMI_ICR_LINE_ISC;
 //  }
-}
+//}
 
 
 /* OLD GENERAL CONFIG

@@ -4,17 +4,15 @@
 //#define DEBUG 
 
 #define CAMERA_RESOLUTION_QVGA_RGB565 3
-//#define CAMERA_ADDRESS 0x30
 #define CAMERA_ID 0x96
 // IRQ vector DMA2CH1 pos54/prio64 address 0x0000 0124 IRQn->DMA2_Stream1_IRQn
 // DCMI vector pos78/prio85 address 0x0000 0178 IRQn->DCMI_IRQn
 uint8_t _camera_read_register(uint32_t regAddr);
 void _camera_write_register(uint32_t regAddr, uint8_t value);
+camera_config_t g_camera_config;
 
-camera_mode_t g_mode;
-camera_resolution_t g_resolution;
-
-void camera_init(image_cb_t cb){
+//void camera_init(image_cb_t cb){
+void camera_init(image_cb_t cb,image_cb_t dma_cb){
   #ifdef DEBUG
   printf("camera_init()\r\n");
   #endif
@@ -30,9 +28,10 @@ void camera_init(image_cb_t cb){
   camera_power_up();
   delay_ms(500);
   camera_reset();
-  camera_set_resolution(0);
+  camera_set_resolution(CAMERA_RESOLUTION_QVGA);
 //  #ifdef DEBUG
-  dcmi_init(cb);
+//  dcmi_init(cb);
+  dcmi_init(cb, dma_cb);
   printf("Camera init done\r\n");
 //  #endif
 }
@@ -40,12 +39,11 @@ void camera_init(image_cb_t cb){
 void camera_reset(){
   _camera_write_register(0x12,0x80);
   camera_set_resolution(CAMERA_RESOLUTION_VGA);
-  camera_set_mode(CAMERA_MODE_CONTINUOUS);
+  camera_set_mode(CAMERA_MODE_SNAPSHOT);
 }
 void camera_set_framerate(){
 }
-void camera_set_color(){
-}
+
 //void camera_set_resolution(uint8_t resolution){
 void camera_set_resolution(camera_resolution_t resolution){
   uint16_t nbRegs;
@@ -77,26 +75,24 @@ void camera_set_resolution(camera_resolution_t resolution){
 //        printf("%X,",_camera_read_register(Camera_QQVGA_Config[i][0]));
 //      }
       break;
-    case CAMERA_RESOLUTION_QVGA_RGB565:
-      printf("setting resolution\r\n");
-      nbRegs = sizeof(Camera_QVGA_RGB565_Config)/sizeof(Camera_QVGA_RGB565_Config[0]);
-      for(uint16_t i=0;i<nbRegs;i++){
-        _camera_write_register(Camera_QVGA_RGB565_Config[i][0],Camera_QVGA_RGB565_Config[i][1]);
-      }
-//      for(uint16_t i = 0; i<nbRegs;i++){
-//        printf("%X,",_camera_read_register(Camera_QVGA_RGB565_Config[i][0]));
+//    case CAMERA_RESOLUTION_QVGA_RGB565:
+//      printf("setting resolution\r\n");
+//      nbRegs = sizeof(Camera_QVGA_RGB565_Config)/sizeof(Camera_QVGA_RGB565_Config[0]);
+//      for(uint16_t i=0;i<nbRegs;i++){
+//        _camera_write_register(Camera_QVGA_RGB565_Config[i][0],Camera_QVGA_RGB565_Config[i][1]);
 //      }
-      g_resolution = resolution;
-      delay_ms(5000);
-      break;
-
-
+////      for(uint16_t i = 0; i<nbRegs;i++){
+////        printf("%X,",_camera_read_register(Camera_QVGA_RGB565_Config[i][0]));
+////      }
+//      break;
   }
-  printf("\r\n\r\n");
+  g_camera_config.resolution = resolution;
+//  delay_ms(5000);
+//  printf("\r\n\r\n");
 }
 
 void camera_take_snapshot(){
-  if(g_mode== CAMERA_MODE_CONTINUOUS)
+  if(g_camera_config.mode== CAMERA_MODE_CONTINUOUS)
     camera_set_mode(CAMERA_MODE_SNAPSHOT);
   else
       DCMI->CR |= DCMI_CR_CAPTURE;
@@ -108,7 +104,7 @@ void camera_set_mode(camera_mode_t mode){
       DCMI->CR &= ~DCMI_CR_CAPTURE;
       DCMI->CR |=  DCMI_CR_CM   ;           // Set snapshot mode  
       DCMI->CR |= DCMI_CR_CAPTURE;
-      printf("changing mode to snapshot");
+      printf("changing mode to snapshot\r\n");
       delay_ms(1000);
       break;
 
@@ -116,11 +112,16 @@ void camera_set_mode(camera_mode_t mode){
       DCMI->CR &= ~DCMI_CR_CAPTURE;
       DCMI->CR &= ~DCMI_CR_CM   ;           // Set continuous mode
       DCMI->CR |= DCMI_CR_CAPTURE;
-      printf("changing mode to continuous");
+      printf("changing mode to continuous\r\n");
       delay_ms(1000);
       break;
   }
-  g_mode = mode;
+  g_camera_config.mode = mode;
+}
+
+void camera_set_color(camera_colorspace_t color_format)
+{
+
 }
 
 void _camera_write_register(uint32_t regAddr, uint8_t value){

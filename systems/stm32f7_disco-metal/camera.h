@@ -7,11 +7,12 @@
 #include "sensors/ov9655.h"
 
 void camera_set_framerate();
-void camera_set_color();
+void camera_set_color(camera_colorspace_t color_format);
 void camera_set_resolution(camera_resolution_t resolution);
 //void camera_set_resolution(uint8_t resolution);
 void camera_set_mode(camera_mode_t mode);
-void camera_init(image_cb_t cb);
+//void camera_init(image_cb_t cb);
+void camera_init(image_cb_t cb, image_cb_t dma_cb);
 void camera_reset();
 void camera_take_snapshot();
 
