@@ -3,7 +3,9 @@
 #include "actuators/RGB565_480x272.h"
 #include "pin.h"
 
-void lcd_init(){
+void dma2d_init();
+
+void lcd_init(uint32_t* bufferAddress){
 
   /*Our Startup config*/
   /*
@@ -25,7 +27,7 @@ void lcd_init(){
   // 
   RCC->PLLSAICFGR &= ~RCC_PLLSAICFGR_PLLSAIN &
                      ~RCC_PLLSAICFGR_PLLSAIR ;
-  RCC->PLLSAICFGR |=  ((192<<6)&RCC_PLLSAICFGR_PLLSAIN) | ((5 << 28) & RCC_PLLSAICFGR_PLLSAIR); // multiply by 192 and divide by 5
+  RCC->PLLSAICFGR |=  ((192<<6)&RCC_PLLSAICFGR_PLLSAIN) | ((LCD_DISPLAY_FREQUENCY_DIVIDER << 28) & RCC_PLLSAICFGR_PLLSAIR); // multiply by 192 and divide by 5
   RCC->DCKCFGR1   &= ~RCC_DCKCFGR1_PLLSAIDIVR; // 
   RCC->DCKCFGR1   |=  RCC_DCKCFGR1_PLLSAIDIVR_0; // divide by 4
   // 1 * 192 / 5 / 4 = 192 / 20 = 9.6 MHz
@@ -38,8 +40,9 @@ void lcd_init(){
   RCC->APB2RSTR   &= ~RCC_APB2RSTR_LTDCRST;
 
   lcd_init_pins();
+  lcd_turn_on();
 
-  LTDC->GCR &= ~LTDC_GCR_LTDCEN;
+  //LTDC->GCR &= ~LTDC_GCR_LTDCEN;
   /* LCD CONFIG */
   //GCR Register 
   LTDC->GCR   &=  ~LTDC_GCR_HSPOL      & // HSYNC active Low
@@ -49,26 +52,26 @@ void lcd_init(){
 
 
 /*ST CONFIGS*/
-uint32_t HorizontalSync = (RK043FN48H_HSYNC - 1);
-uint32_t VerticalSync = (RK043FN48H_VSYNC - 1);
-uint32_t AccumulatedHBP = (RK043FN48H_HSYNC + RK043FN48H_HBP - 1);
-uint32_t AccumulatedVBP = (RK043FN48H_VSYNC + RK043FN48H_VBP - 1);
-uint32_t AccumulatedActiveH = (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - 1);
-uint32_t AccumulatedActiveW = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - 1);
-uint32_t TotalHeigh = (RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP + RK043FN48H_VFP - 1);
-uint32_t TotalWidth = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP + RK043FN48H_HFP - 1);
+uint32_t HorizontalSync = (LCD_DISPLAY_HSYNC - 1);
+uint32_t VerticalSync = (LCD_DISPLAY_VSYNC - 1);
+uint32_t AccumulatedHBP = (LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP - 1);
+uint32_t AccumulatedVBP = (LCD_DISPLAY_VSYNC + LCD_DISPLAY_VBP - 1);
+uint32_t AccumulatedActiveH = (LCD_DISPLAY_HEIGHT + LCD_DISPLAY_VSYNC + LCD_DISPLAY_VBP - 1);
+uint32_t AccumulatedActiveW = (LCD_DISPLAY_WIDTH + LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP - 1);
+uint32_t TotalHeigh = (LCD_DISPLAY_HEIGHT + LCD_DISPLAY_VSYNC + LCD_DISPLAY_VBP + LCD_DISPLAY_VFP - 1);
+uint32_t TotalWidth = (LCD_DISPLAY_WIDTH + LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP + LCD_DISPLAY_HFP - 1);
 //Layer variables
 uint32_t WindowX0 = 0;
-uint32_t WindowX1 = 480;
+uint32_t WindowX1 = LCD_DISPLAY_WIDTH;
 uint32_t WindowY0 = 0;
-uint32_t WindowY1 = 272;
+uint32_t WindowY1 = LCD_DISPLAY_HEIGHT;
 uint32_t PixelFormat = ((uint32_t)0x00000002); //LTDC_PIXEL_FORMAT_RGB565;
-uint32_t FBStartAdress = (uint32_t)&RGB565_480x272;
+uint32_t FBStartAdress = (uint32_t)&RGB565_480x272; //TODO Here it should be bufferAddress
 uint32_t Alpha = 0xFF;
 uint32_t BlendingFactor1 = ((uint32_t)0x00000400);//LTDC_BLENDING_FACTOR1_CA;
 uint32_t BlendingFactor2 = ((uint32_t)0x00000005);//LTDC_BLENDING_FACTOR2_CA;
-uint32_t ImageWidth  = 480;
-uint32_t ImageHeight = 272;
+uint32_t ImageWidth  = LCD_DISPLAY_WIDTH;
+uint32_t ImageHeight = LCD_DISPLAY_HEIGHT;
 uint32_t tmp;
 // desperate attempt
 LTDC->SSCR &= ~(LTDC_SSCR_VSH | LTDC_SSCR_HSW);
@@ -106,6 +109,7 @@ LTDC->GCR |= LTDC_GCR_LTDCEN;
 
   /* Configures the default color values */
   LTDC_Layer1->DCCR &= ~(LTDC_LxDCCR_DCBLUE | LTDC_LxDCCR_DCGREEN | LTDC_LxDCCR_DCRED | LTDC_LxDCCR_DCALPHA);
+  LTDC_Layer1->DCCR |= 0xFFFFFFFF;    //TODO define basic colors ?
 
   /* Specifies the constant alpha value */
   LTDC_Layer1->CACR &= ~(LTDC_LxCACR_CONSTA);
@@ -113,12 +117,15 @@ LTDC->GCR |= LTDC_GCR_LTDCEN;
 
   /* Specifies the blending factors */
   LTDC_Layer1->BFCR &= ~(LTDC_LxBFCR_BF2 | LTDC_LxBFCR_BF1);
-  LTDC_Layer1->BFCR = (BlendingFactor1 | BlendingFactor2);
+  LTDC_Layer1->BFCR = 0x607;//(BlendingFactor1 | BlendingFactor2);
 
   /* Configures the color frame buffer start address */
   LTDC_Layer1->CFBAR &= ~(LTDC_LxCFBAR_CFBADD);
-  LTDC_Layer1->CFBAR = (FBStartAdress);
+  LTDC_Layer1->CFBAR = FBStartAdress;
+//#define BUFFER_SIZE 0x2850
+//static uint32_t aDST_Buffer[BUFFER_SIZE];
   /* Configures the color frame buffer pitch in byte */
+  tmp = 2;
   LTDC_Layer1->CFBLR  &= ~(LTDC_LxCFBLR_CFBLL | LTDC_LxCFBLR_CFBP);
   LTDC_Layer1->CFBLR  = (((ImageWidth * tmp) << 16) | (((WindowX1 - WindowX0) * tmp)  + 3));
 
@@ -131,15 +138,15 @@ LTDC->GCR |= LTDC_GCR_LTDCEN;
 
   LTDC->SRCR = LTDC_SRCR_IMR;
 //  // SSCR (Size register)
-//  LTDC->SSCR  |=   RK043FN48H_VSYNC    | // Use ST values without thinking
-//                   RK043FN48H_HSYNC<<16; // Think about it if problem
+//  LTDC->SSCR  |=   LCD_DISPLAY_VSYNC    | // Use ST values without thinking
+//                   LCD_DISPLAY_HSYNC<<16; // Think about it if problem
 //  // Front/Back Porch (Defning active area)
-//  LTDC->BPCR  |=   (( (RK043FN48H_HSYNC + RK043FN48H_HBP - 1) << 16) & LTDC_BPCR_AHBP) |   // setting horizontal accumulated Back Porch (HSYNC + HBP)
-//                   ( (RK043FN48H_VSYNC + RK043FN48H_VBP - 1) &  LTDC_BPCR_AVBP )       ; // (VSYNC + VBP) 
-//  LTDC->AWCR  |=   (((RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - 1 ) <<16) & LTDC_AWCR_AAW) | // active area = BP + SYNC + Pixels used 
-//                   ((RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - 1 )  & LTDC_AWCR_AAH)   ; 
-//  LTDC->TWCR  |=   (((RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP - 1 + RK043FN48H_HFP )<<16)&LTDC_TWCR_TOTALW)  | // Resulting total size
-//                   ((RK043FN48H_HEIGHT + RK043FN48H_VSYNC + RK043FN48H_VBP - 1 + RK043FN48H_VFP )& LTDC_TWCR_TOTALH) ;
+//  LTDC->BPCR  |=   (( (LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP - 1) << 16) & LTDC_BPCR_AHBP) |   // setting horizontal accumulated Back Porch (HSYNC + HBP)
+//                   ( (LCD_DISPLAY_VSYNC + LCD_DISPLAY_VBP - 1) &  LTDC_BPCR_AVBP )       ; // (VSYNC + VBP) 
+//  LTDC->AWCR  |=   (((LCD_DISPLAY_WIDTH + LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP - 1 ) <<16) & LTDC_AWCR_AAW) | // active area = BP + SYNC + Pixels used 
+//                   ((LCD_DISPLAY_HEIGHT + LCD_DISPLAY_VSYNC + LCD_DISPLAY_VBP - 1 )  & LTDC_AWCR_AAH)   ; 
+//  LTDC->TWCR  |=   (((LCD_DISPLAY_WIDTH + LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP - 1 + LCD_DISPLAY_HFP )<<16)&LTDC_TWCR_TOTALW)  | // Resulting total size
+//                   ((LCD_DISPLAY_HEIGHT + LCD_DISPLAY_VSYNC + LCD_DISPLAY_VBP - 1 + LCD_DISPLAY_VFP )& LTDC_TWCR_TOTALH) ;
 //
 //  //FIXME Just to confirm that it works lets put a red BG --> should put 0,0,0 for real application
 //  LTDC->BCCR |=   ((0x0 << 16)   & LTDC_BCCR_BCRED)   |
@@ -157,8 +164,8 @@ LTDC->GCR |= LTDC_GCR_LTDCEN;
 //                          (12 + (LTDC->BPCR & LTDC_BPCR_AVBP) +1)           ;
 //
 //    LTDC_Layer1->PFCR  = 2; // RGB565 //TODO define all relevant values in a header lcd.h in includes/actuators
-//                          //((RK043FN48H_HSYNC + RK043FN48H_HBP) +
-////    LTDC_Layer1->WVPCR |= (RK043FN48H_HSYNC + RK043FN48H_VBP) +
+//                          //((LCD_DISPLAY_HSYNC + LCD_DISPLAY_HBP) +
+////    LTDC_Layer1->WVPCR |= (LCD_DISPLAY_HSYNC + LCD_DISPLAY_VBP) +
 //    LTDC_Layer1->CACR = 0xFF; // opaque layer
 //    
 //    LTDC_Layer1->DCCR = 0x0; //FIXME same as line 40 just for fun
@@ -184,20 +191,22 @@ LTDC->GCR |= LTDC_GCR_LTDCEN;
 //  LTDC_Layer1->CR |= LTDC_LxCR_LEN;
 //
 //  printf("LTDC ISR: 0x%8X\r\n", LTDC->ISR);
-//  NVIC_SetPriority(LTDC_IRQn,5);
-//  NVIC_EnableIRQ(LTDC_IRQn);
+  NVIC_SetPriority(LTDC_IRQn,4);
+  NVIC_EnableIRQ(LTDC_IRQn);
 //  printf("LTDC ISR: 0x%8X\r\n", LTDC->ISR);
-//  NVIC_SetPriority(LTDC_ER_IRQn,5);
-//  NVIC_EnableIRQ(LTDC_ER_IRQn);
+  NVIC_SetPriority(LTDC_ER_IRQn,4);
+  NVIC_EnableIRQ(LTDC_ER_IRQn);
 
 // Enable display
-#define PORTI_LCD_DISP 12
-#define PORTK_LCD_BL_CONTROL 3  // ??
-  pin_set_output_high(GPIOI,PORTI_LCD_DISP);
-  pin_set_output_high(GPIOK, PORTK_LCD_BL_CONTROL);
+//#define PORTI_LCD_DISP 12
+//#define PORTK_LCD_BL_CONTROL 3  // ??
+//  pin_set_output_high(GPIOI,PORTI_LCD_DISP);
+//  pin_set_output_high(GPIOK, PORTK_LCD_BL_CONTROL);
   printf("end of LCD init\r\n");
 
+//  dma2d_init();
 }
+
 
 void lcd_tft_vector(){
   printf("ltdc interrupt %X",LTDC->ISR);
@@ -214,42 +223,32 @@ void lcd_tft_vector(){
 void lcd_tft_error_vector(){
   printf("error LTDC !\r\n");
 }
-  /* ENABLE OVERDRIVE MODE*/
-  //1) Select HSE as sys clock (in RCC_CR) => HSEON, HSERDY. RCC_CFGR-> SW = 01 (select HSE) then wait for sys clock to be ready (rcc_cr->sws)
-  //2) config RCC_PLLCFCG and set PLLON in RCC_CR
-  //3) Set ODEN in PWR_CR1 and wait for ODRDY in PWR_CSR1
-  //4) set ODSW in PWR_CR1 and wait for ODSWRDY in PWR_CSR1
-  //5) select flash latecny ?? and prescalers
-  //6) wait for pll lock in RCC_CR
-  //7) switch system to pll                               RCC->CR SW = 10 for pll then wait for SWS to return 10
-  //8) enable all peripherals
 
-//  RCC->APB1ENR |= RCC_APB1ENR_PWREN;
-//  //1
-//  led_off();
-//  RCC->CR |= RCC_CR_HSEON;
-//  printf("turn on HSE\r\n");
-//  while((RCC->CR & RCC_CR_HSERDY) != RCC_CR_HSERDY);
-//  RCC->CFGR &= ~RCC_CFGR_SW;
-//  RCC->CFGR |= RCC_CFGR_SW_0;
-//  printf("waiting for HSE selection\r\n");
-//  while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_0);
-//  printf("HSE clk selected\r\n");
-//  //2
-//  uint32_t temp = 0;
-//  temp = (9 << 24) | (1 << 22) | (2 << 16) | (432 << 6 ) | 25;
-//  RCC->PLLCFGR = temp;
-//  RCC->CR |= RCC_CR_PLLON;
-//  //3
-//  PWR->CR1 |= PWR_CR1_ODEN;
-//  while((PWR->CSR1 & PWR_CSR1_ODRDY)!= PWR_CSR1_ODRDY);
-//  //4
-//  PWR->CR1 |= PWR_CR1_ODSWEN;
-//  while((PWR->CSR1 & PWR_CSR1_ODSWRDY)!= PWR_CSR1_ODSWRDY);
-//  //5
-//  //6
-//  while((RCC->CR & RCC_CR_PLLRDY) != RCC_CR_PLLRDY);
-//  //7
-//  RCC->CFGR = ((RCC->CFGR & ~RCC_CFGR_SW) | 0x2);
-//  while((RCC->CFGR & RCC_CFGR_SWS) | RCC_CFGR_SWS_PLL);
-//  led_on();
+// Copy of ST example never tested/validated
+void dma2d_init(){
+  RCC->AHB1ENR |= RCC_AHB1ENR_DMA2DEN; // tunr on DMA2D clock
+  RCC->AHB1RSTR |= RCC_AHB1RSTR_DMA2DRST;// reset controller 
+  RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2DRST;// reset controller 
+  
+  DMA2D->CR |= DMA2D_CR_MODE;
+
+  DMA2D->OPFCCR &= ~DMA2D_OPFCCR_CM;
+  DMA2D->OPFCCR |= 0x2;
+
+  DMA2D->OOR &= ~DMA2D_OOR_LO;
+
+  DMA2D->BGPFCCR |= 0xFF010002;
+  DMA2D->BGOR &= 0xFFFFC000;
+  DMA2D->FGPFCCR |= 0xFF010002;
+  DMA2D->FGOR &= 0xFFFFC000;
+  DMA2D->NLR = (LCD_DISPLAY_WIDTH << 16) | LCD_DISPLAY_HEIGHT;
+  DMA2D->OMAR = aDST_Buffer;// Address destination of DMA2
+  DMA2D->OCOLR = 0;
+
+  DMA2D->CR |= DMA2D_CR_START;
+}
+
+
+
+
+

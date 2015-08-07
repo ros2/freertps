@@ -73,6 +73,7 @@
 /** 
   * @brief  OV9655 ID  
   */  
+#define CAMERA_ID 0x96
 #define  OV9655_ID    0x96
 /** 
   * @brief  OV9655 Registers  

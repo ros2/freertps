@@ -1,16 +1,17 @@
 #include "camera.h"
 #include <stdio.h>
-
+//FIXME this code is highly correlated to the OV9655 camera. 
+//The registers are valids only for this specific chip
 //#define DEBUG 
-
-#define CAMERA_RESOLUTION_QVGA_RGB565 3
-#define CAMERA_ID 0x96
-// IRQ vector DMA2CH1 pos54/prio64 address 0x0000 0124 IRQn->DMA2_Stream1_IRQn
-// DCMI vector pos78/prio85 address 0x0000 0178 IRQn->DCMI_IRQn
 uint8_t _camera_read_register(uint32_t regAddr);
 void _camera_write_register(uint32_t regAddr, uint8_t value);
 camera_config_t g_camera_config;
 
+//TODO implement
+void camera_increase_brightness();
+void camera_decrease_brightness();
+void camera_increase_contrast();
+void camera_decrease_contrast();
 //void camera_init(image_cb_t cb){
 void camera_init(image_cb_t cb,image_cb_t dma_cb){
   #ifdef DEBUG
@@ -18,10 +19,6 @@ void camera_init(image_cb_t cb,image_cb_t dma_cb){
   #endif
   camera_init_pins();
   camera_power_down();
-//  printf("call_i2c_init()\r\n");
-//  printf("call camera_reset_regs()\r\n");
-//  printf("call camera_reset_regs()");
-
 
   i2c_init(I2C1);
   
@@ -40,8 +37,17 @@ void camera_reset(){
   _camera_write_register(0x12,0x80);
   camera_set_resolution(CAMERA_RESOLUTION_VGA);
   camera_set_mode(CAMERA_MODE_SNAPSHOT);
+  camera_set_framerate(CAMERA_FRAMERATE_30FPS);
 }
-void camera_set_framerate(){
+
+void camera_set_framerate(camera_framerate_t framerate){
+  if(framerate == CAMERA_FRAMERATE_15FPS){
+    _camera_write_register(0x12,(_camera_read_register(0x12) & 0x1F));
+  }
+  if(framerate == CAMERA_FRAMERATE_30FPS){
+    _camera_write_register(0x12,(_camera_read_register(0x12) & 0x1F) | 0x60);
+  }
+  g_camera_config.framerate = framerate;
 }
 
 //void camera_set_resolution(uint8_t resolution){
@@ -75,16 +81,6 @@ void camera_set_resolution(camera_resolution_t resolution){
 //        printf("%X,",_camera_read_register(Camera_QQVGA_Config[i][0]));
 //      }
       break;
-//    case CAMERA_RESOLUTION_QVGA_RGB565:
-//      printf("setting resolution\r\n");
-//      nbRegs = sizeof(Camera_QVGA_RGB565_Config)/sizeof(Camera_QVGA_RGB565_Config[0]);
-//      for(uint16_t i=0;i<nbRegs;i++){
-//        _camera_write_register(Camera_QVGA_RGB565_Config[i][0],Camera_QVGA_RGB565_Config[i][1]);
-//      }
-////      for(uint16_t i = 0; i<nbRegs;i++){
-////        printf("%X,",_camera_read_register(Camera_QVGA_RGB565_Config[i][0]));
-////      }
-//      break;
   }
   g_camera_config.resolution = resolution;
 //  delay_ms(5000);
@@ -99,31 +95,48 @@ void camera_take_snapshot(){
 }
 
 void camera_set_mode(camera_mode_t mode){
-  switch(mode){
-    case CAMERA_MODE_SNAPSHOT:
+  if(mode ==CAMERA_MODE_SNAPSHOT){
       DCMI->CR &= ~DCMI_CR_CAPTURE;
       DCMI->CR |=  DCMI_CR_CM   ;           // Set snapshot mode  
       DCMI->CR |= DCMI_CR_CAPTURE;
       printf("changing mode to snapshot\r\n");
-      delay_ms(1000);
-      break;
-
-    case CAMERA_MODE_CONTINUOUS:
+  }
+  if(mode == CAMERA_MODE_CONTINUOUS){
       DCMI->CR &= ~DCMI_CR_CAPTURE;
       DCMI->CR &= ~DCMI_CR_CM   ;           // Set continuous mode
       DCMI->CR |= DCMI_CR_CAPTURE;
       printf("changing mode to continuous\r\n");
-      delay_ms(1000);
-      break;
   }
+      delay_ms(1000);
   g_camera_config.mode = mode;
 }
 
 void camera_set_color(camera_colorspace_t color_format)
 {
+  if(color_format == CAMERA_COLOR_RGB_565){
+    _camera_write_register(0x12,(_camera_read_register(0x12) & 0xFC) | 0x03);
+    _camera_write_register(0x40,(_camera_read_register(0x40) & 0x0F) | 0xD0);
+  }
+  if(color_format == CAMERA_COLOR_RGB_555){
+    _camera_write_register(0x12,(_camera_read_register(0x12) & 0xFC) | 0x03);
+    _camera_write_register(0x40,(_camera_read_register(0x40) & 0x0F) | 0xF0);
 
+  }
+  if(color_format == CAMERA_COLOR_YUV){
+    _camera_write_register(0x3A,(_camera_read_register(0x3A) & 0xE3) | 0x0C);
+  }
+  g_camera_config.colorspace = color_format;
 }
 
+void camera_set_nightmode(uint8_t mode){
+  uint8_t tmp = _camera_read_register(0x3B) & 0x1F; // reset night mode and night mode insert frame
+  if(mode == 1){
+    tmp|=0x80;
+  }
+  _camera_write_register(0x3B, tmp);         // enable nightmode with normale framerate
+}
+
+//Private functions
 void _camera_write_register(uint32_t regAddr, uint8_t value){
 //  printf("camera_write_register()\r\n");
 //  printf("writing %X at address %X\r\n",value,regAddr);

@@ -101,47 +101,27 @@ NOT ALTERNATE FUNCTIONS
 #define PORTK_LCD_BL_CONTROL 3
 */
 
-// LCD Red pins
-  pin_set_output_type(GPIOI, PORTI_LCD_R0, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R1, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R2, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R3, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R4, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R5, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R6, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_R7, PIN_OUTPUT_TYPE_PUSH_PULL);
-//LCD Green pins
-  pin_set_output_type(GPIOJ, PORTJ_LCD_G0, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_G1, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_G2, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_G3, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_G4, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOK, PORTK_LCD_G5, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOK, PORTK_LCD_G6, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOK, PORTK_LCD_G7, PIN_OUTPUT_TYPE_PUSH_PULL);
-//LCD Blue pins
-  pin_set_output_type(GPIOE, PORTE_LCD_B0, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_B1, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_B2, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOJ, PORTJ_LCD_B3, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOG, PORTG_LCD_B4, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOK, PORTK_LCD_B5, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOK, PORTK_LCD_B6, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOK, PORTK_LCD_B7, PIN_OUTPUT_TYPE_PUSH_PULL);
-//LCD Control signals
-  pin_set_output_type(GPIOI, PORTI_LCD_VSYNC, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOI, PORTI_LCD_HSYNC, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOI, PORTI_LCD_CLK, PIN_OUTPUT_TYPE_PUSH_PULL);
-  pin_set_output_type(GPIOI, PORTI_LCD_INT, PIN_OUTPUT_TYPE_PUSH_PULL); //FIXME they do it in the example, doesnt make sense since we already have a VSYNC
 //  pin_set_output_type(GPIOK, PORTK_LCD_DE, PIN_OUTPUT_TYPE_PUSH_PULL);
   pin_set_output_type(GPIOI, PORTI_LCD_DISP, PIN_OUTPUT_TYPE_PUSH_PULL);
 //  pin_set_output_type(GPIOI, PORTI_LCD_INT, PIN_OUTPUT_TYPE_PUSH_PULL);   //No idea if its necessary ??
   pin_set_output_type(GPIOK, PORTK_LCD_BL_CONTROL, PIN_OUTPUT_TYPE_PUSH_PULL);
   
-  pin_set_output_speed(GPIOE, PORTE_LCD_B0, 2);
-  pin_set_output_high(GPIOI,PORTI_LCD_DISP);
+  pin_set_output_high(GPIOI, PORTI_LCD_DISP);
   pin_set_output_high(GPIOK, PORTK_LCD_BL_CONTROL);
+  pin_set_output_speed(GPIOE, PORTE_LCD_B0, 2);
 //  pin_set_output_high(GPIOI, PORTI_LCD_INT);
 
 }
 
+
+void lcd_turn_on(){
+  pin_set_output_high(GPIOI, PORTI_LCD_DISP);
+  pin_set_output_high(GPIOK, PORTK_LCD_BL_CONTROL);
+}
+
+void lcd_turn_off(){
+  pin_set_output_low(GPIOI, PORTI_LCD_DISP);
+  pin_set_output_low(GPIOK, PORTK_LCD_BL_CONTROL);
+}
+ 
+ 

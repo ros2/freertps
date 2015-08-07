@@ -1,4 +1,5 @@
 #include "dcmi.h"
+#include "actuators/rk043fn48h.h"
 // This file implements init function for dcmi and dma mo,dules to talk to a camera
 #include <stdlib.h>
 
