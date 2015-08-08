@@ -18,5 +18,5 @@ typedef struct
   camera_resolution_t resolution;
   camera_framerate_t framerate;
   // add other stuff which should be valid for any camera
-}camera_config_t;
+} __attribute__((packed)) camera_config_t;
 #endif
