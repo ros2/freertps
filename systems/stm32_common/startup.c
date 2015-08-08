@@ -29,12 +29,17 @@ void reset_vector()
     *pDest++ = 0;
   //__libc_init_array() ;
   SCB->CPACR |= ((3UL << (10*2)) | (3UL << (11*2))); // activate the FPU
+  //TODO used define provided if changes in future generations ? 
   // set up the clocking scheme
   RCC->CR |= 0x1; // ensure the HSI (internal) oscillator is on
+//  RCC->CR |= RCC_CR_HSION;
   RCC->CFGR = 0; // ensure the HSI oscillator is the clock source
+//RCC->CFGR = RCC_CFGR_SW_HSI;
   RCC->CR &= 0xfef6ffff; // turn off the main PLL and HSE oscillator
+// RCC->CR &= ~(RCC_CR_PLLON | RCC_CR_HSEON | RCC_CR_CSSON);
   RCC->PLLCFGR = 0x24003010; // ensure PLLCFGR is at reset state
   RCC->CR &= 0xfffbffff; // reset HSEBYP (i.e., HSE is *not* bypassed)
+//  RCC->CR &= ~RCC_CR_HSEBYP;
   RCC->CIR = 0x0; // disable all RCC interrupts
   RCC->CR |= RCC_CR_HSEON; // enable HSE oscillator (off-chip crystal)
   for (volatile uint32_t i = 0; 
