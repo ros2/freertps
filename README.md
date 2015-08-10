@@ -7,6 +7,15 @@ extremely high awesome factor
 This code is extremely experimental. It is an abomination. Approximately everything is expected to change rapidly as features are added and cleaned up.
 ## WARNING WARNING WARNING
 
+# Prerequisites
+
+There are many ways to build this code. Most development is currently happening on Ubuntu 14.04.2 workstations, with the following toolchains:
+ * arm-none-eab-gcc 4.9.3 installed from PPA at https://launchpad.net/~terry.guo/+archive/ubuntu/gcc-arm-embedded
+ * cmake 2.8.12.2
+ * OpenOCD 0.10.0-dev built from latest source tree and modified according to a few patches on the OpenOCD website for STM32F7 support
+
+
+ 
 To build it, just type "make" and it will spin CMake up a few times to build freertps for a few different systems.
 
 Then, to try it out on the STM32F7-Discovery board, you can do this (providing that you have the latest source (not release) of OpenOCD, and have cherry-picked a few patches floating around the mailing list to add support for STM32F7:
