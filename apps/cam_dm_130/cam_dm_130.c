@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "sensors/camera.h"
+#include "peripheral/usb.h"
 //#include "freertps/freertps.h"
 static int img_count;
 static int dma_count;
@@ -35,7 +36,7 @@ int main(){
   printf("RCC->APB2ENR:     0x%8X\r\n",RCC->APB2ENR);
 
   led_init();
-  lcd_init();
+//  lcd_init();
   printf("power settings:\r\n");
   printf("PWR->CR1:         0x%8X\r\n",PWR->CR1);
   printf("PWR->CR2:         0x%8X\r\n",PWR->CR2);
@@ -67,7 +68,9 @@ int main(){
 //  camera_init(image_cb,dma_cb);
 //  camera_set_resolution(CAMERA_RESOLUTION_QVGA);
 //  camera_set_mode(CAMERA_MODE_CONTINUOUS);
-
+  usbd_fs_init();
+  uint8_t testUSB[6]="coucou";
+  //usb_tx(1,testUSB,6);
   while(1){
     for(i=0;i<170000000;i++){
     }

@@ -1,3 +1,17 @@
+#define CONTROL_XFER 0x00
+#define ISOCHRONOUS_XFER 0x01
+#define BULK_XFER 0x02
+#define INTERRUPT_XFER 0x03
+
+#define CONFIG_LENGTH 9
+#define IFACE_LENGTH 9
+#define EP_LENGTH 7
+#define DEVICE_LENGTH 18
+
+#define EP_IN_ADDR 0x80
+#define EP_OUT_ADDR 0x00
+
+#define REQUEST_STATUS_MASK 0x07
 typedef enum { DEVICE                = (uint8_t)0x01,
                CONFIGURATION         = (uint8_t)0x02,
                STRING                = (uint8_t)0x03,
@@ -22,10 +36,6 @@ typedef enum{ CLEAR_FEATURE = (uint8_t)0x01,
             }usb_request_t;
 
 /* INTERFACE descriptor */
-#define CONTROL_TRANSFER 0
-#define ISOCHRONOUS_TRANSFER 0
-#define BULK_TRANSFER 0
-#define INTERRUPT_TRANSFER
 typedef struct
 {
   uint8_t  length;                        // size of the descriptor in bytes
@@ -33,7 +43,7 @@ typedef struct
   uint8_t  endpoint_address;              // bit7: direction, 0=OUT 1=IN
                                           // bit[6:4]: 0, 
                                           // bit[3:0]: EndpointNumber
-  uint8_t  attributes;                    // bit[1:0]: TRANSFERT type + synchronisation attributes if ISOCHRONOUS transfer used
+  uint8_t  attributes;                    // bit[1:0]: TRANSFER type + synchronisation attributes if ISOCHRONOUS transfer used
   uint16_t max_packet_size;               // max packet size in bytes
   uint8_t  interval;                      // interval for polling: 
                           // if LS or FS: expressed in frames(ms)
@@ -51,11 +61,12 @@ typedef struct
   uint8_t interface_subclass;             // 0xFF if not class given by USB-IF
   uint8_t interface_protocol;             // 0xFF if not class given by USB-IF 
   uint8_t interface_string_index;         // 0 if no description STRING descriptor
-  usb_ep_desc_t eps[2];                   //FIXME should be a pointer
+  usb_ep_desc_t eps[2];                   //FIXME should be a pointer, but gcc will complain about flexible array in struct
 } __attribute__((packed)) usb_iface_desc_t;
 
 
 /* CONFIGURATION descriptor */
+//TODO Add OTG descriptors too
 typedef struct 
 {
   uint8_t length;                         // size of the descriptor in bytes
@@ -72,7 +83,7 @@ typedef struct
                                           // | bit6: self powered 
                                           // | bit5: remote wakeup
   uint8_t  max_power;                     // max current in 2mA steps
-  usb_iface_desc_t ifaces[1];             //FIXME should be a pointer
+  usb_iface_desc_t ifaces[1];             //FIXME should be a pointer, but gcc will complain about flexible array in struct
 } __attribute__((packed)) usb_config_desc_t;
 
 

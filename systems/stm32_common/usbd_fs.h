@@ -21,8 +21,8 @@
 #define USB_DPID_DATA2 1
 #define USB_DPID_MDATA 3
 
-void usb_fs_init();
+void usbd_fs_init(uint8_t nbEPIn,uint8_t nbEPOut,uint16_t maxPktSize);
+//void usbd_fs_init();
 void usb_fs_init_pins(); // BSP function
-
 
 #endif
