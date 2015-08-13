@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(freertps C)
 
+find_package(ament_cmake REQUIRED)
+
 include_directories(include)
 ament_export_include_directories(include)
 
@@ -12,11 +14,13 @@ function(freertps_add_executable exe srcs)
   endif()
 endfunction()
 
-message("system: ${SYSTEM}")
+set(SYSTEM "native-posix" CACHE STRING "the target system name") 
+message("system: [${SYSTEM}]")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -O2")
 
-# set up the toolchain for this system
+# set up the toolchain for this system, include additional stuff, set
+# more defines for clock speeds, etc etc
 include(systems/${SYSTEM}/toolchain.cmake)
 
 # build the non-portable support library for this system
@@ -44,6 +48,7 @@ add_library(freertps STATIC disco.c
 #foreach(app ${SYSTEM_APPS})
 #  add_subdirectory(apps/${app})
 #endforeach()
+
 
 ament_package()
 

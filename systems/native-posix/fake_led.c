@@ -1,4 +1,5 @@
 #include "actuators/led.h"
+#include <stdio.h>
 
 void led_init()
 {
