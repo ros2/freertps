@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(freertps C)
 
 include_directories(include)
+ament_export_include_directories(include)
 
 function(freertps_add_executable exe srcs)
   add_executable(${exe} ${srcs})
@@ -39,7 +40,21 @@ add_library(freertps STATIC disco.c
                             udp.c)
 
 # build the applications for this system
-string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
-foreach(app ${SYSTEM_APPS})
-  add_subdirectory(apps/${app})
-endforeach()
+#string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
+#foreach(app ${SYSTEM_APPS})
+#  add_subdirectory(apps/${app})
+#endforeach()
+
+ament_package()
+
+install(
+  DIRECTORY include
+  DESTINATION include
+)
+install(
+  TARGETS freertps
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
