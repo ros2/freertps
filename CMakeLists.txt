@@ -34,7 +34,8 @@ foreach(syslib ${SYSTEM_EXTRA_LIBS})
 endforeach()
 
 # build the portable library
-add_library(freertps STATIC disco.c 
+#add_library(freertps STATIC disco.c 
+add_library(freertps        disco.c 
                             freertps.c 
                             id.c 
                             part.c 

@@ -1,4 +1,5 @@
-add_library(native-posix STATIC time.c 
+#add_library(native-posix STATIC time.c 
+add_library(native-posix        time.c 
                                 udp.c 
                                 bswap.c 
                                 system.c 
