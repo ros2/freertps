@@ -4,6 +4,7 @@ project(freertps C)
 find_package(ament_cmake REQUIRED)
 
 include_directories(include)
+# in the future, consider target_include_directories() instead...
 ament_export_include_directories(include)
 
 function(freertps_add_executable exe srcs)
@@ -18,6 +19,7 @@ set(SYSTEM "native-posix" CACHE STRING "the target system name")
 message("system: [${SYSTEM}]")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -O2")
+# ament_export_definitions()....in the future
 
 # set up the toolchain for this system, include additional stuff, set
 # more defines for clock speeds, etc etc
@@ -42,6 +44,7 @@ add_library(freertps STATIC disco.c
                             pub.c 
                             time.c 
                             udp.c)
+ament_export_libraries(freertps)
 
 # build the applications for this system
 #string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
@@ -53,7 +56,7 @@ add_library(freertps STATIC disco.c
 ament_package()
 
 install(
-  DIRECTORY include
+  DIRECTORY include/
   DESTINATION include
 )
 install(
