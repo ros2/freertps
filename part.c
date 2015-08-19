@@ -2,6 +2,10 @@
 #include "freertps/udp.h"
 #include "freertps/disco.h"
 #include "freertps/part.h"
+#include <stdio.h>
+
+//static frudp_part_t g_frudp_participant;
+static bool g_frudp_participant_init_complete = false;
 
 frudp_part_t *frudp_part_find(const frudp_guid_prefix_t *guid_prefix)
 {
@@ -18,4 +22,24 @@ frudp_part_t *frudp_part_find(const frudp_guid_prefix_t *guid_prefix)
       return p;
   }
   return NULL; // couldn't find it. sorry.
+}
+
+bool frudp_part_create(const uint32_t domain_id)
+{
+  if (g_frudp_participant_init_complete)
+  {
+    printf("woah there partner. "
+           "freertps currently only allows one participant.\r\n");
+    return false;
+  }
+  g_frudp_config.domain_id = domain_id;
+  if (!frudp_init_participant_id())
+  {
+    printf("unable to initialize participant ID\r\n");
+    return false;
+  }
+  frudp_generic_init();
+  frudp_disco_init();
+  g_frudp_participant_init_complete = true;
+  return true;
 }

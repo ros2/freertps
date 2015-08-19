@@ -107,7 +107,8 @@ bool frudp_init()
   */
   if (!frudp_init_participant_id())
     return false;
-  frudp_generic_init();
+  // some of the following stuff has been moved to frudp_part_create()
+  //frudp_generic_init();
   // not sure about endianness here.
   g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
   g_frudp_config.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
@@ -117,7 +118,7 @@ bool frudp_init()
   // 4 bytes left. let's use the POSIX process ID
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
   memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
-  frudp_disco_init();
+  //frudp_disco_init();
   return true;
 }
 
