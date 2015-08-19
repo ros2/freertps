@@ -35,8 +35,7 @@ endforeach()
 message("SYSTEM_APPS = ${SYSTEM_APPS}")
 
 # build the portable library
-#add_library(freertps STATIC disco.c 
-add_library(freertps SHARED disco.c 
+add_library(freertps STATIC disco.c
                             freertps.c 
                             id.c 
                             part.c 
@@ -47,8 +46,6 @@ add_library(freertps SHARED disco.c
                             time.c 
                             udp.c)
 target_link_libraries(freertps freertps_system_${SYSTEM})
-#target_link_libraries(freertps_system_${SYSTEM} freertps)
-# need the equivalent of --start-group and --end-group here somehow...
 ament_export_libraries(freertps)
 ament_export_libraries(freertps_system_${SYSTEM})
 
