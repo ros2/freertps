@@ -96,8 +96,9 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
          submsg->header.len - sizeof(frudp_submsg_data_t) + 4);
   //pub_sample->data_len = sample->data_len;
   // TODO: now, send DATA and HEARTBEAT submessages
-  printf("frudp publish %d bytes, seq num %d\n",
+  printf("frudp publish %d bytes, seq num %d:%d\n",
          submsg->header.len,
+         (int)pub_submsg->writer_sn.high,
          (int)pub_submsg->writer_sn.low);
 /*
   /////////////////////////////////////////////////////////////
@@ -136,7 +137,12 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
   hb_submsg->writer_id = submsg->writer_id;
   hb_submsg->first_sn.low = 1; // todo
   hb_submsg->first_sn.high = 0; // todo
-  hb_submsg->last_sn = submsg->writer_sn;
+  hb_submsg->last_sn = hb_submsg->first_sn; //submsg->writer_sn;
+  /*
+  printf(" hb submsg publish last_sn = %d:%d\n",
+         (int)hb_submsg->last_sn.high,
+         (int)hb_submsg->last_sn.low);
+  */
   static int hb_count = 0;
   hb_submsg->count = hb_count++;
 

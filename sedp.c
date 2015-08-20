@@ -355,7 +355,9 @@ static void sedp_publish(const char *topic_name,
   d->octets_to_inline_qos = 16; // ?
   d->reader_id = g_sedp_sub_reader_id;
   d->writer_id = g_sedp_sub_writer_id;
-  d->writer_sn = g_frudp_sn_unknown;
+  //d->writer_sn = g_frudp_sn_unknown;
+  d->writer_sn.high = 0;
+  d->writer_sn.low = 0;
   //frudp_parameter_list_item_t *inline_qos_param =
   //  (frudp_parameter_list_item_t *)d->data;
   /*
