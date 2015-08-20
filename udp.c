@@ -293,7 +293,8 @@ static bool frudp_rx_info_ts(RX_MSG_ARGS)
     // todo: care about alignment
     //memcpy("
     //printf("about to read %08x\r\n", (unsigned)submsg->contents);
-    rcvr->timestamp = *((fr_time_t *)(submsg->contents));
+    const fr_time_t * const t_msg = (const fr_time_t * const)submsg->contents;
+    rcvr->timestamp = *t_msg; //*((fr_time_t *)(submsg->contents));
     /*
     FREERTPS_INFO("info_ts rx timestamp %.6f\n",
                   (double)(rcvr->timestamp.seconds) +
@@ -483,14 +484,14 @@ bool frudp_generic_init()
 uint16_t frudp_mcast_builtin_port()
 {
   return FRUDP_PORT_PB +
-         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_DG * g_frudp_config.domain_id +
          FRUDP_PORT_D0;
 }
 
 uint16_t frudp_ucast_builtin_port()
 {
   return FRUDP_PORT_PB +
-         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_DG * g_frudp_config.domain_id +
          FRUDP_PORT_D1 +
          FRUDP_PORT_PG * g_frudp_config.participant_id;
 }
@@ -498,14 +499,14 @@ uint16_t frudp_ucast_builtin_port()
 uint16_t frudp_mcast_user_port()
 {
   return FRUDP_PORT_PB +
-         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_DG * g_frudp_config.domain_id +
          FRUDP_PORT_D2;
 }
 
 uint16_t frudp_ucast_user_port()
 {
   return FRUDP_PORT_PB +
-         FRUDP_PORT_DG * FRUDP_DOMAIN_ID +
+         FRUDP_PORT_DG * g_frudp_config.domain_id +
          FRUDP_PORT_D3 +
          FRUDP_PORT_PG * g_frudp_config.participant_id;
 }

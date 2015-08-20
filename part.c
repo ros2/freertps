@@ -1,8 +1,10 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "freertps/udp.h"
 #include "freertps/disco.h"
 #include "freertps/part.h"
-#include <stdio.h>
+#include "freertps/config.h"
+#include "freertps/freertps.h"
 
 //static frudp_part_t g_frudp_participant;
 static bool g_frudp_participant_init_complete = false;
@@ -32,6 +34,7 @@ bool frudp_part_create(const uint32_t domain_id)
            "freertps currently only allows one participant.\r\n");
     return false;
   }
+  FREERTPS_INFO("frudp_part_create(domain_id = %d)\r\n", domain_id);
   g_frudp_config.domain_id = domain_id;
   if (!frudp_init_participant_id())
   {
