@@ -40,7 +40,7 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
 //////////////////////////////////////////////////////////////////////////
 
 
-//#define RX_VERBOSE
+#define RX_VERBOSE
 
 bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
               const uint32_t dst_addr, const uint16_t dst_port,

@@ -105,8 +105,8 @@ bool frudp_init()
     return false;
   }
   */
-  if (!frudp_init_participant_id())
-    return false;
+  //if (!frudp_init_participant_id())
+  //  return false;
   // some of the following stuff has been moved to frudp_part_create()
   //frudp_generic_init();
   // not sure about endianness here.

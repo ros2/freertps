@@ -20,18 +20,17 @@
 typedef struct
 {
   frudp_guid_prefix_t guid_prefix;
-  //g_frudp_part_t part;
   int participant_id;
   uint32_t domain_id;
   uint32_t unicast_addr;
 } frudp_config_t;
 extern frudp_config_t g_frudp_config;
 
-//#define VERBOSE_HEARTBEAT
-//#define VERBOSE_DATA
-//#define VERBOSE_ACKNACK
-//#define VERBOSE_GAP
+#define VERBOSE_HEARTBEAT
+#define VERBOSE_DATA
+#define VERBOSE_ACKNACK
+#define VERBOSE_GAP
 
-//#define VERBOSE_TX_ACKNACK
+#define VERBOSE_TX_ACKNACK
 
 #endif
