@@ -30,8 +30,21 @@ frudp_pub_t *frudp_create_pub(const char *topic_name,
     return NULL; // no room. sorry
   }
   frudp_pub_t *p = &g_frudp_pubs[g_frudp_num_pubs];
-  p->topic_name = topic_name;
-  p->type_name = type_name;
+  // todo: figure out how to do this better rather than just leaking
+  char *long_lived_topic_name = NULL;
+  if (topic_name)
+  {
+    long_lived_topic_name = topic_name ? malloc(strlen(topic_name)+1) : 0;
+    strcpy(long_lived_topic_name, topic_name);
+  }
+  char *long_lived_type_name = NULL;
+  if (type_name)
+  {
+    long_lived_type_name = malloc(strlen(type_name)+1);
+    strcpy(long_lived_type_name, type_name);
+  }
+  p->topic_name = long_lived_topic_name;
+  p->type_name = long_lived_type_name;
   if (data_submsgs) // it's for a reliable connection
   {
     p->data_submsgs = data_submsgs;
@@ -274,7 +287,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
                             const uint8_t *payload,
                             const uint32_t payload_len)
 {
-  //printf("publish user msg %d bytes\n", (int)payload_len);
+  printf("publish user msg %d bytes\n", (int)payload_len);
   if (pub->reliable)
   {
     // shouldn't be hard to push this through the reliable-comms machinery 

@@ -178,6 +178,10 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
   for (unsigned i = 0; i < g_frudp_num_pubs; i++)
   {
     frudp_pub_t *pub = &g_frudp_pubs[i];
+    printf("comparing incoming SEDP sub to our publisher %s of type %s\r\n",
+           (pub->topic_name ? pub->topic_name : "(no name)"),
+           (pub->type_name  ? pub->type_name  : "(no type)"));
+           
     if (!pub->topic_name || !pub->type_name)
       continue; // sanity check. some built-ins don't have names.
     if (strcmp(pub->topic_name, info->topic_name))
@@ -405,7 +409,8 @@ static void sedp_publish(const char *topic_name,
     *param_topic_len = topic_len + 1;
     //*((uint32_t *)param->value) = topic_len + 1;
     memcpy(param->value + 4, topic_name, topic_len + 1);
-    param->len = (4 + topic_len + 3) & ~0x3; // params must be 32-bit aligned
+    //param->value[4 + topic_len + 1] = 0; // null-terminate plz
+    param->len = (4 + topic_len + 1 + 3) & ~0x3; // params must be 32-bit aligned
   }
   /////////////////////////////////////////////////////////////
   if (type_name)
@@ -415,7 +420,7 @@ static void sedp_publish(const char *topic_name,
     int type_len = strlen(type_name);
     *((uint32_t *)param->value) = type_len + 1;
     memcpy(param->value + 4, type_name, type_len + 1);
-    param->len = (4 + type_len + 3) & ~0x3; // params must be 32-bit aligned
+    param->len = (4 + type_len + 1 + 3) & ~0x3; // params must be 32-bit aligned
   }
   /////////////////////////////////////////////////////////////
   // todo: follow the "reliable" flag in the subscription structure

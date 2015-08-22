@@ -239,10 +239,11 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
 
 bool frudp_listen(const uint32_t max_usec)
 {
+  //printf("frudp_listen(%d)\n", (int)max_usec);
   static uint8_t s_frudp_listen_buf[FU_RX_BUFSIZE]; // haha
   double t_start = fr_time_now_double();
   double t_now = t_start;
-  while (t_now - t_start < 1.0e-6 * max_usec)
+  while (t_now - t_start <= 1.0e-6 * max_usec)
   {
     fd_set rdset;
     FD_ZERO(&rdset);
@@ -291,6 +292,8 @@ bool frudp_listen(const uint32_t max_usec)
         }
       }
     }
+    if (max_usec == 0) // this is a common case from, e.g., spin_some()
+      break;
     t_now = fr_time_now_double();
     if (g_timer_period > 0)
     {
