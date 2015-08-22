@@ -17,13 +17,13 @@ GDB_SERVER_TARGETS:=$(foreach APP, $(BUILT_APPS), gdb_server-$(APP))
 
 $(SYSTEMS): %: build/%
 	@echo $@
-	cd build/$@ && cmake ../.. -DSYSTEM=$@ && make
+	cd build/$@ && cmake ../.. -DSYSTEM=$@ -Dfreertps_standalone=ON && make
 
 build/%:
 	mkdir -p $@
 
 clean:
-	-rm -rf build* build.*
+	-rm -rf build*
 
 OPENOCD=/usr/local/bin/openocd -f stm32/openocd/stlink-v2-1.cfg -f stm32/openocd/stm32f7-disco.cfg 
 IMAGE=build.stm32/examples/listener.bin

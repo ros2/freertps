@@ -48,9 +48,7 @@ void freertps_system_init()
   //signal(SIGINT, sigint_handler); // let ROS2 handle this now
 }
 
-/*
 bool freertps_system_ok()
 {
-  return !g_done;
+  return true; //!g_done;
 }
-*/

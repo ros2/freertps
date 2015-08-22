@@ -1,4 +1,4 @@
-add_library(freertps_system_native-posix STATIC time.c
+add_library(freertps_system_native-posix  time.c
                                           udp.c 
                                           bswap.c 
                                           system.c 

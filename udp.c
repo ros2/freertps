@@ -144,7 +144,7 @@ static bool frudp_rx_acknack(RX_MSG_ARGS)
 {
   frudp_submsg_acknack_t *m = (frudp_submsg_acknack_t *)submsg->contents;
 #ifdef VERBOSE_ACKNACK
-  printf("  ACKNACK   0x%08x => ", (unsigned)htonl(m->writer_id.u));
+  printf("  ACKNACK   0x%08x => ", (unsigned)freertps_htonl(m->writer_id.u));
   frudp_guid_t reader_guid;
   frudp_stuff_guid(&reader_guid, &rcvr->src_guid_prefix, &m->reader_id);
   frudp_print_guid(&reader_guid);
@@ -177,7 +177,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   printf("  HEARTBEAT   ");
   frudp_print_guid(&writer_guid);
   printf(" => 0x%08x  %d -> %d\n",
-         (unsigned)htonl(hb->reader_id.u),
+         (unsigned)freertps_htonl(hb->reader_id.u),
          (unsigned)hb->first_sn.low,
          (unsigned)hb->last_sn.low);
 #endif
@@ -269,8 +269,8 @@ static bool frudp_rx_gap(RX_MSG_ARGS)
 #ifdef VERBOSE_GAP
   frudp_submsg_gap_t *gap = (frudp_submsg_gap_t *)submsg;
   printf("  GAP 0x%08x => 0x%08x  %d -> %d\n",
-         (unsigned)htonl(gap->writer_id.u),
-         (unsigned)htonl(gap->reader_id.u),
+         (unsigned)freertps_htonl(gap->writer_id.u),
+         (unsigned)freertps_htonl(gap->reader_id.u),
          (int)gap->gap_start.low,
          (int)(gap->gap_end.bitmap_base.low +
                gap->gap_end.num_bits));
@@ -390,7 +390,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   printf("  DATA ");
   frudp_print_guid(&writer_guid);
   printf(" => 0x%08x  : %d\n",
-         (unsigned)htonl(data_submsg->reader_id.u),
+         (unsigned)freertps_htonl(data_submsg->reader_id.u),
          (int)data_submsg->writer_sn.low);
 #endif
   // special-case SEDP, since some SEDP broadcasts (e.g., from opensplice

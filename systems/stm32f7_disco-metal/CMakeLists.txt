@@ -1,5 +1,5 @@
 include_directories(../stm32_common)
-add_library(stm32f7_disco-metal STATIC console.c 
+add_library(freertps_system_stm32f7_disco-metal console.c 
                                        led.c 
                                        systime.c
                                        flash.c

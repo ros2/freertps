@@ -1,15 +1,25 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(freertps C)
 
-find_package(ament_cmake REQUIRED)
+set(freertps_standalone OFF CACHE BOOL "standalone build")
 
-include_directories(include)
 # in the future, consider target_include_directories() instead...
-ament_export_include_directories(include)
+if(NOT freertps_standalone)
+  find_package(ament_cmake REQUIRED)
+  ament_export_include_directories(include)
+endif()
+include_directories(include)
 
 function(freertps_add_executable exe srcs)
+  message("freertps_add_executable(${exe})")
   add_executable(${exe} ${srcs})
-  target_link_libraries(${exe} freertps -Wl,--start-group ${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
+  foreach(syslib ${SYSTEM_EXTRA_LIBS})
+    message("adding dependency on ${syslib}")
+    add_dependencies(${exe} ${syslib})
+    #include(systems/${syslib})
+  endforeach()
+
+  target_link_libraries(${exe} freertps -Wl,--start-group freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
   if(${make_binfiles})
     make_bin(${exe} ${CMAKE_CURRENT_BINARY_DIR}/${exe}.elf ${CMAKE_CURRENT_BINARY_DIR}/${exe}.bin)
   endif()
@@ -30,42 +40,42 @@ add_subdirectory(systems/${SYSTEM})
 
 # and any other required system libraries
 foreach(syslib ${SYSTEM_EXTRA_LIBS})
-  include(systems/${syslib})
+  #include(systems/${syslib})
+  add_subdirectory(systems/${syslib})
 endforeach()
 message("SYSTEM_APPS = ${SYSTEM_APPS}")
 
 # build the portable library
-add_library(freertps STATIC disco.c
-                            freertps.c 
-                            id.c 
-                            part.c 
-                            spdp.c 
-                            sedp.c 
-                            sub.c 
-                            pub.c 
-                            time.c 
-                            udp.c)
+add_library(freertps disco.c
+                     freertps.c 
+                     id.c 
+                     part.c 
+                     spdp.c 
+                     sedp.c 
+                     sub.c 
+                     pub.c 
+                     time.c 
+                     udp.c)
 target_link_libraries(freertps freertps_system_${SYSTEM})
-ament_export_libraries(freertps)
-ament_export_libraries(freertps_system_${SYSTEM})
 
-# build the applications for this system
-#string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
-#foreach(app ${SYSTEM_APPS})
-#  add_subdirectory(apps/${app})
-#endforeach()
-
-
-ament_package()
-
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
-install(
-  TARGETS freertps freertps_system_${SYSTEM}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
+if (NOT freertps_standalone)
+  ament_export_libraries(freertps)
+  ament_export_libraries(freertps_system_${SYSTEM})
+  ament_package()
+  install(
+    DIRECTORY include/
+    DESTINATION include
+  )
+  install(
+    TARGETS freertps freertps_system_${SYSTEM}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+  )
+else()
+  # build the applications for this system
+  string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
+  foreach(app ${SYSTEM_APPS})
+    add_subdirectory(apps/${app})
+  endforeach()
+endif()
