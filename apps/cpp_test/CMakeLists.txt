@@ -1,1 +1,1 @@
-freertps_add_executable(talker talker.c)
+freertps_add_executable(cpp_test main.cpp)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.12)
-project(freertps C)
+project(freertps)
 
 set(freertps_standalone OFF CACHE BOOL "standalone build")
 
@@ -13,6 +13,7 @@ include_directories(include)
 function(freertps_add_executable exe srcs)
   message("freertps_add_executable(${exe})")
   add_executable(${exe} ${srcs})
+  set_target_properties(${exe} PROPERTIES LINKER_LANGUAGE C)
   foreach(syslib ${SYSTEM_EXTRA_LIBS})
     message("adding dependency on ${syslib}")
     add_dependencies(${exe} ${syslib})

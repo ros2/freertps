@@ -52,3 +52,5 @@ void _ttywrch(__attribute__((unused)) int ch)
 {
 }
 
+//int _open(const char *pathname, int flags) { return -1; }
+int _open(const char *pathname, int flags, mode_t mode) { return -1; }
