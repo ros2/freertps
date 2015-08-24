@@ -12,7 +12,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections -include
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections -include ${STM32_CHIP_HEADER}")
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
-set(CMAKE_EXE_LINKER_FLAGS "-lc -lgcc -mthumb -static -Wl,--no-gc-sections -Wl,--print-gc-sections -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/map,--cref")
+set(CMAKE_EXE_LINKER_FLAGS "-lc -lgcc -mthumb -static -Wl,--print-gc-sections -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/map,--cref")
+#set(CMAKE_EXE_LINKER_FLAGS "-lc -lgcc -mthumb -static -Wl,--no-gc-sections -Wl,--print-gc-sections -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/map,--cref")
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 
 set(make_binfiles ON CACHE BOOL "build binaries from ELFs")
