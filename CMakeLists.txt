@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
+#SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
+#SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
+
 project(freertps)
 
 set(freertps_standalone OFF CACHE BOOL "standalone build")
@@ -62,14 +65,15 @@ target_link_libraries(freertps freertps_system_${SYSTEM})
 
 if (NOT freertps_standalone)
   ament_export_libraries(freertps)
-  ament_export_libraries(freertps_system_${SYSTEM})
+  #ament_export_libraries(freertps_system_${SYSTEM})
   ament_package()
   install(
     DIRECTORY include/
     DESTINATION include
   )
+    #TARGETS freertps systems/freertps_system_${SYSTEM}
   install(
-    TARGETS freertps freertps_system_${SYSTEM}
+    TARGETS freertps
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin

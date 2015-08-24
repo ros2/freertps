@@ -8,3 +8,9 @@ target_link_libraries(freertps_system_${SYSTEM} freertps)
 set(SYSTEM_EXTRA_LIBS  "" CACHE STRING "")
 set(SYSTEM_BONUS_LIBS "m" CACHE STRING "") # not the best variable name
 set(SYSTEM_APPS  "listener talker imu led cpp_test" CACHE STRING "")
+install(
+  TARGETS freertps_system_${SYSTEM}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
