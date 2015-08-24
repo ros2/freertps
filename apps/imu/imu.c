@@ -53,7 +53,7 @@ void timer_cb()
   //       xyz[0], xyz[1], xyz[2]);
   if (!g_pub)
     return;
-  static char __attribute__((aligned(4))) msg[1024] = {0};
+  static char __attribute__((aligned(4))) msg[512] = {0};
   std_interfaces__header_t *header = (std_interfaces__header_t *)msg;
   header->stamp.sec = 1234;
   header->stamp.nanosec = 5678;

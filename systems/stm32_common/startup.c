@@ -27,7 +27,7 @@ void reset_vector()
   // set up bss segment
   for (pDest = &_sbss; pDest < &_ebss; )
     *pDest++ = 0;
-  //__libc_init_array() ;
+  __libc_init_array() ;
   SCB->CPACR |= ((3UL << (10*2)) | (3UL << (11*2))); // activate the FPU
   //TODO used define provided if changes in future generations ? 
   // set up the clocking scheme
