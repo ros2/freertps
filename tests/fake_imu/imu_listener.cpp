@@ -8,13 +8,6 @@ void imu_cb(const sensor_interfaces::msg::Imu::ConstSharedPtr &msg)
          msg->linear_acceleration.x,
          msg->linear_acceleration.y,
          msg->linear_acceleration.z);
-  /*
-  printf("  orient: [ %.3f %.3f %.3f %.3f ]\n",
-         msg->orientation.x,
-         msg->orientation.y,
-         msg->orientation.z,
-         msg->orientation.w);
-  */
 }
 
 int main(int argc, char **argv)

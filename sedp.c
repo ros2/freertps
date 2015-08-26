@@ -178,9 +178,11 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
   for (unsigned i = 0; i < g_frudp_num_pubs; i++)
   {
     frudp_pub_t *pub = &g_frudp_pubs[i];
+#ifdef SEDP_VERBOSE
     printf("comparing incoming SEDP sub to our publisher %s of type %s\r\n",
            (pub->topic_name ? pub->topic_name : "(no name)"),
            (pub->type_name  ? pub->type_name  : "(no type)"));
+#endif
            
     if (!pub->topic_name || !pub->type_name)
       continue; // sanity check. some built-ins don't have names.
@@ -188,7 +190,7 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
       continue; // not the same topic. move along.
     if (strcmp(pub->type_name, info->type_name))
     {
-      printf("    type mismatch: [%s] != [%s]\n",
+      printf("    SEDP type mismatch: [%s] != [%s]\n",
              pub->type_name, info->type_name);
       continue;
     }
@@ -460,6 +462,12 @@ void sedp_publish_sub(frudp_sub_t *sub)
 
 void sedp_publish_pub(frudp_pub_t *pub)
 {
+  if (!g_sedp_pub_pub)
+  {
+    printf("woah there partner.\r\n"
+           "you need to call frudp_part_create()\r\n");
+    return;
+  }
   sedp_publish(pub->topic_name,
                pub->type_name,
                g_sedp_pub_pub,

@@ -26,11 +26,12 @@ typedef struct
 } frudp_config_t;
 extern frudp_config_t g_frudp_config;
 
-#define VERBOSE_HEARTBEAT
-#define VERBOSE_DATA
-#define VERBOSE_ACKNACK
-#define VERBOSE_GAP
+//#define VERBOSE_HEARTBEAT
+//#define VERBOSE_DATA
+//#define VERBOSE_ACKNACK
+//#define VERBOSE_GAP
 
-#define VERBOSE_TX_ACKNACK
+//#define VERBOSE_TX_ACKNACK
+//#define SEDP_VERBOSE
 
 #endif

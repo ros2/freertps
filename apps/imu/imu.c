@@ -98,12 +98,14 @@ void timer_cb()
 int main(int argc, char **argv)
 {
   imu_init();
+  freertps_system_init();
+  frudp_part_create(0); // create a participant on domain 0
   freertps_timer_set_freq(1000, timer_cb);
 
   printf("hello, world!\r\n");
   freertps_system_init();
   g_pub = freertps_create_pub
-            ("imu", "sensor_interfaces::msg::dds_::Imu_");
+            ("imu", "sensor_msgs::msg::dds_::Imu_");
   while (freertps_system_ok())
   {
     frudp_listen(1000000);

@@ -43,7 +43,7 @@ void (*volatile __malloc_initialize_hook)(void) = freertps_init_malloc_hook;
 
 void freertps_system_init()
 {
-  __malloc_hook = freertps_malloc;
+  //__malloc_hook = freertps_malloc;
   frudp_init();
   //signal(SIGINT, sigint_handler); // let ROS2 handle this now
 }

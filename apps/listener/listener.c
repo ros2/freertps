@@ -14,8 +14,9 @@ int main(int argc, char **argv)
 {
   printf("hello, world!\r\n");
   freertps_system_init();
+  frudp_part_create(0); // create a participant on domain 0
   freertps_create_sub("chatter", 
-                      "std_interfaces::msg::dds_::String_",
+                      "std_msgs::msg::dds_::String_",
                       chatter_cb);
   while (freertps_system_ok())
   {

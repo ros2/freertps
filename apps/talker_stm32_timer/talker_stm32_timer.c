@@ -32,7 +32,7 @@ int main(int argc, char **argv)
   printf("hello, world!\r\n");
   freertps_system_init();
   g_pub = freertps_create_pub
-            ("chatter", "std_interfaces::msg::dds_::String_");
+            ("chatter", "std_msgs::msg::dds_::String_");
   while (freertps_system_ok())
   {
     frudp_listen(1000000);

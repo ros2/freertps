@@ -6,7 +6,7 @@ SYSTEMS=native-posix               \
 APPS=listener talker
 
 .PHONY: all clean $(SYSTEMS)
-all: $(SYSTEMS)
+all: utils/bin/console $(SYSTEMS)
 
 BUILT_SYSTEMS:=$(shell ls build)
 BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(APP)-$(SYSTEM)))
@@ -14,6 +14,9 @@ PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), program-$(APP))
 GDB_TARGETS:=$(foreach APP, $(BUILT_APPS), gdb-$(APP))
 RESET_TARGETS:=$(foreach APP, $(BUILT_APPS), reset-$(APP))
 GDB_SERVER_TARGETS:=$(foreach APP, $(BUILT_APPS), gdb_server-$(APP))
+
+utils/bin/console:
+	cd utils && make
 
 $(SYSTEMS): %: build/%
 	@echo $@

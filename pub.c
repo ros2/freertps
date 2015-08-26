@@ -209,7 +209,7 @@ void frudp_pub_rx_acknack(frudp_pub_t *pub,
                      acknack->reader_sn_state.num_bits + 1;
        req_seq_num++)
   {
-    printf("     request for seq num %d\n", req_seq_num);
+    //printf("     request for seq num %d\n", req_seq_num);
     for (int msg_idx = 0; msg_idx < pub->num_data_submsgs; msg_idx++)
     {
       frudp_submsg_data_t *data = pub->data_submsgs[msg_idx];
@@ -262,7 +262,7 @@ void frudp_pub_rx_acknack(frudp_pub_t *pub,
         submsg_wpos += 4 + hb_submsg->header.len;
 
         int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
-        printf("         sending %d bytes\n", payload_len);
+        //printf("         sending %d bytes\n", payload_len);
         frudp_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
                  part->metatraffic_unicast_locator.port,
                  (const uint8_t *)msg, payload_len);
@@ -287,7 +287,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
                             const uint8_t *payload,
                             const uint32_t payload_len)
 {
-  printf("publish user msg %d bytes\n", (int)payload_len);
+  //printf("publish user msg %d bytes\n", (int)payload_len);
   if (pub->reliable)
   {
     // shouldn't be hard to push this through the reliable-comms machinery 
