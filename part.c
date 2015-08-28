@@ -26,7 +26,7 @@ frudp_part_t *frudp_part_find(const frudp_guid_prefix_t *guid_prefix)
   return NULL; // couldn't find it. sorry.
 }
 
-bool frudp_part_create(const uint32_t domain_id)
+bool frudp_part_create()
 {
   if (g_frudp_participant_init_complete)
   {
@@ -34,15 +34,16 @@ bool frudp_part_create(const uint32_t domain_id)
            "freertps currently only allows one participant.\r\n");
     return false;
   }
-  FREERTPS_INFO("frudp_part_create(domain_id = %d)\r\n", domain_id);
-  g_frudp_config.domain_id = domain_id;
+  FREERTPS_INFO("frudp_part_create() on domain_id %d\r\n",
+                g_frudp_config.domain_id);
+  //g_frudp_config.domain_id = domain_id;
   if (!frudp_init_participant_id())
   {
     printf("unable to initialize participant ID\r\n");
     return false;
   }
-  frudp_generic_init();
-  frudp_disco_init();
+  //frudp_generic_init();
+  //frudp_disco_init();
   g_frudp_participant_init_complete = true;
   return true;
 }

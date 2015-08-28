@@ -16,6 +16,20 @@ void frudp_add_reader(const frudp_reader_t *match)
 {
   if (g_frudp_num_readers >= FRUDP_MAX_READERS)
     return;
+  // make sure that in the meantime, we haven't already added this
+  bool found = false;
+  for (unsigned j = 0; !found && j < g_frudp_num_readers; j++)
+  {
+    frudp_reader_t *r = &g_frudp_readers[j];
+    if (frudp_guid_identical(&r->writer_guid, &match->writer_guid))
+      found = true;
+  }
+  if (found)
+  {
+    printf("found reader already; skipping duplicate add\n");
+    return;
+  }
+
   g_frudp_readers[g_frudp_num_readers] = *match;
   g_frudp_num_readers++;
   printf("add_reader(");

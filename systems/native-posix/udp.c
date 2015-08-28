@@ -119,6 +119,7 @@ bool frudp_init()
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
   memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
   //frudp_disco_init();
+  frudp_generic_init();
   return true;
 }
 

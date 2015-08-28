@@ -60,19 +60,19 @@ void frudp_sedp_init()
     d->writer_sn = g_frudp_sn_unknown;
     g_sedp_pub_writer_data_submsgs[i] = d;
   }
-  g_sedp_sub_pub = frudp_create_pub
-                     (NULL, // no topic name
-                      NULL, // no type name
-                      g_sedp_sub_writer_id,
-                      g_sedp_sub_writer_data_submsgs,
-                      FRUDP_MAX_SUBS);
+  g_sedp_sub_pub = frudp_create_pub(
+    NULL, // no topic name
+    NULL, // no type name
+    g_sedp_sub_writer_id,
+    g_sedp_sub_writer_data_submsgs,
+    FRUDP_MAX_SUBS);
 
-  g_sedp_pub_pub = frudp_create_pub
-                     (NULL, // no topic name
-                      NULL, // no type name
-                      g_sedp_pub_writer_id,
-                      g_sedp_pub_writer_data_submsgs,
-                      FRUDP_MAX_PUBS);
+  g_sedp_pub_pub = frudp_create_pub(
+    NULL, // no topic name
+    NULL, // no type name
+    g_sedp_pub_writer_id,
+    g_sedp_pub_writer_data_submsgs,
+    FRUDP_MAX_PUBS);
 
   frudp_sub_t sedp_sub_sub;
   sedp_sub_sub.topic_name = NULL;
@@ -91,6 +91,10 @@ void frudp_sedp_init()
   sedp_pub_sub.msg_cb = NULL;
   sedp_pub_sub.reliable = true;
   frudp_add_sub(&sedp_pub_sub);
+}
+
+void frudp_sedp_start()
+{
 }
 
 void frudp_sedp_fini()
@@ -171,6 +175,7 @@ static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
   }
 }
 
+#define SEDP_VERBOSE
 static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
 {
   printf("sedp sub: [%s]\n", info->topic_name ? info->topic_name : "");
@@ -242,7 +247,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
       memcpy(&g_topic_info.guid, guid, sizeof(frudp_guid_t));
 #ifdef SEDP_VERBOSE
       //memcpy(&part->guid_prefix, &guid->guid_prefix, FRUDP_GUID_PREFIX_LEN);
-      uint8_t *p = guid->guid_prefix.prefix;
+      uint8_t *p = guid->prefix.prefix;
       printf("    endpoint guid 0x%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
                                  "%02x%02x%02x%02x"
@@ -351,6 +356,7 @@ static void sedp_publish(const char *topic_name,
                          frudp_pub_t *pub,
                          const frudp_eid_t eid)
 {
+  printf("sedp publish\n");
   frudp_submsg_data_t *d = (frudp_submsg_data_t *)g_sedp_msg_buf;
   d->header.id = FRUDP_SUBMSG_ID_DATA;
   d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
@@ -454,6 +460,12 @@ static void sedp_publish(const char *topic_name,
 
 void sedp_publish_sub(frudp_sub_t *sub)
 {
+  if (!g_sedp_sub_pub)
+  {
+    printf("woah there partner.\r\n"
+           "you need to call frudp_part_create()\r\n");
+    return;
+  }
   sedp_publish(sub->topic_name,
                sub->type_name,
                g_sedp_sub_pub,

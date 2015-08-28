@@ -6,8 +6,9 @@
 #include "freertps/part.h"
 
 void frudp_sedp_init();
-void frudp_sedp_fini();
+void frudp_sedp_start();
 void frudp_sedp_tick();
+void frudp_sedp_fini();
 
 extern frudp_pub_t *g_sedp_sub_pub;
 void sedp_publish_sub(frudp_sub_t *sub);

@@ -211,6 +211,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
         r.data_cb = sub->data_cb;
         r.msg_cb = sub->msg_cb;
         match = &r;
+        printf("adding reader due to heartbeat RX\n");
         frudp_add_reader(&r);
       }
     }
@@ -449,7 +450,16 @@ static bool frudp_rx_data(RX_MSG_ARGS)
   }
   if (!num_matches_found)
   {
-    printf("    couldn't find a matched reader for this DATA\n");
+    /*
+    printf("  DATA ");
+    printf(" => 0x%08x  : %d\n",
+      (unsigned)freertps_htonl(data_submsg->reader_id.u),
+      (int)data_submsg->writer_sn.low);
+    */
+    printf("    couldn't find a matched reader for this DATA:\n");
+    printf("      ");
+    frudp_print_guid(&writer_guid);
+    printf("\n");
     printf("    available readers:\n");
     for (unsigned i = 0; i < g_frudp_num_readers; i++)
     {
@@ -457,7 +467,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
       printf("      writer = ");
       frudp_print_guid(&match->writer_guid);
       printf(" => %08x\n", 
-             (unsigned)freertps_htonl(match->reader_eid.u));
+        (unsigned)freertps_htonl(match->reader_eid.u));
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
@@ -473,11 +483,13 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
 bool frudp_generic_init()
 {
   FREERTPS_INFO("frudp_generic_init()\n");
+  frudp_part_create();
   frudp_add_mcast_rx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_builtin_port());
   frudp_add_mcast_rx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_user_port());
   frudp_add_ucast_rx(frudp_ucast_user_port());
+  frudp_disco_init();
   return true;
 }
 

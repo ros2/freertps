@@ -20,6 +20,6 @@ typedef struct
 } frudp_part_t;
 
 frudp_part_t *frudp_part_find(const frudp_guid_prefix_t *guid_prefix);
-bool frudp_part_create(const uint32_t domain_id);
+bool frudp_part_create();
 
 #endif

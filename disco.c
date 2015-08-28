@@ -17,6 +17,13 @@ void frudp_disco_init()
   frudp_sedp_init();
 }
 
+void frudp_disco_start()
+{
+  FREERTPS_INFO("discovery start\n");
+  frudp_spdp_start();
+  frudp_sedp_start();
+}
+
 void frudp_disco_fini()
 {
   FREERTPS_INFO("discovery fini\n");

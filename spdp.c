@@ -228,13 +228,17 @@ void frudp_spdp_init()
   spdp_reader.msg_cb = NULL;
   spdp_reader.reliable = false;
   frudp_add_reader(&spdp_reader);
-
   /*
   frudp_subscribe(g_frudp_entity_id_unknown,
                   g_spdp_writer_id,
                   frudp_spdp_rx_data,
                   NULL);
   */
+}
+
+void frudp_spdp_start()
+{
+  frudp_spdp_tick();
 }
 
 void frudp_spdp_fini()
@@ -430,6 +434,7 @@ void frudp_spdp_tick()
   if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second
   //if (fr_time_diff(&t, &frudp_spdp_last_bcast).fraction >= 1000000000) // every second
   {
+    printf("spdp bcast\r\n");
     frudp_spdp_bcast();
     frudp_spdp_last_bcast = t;
     //printf("%d participants known\n", (int)g_frudp_discovery_num_participants);

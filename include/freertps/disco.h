@@ -46,7 +46,9 @@
 
 void frudp_disco_init();
 void frudp_disco_fini();
-void frudp_disco_tick();
+
+void frudp_disco_start(); /// must be called to kick off discovery
+void frudp_disco_tick();  /// must be called periodically to broadcast SPDP
 
 #define FRUDP_DISCO_TX_BUFLEN 4096
 extern uint8_t g_frudp_disco_tx_buf[FRUDP_DISCO_TX_BUFLEN];
