@@ -14,12 +14,16 @@
 #define PORTA_MISO 6
 #define PORTB_MOSI 5
 
+//#define PRINT_REGISTER_TABLE
+
 static void accel_txrx(const uint8_t start_reg, 
                        const uint8_t num_regs,
                        uint8_t *rx,
                        const uint8_t *tx);
-static uint8_t accel_read_reg(const uint8_t reg);
 static void accel_write_reg(const uint8_t reg, const uint8_t val); 
+#ifdef PRINT_REGISTER_TABLE
+static uint8_t accel_read_reg(const uint8_t reg);
+#endif
 
 void imu_init()
 {
@@ -43,8 +47,10 @@ void imu_init()
   delay_us(100);
   accel_write_reg(0x20, 0x87); // set max beef (1600 Hz)
   delay_us(100); // wake up plz
-  //uint8_t info1 = accel_read_reg(0x0d);
-  //printf("info1 = 0x%02x\r\n", (unsigned)info1);
+#ifdef PRINT_REGISTER_TABLE
+  uint8_t info1 = accel_read_reg(0x0d);
+  printf("info1 = 0x%02x\r\n", (unsigned)info1);
+#endif
   float test_accel[3] = {0};
   for (int i = 0; i < 10; i++)
   {
@@ -58,12 +64,14 @@ static void accel_write_reg(const uint8_t reg, const uint8_t val)
   accel_txrx(reg, 1, NULL, &val);
 }
 
+#ifdef PRINT_REGISTER_TABLE
 static uint8_t accel_read_reg(const uint8_t reg)
 {
   uint8_t reg_val = 0;
   accel_txrx(reg, 1, &reg_val, NULL);
   return reg_val;
 }
+#endif
 
 static void accel_txrx(const uint8_t start_reg, 
                        const uint8_t num_regs,

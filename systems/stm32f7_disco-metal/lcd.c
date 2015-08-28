@@ -2,6 +2,7 @@
 #include "actuators/rk043fn48h.h"
 #include "actuators/RGB565_480x272.h"
 #include "pin.h"
+#include <stdio.h>
 
 void dma2d_init();
 
@@ -68,8 +69,8 @@ uint32_t WindowY1 = LCD_DISPLAY_HEIGHT;
 uint32_t PixelFormat = ((uint32_t)0x00000002); //LTDC_PIXEL_FORMAT_RGB565;
 uint32_t FBStartAdress = (uint32_t)&RGB565_480x272; //TODO Here it should be bufferAddress
 uint32_t Alpha = 0xFF;
-uint32_t BlendingFactor1 = ((uint32_t)0x00000400);//LTDC_BLENDING_FACTOR1_CA;
-uint32_t BlendingFactor2 = ((uint32_t)0x00000005);//LTDC_BLENDING_FACTOR2_CA;
+//uint32_t BlendingFactor1 = ((uint32_t)0x00000400);//LTDC_BLENDING_FACTOR1_CA;
+//uint32_t BlendingFactor2 = ((uint32_t)0x00000005);//LTDC_BLENDING_FACTOR2_CA;
 uint32_t ImageWidth  = LCD_DISPLAY_WIDTH;
 uint32_t ImageHeight = LCD_DISPLAY_HEIGHT;
 uint32_t tmp;
@@ -209,7 +210,7 @@ LTDC->GCR |= LTDC_GCR_LTDCEN;
 
 
 void lcd_tft_vector(){
-  printf("ltdc interrupt %X",LTDC->ISR);
+  printf("ltdc interrupt %X", (unsigned)LTDC->ISR);
   if((LTDC->ISR & LTDC_ISR_LIF) == LTDC_ISR_LIF){
 //    printf("%8X,",LTDC_Layer1->CLUTWR);
     LTDC->ICR |= LTDC_ICR_CLIF;
@@ -242,7 +243,7 @@ void dma2d_init(){
   DMA2D->FGPFCCR |= 0xFF010002;
   DMA2D->FGOR &= 0xFFFFC000;
   DMA2D->NLR = (LCD_DISPLAY_WIDTH << 16) | LCD_DISPLAY_HEIGHT;
-  DMA2D->OMAR = aDST_Buffer;// Address destination of DMA2
+  DMA2D->OMAR = (uint32_t)aDST_Buffer;// Address destination of DMA2
   DMA2D->OCOLR = 0;
 
   DMA2D->CR |= DMA2D_CR_START;

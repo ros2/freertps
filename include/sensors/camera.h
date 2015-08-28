@@ -2,7 +2,7 @@
 #define SENSOR_CAMERA_H
 
 #define BUFFER_SIZE 0x2850
-static uint32_t aDST_Buffer[BUFFER_SIZE];
+static uint32_t __attribute__((unused)) aDST_Buffer[BUFFER_SIZE];
 
 typedef void (*image_cb_t)();
 

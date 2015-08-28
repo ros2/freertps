@@ -13,6 +13,9 @@ static void sigint_handler(int signum)
 }
 */
 
+//#define MALLOC_DEBUG
+
+#ifdef MALLOC_DEBUG
 // save the glibc hook; we'll use it later
 static void *(*g_freertps_prev_malloc_hook)(size_t, const void *); 
 
@@ -40,6 +43,7 @@ void freertps_init_malloc_hook()
   __malloc_hook = freertps_malloc;
 }
 void (*volatile __malloc_initialize_hook)(void) = freertps_init_malloc_hook;
+#endif
 
 void freertps_system_init()
 {

@@ -71,19 +71,22 @@ typedef struct
 {
   uint8_t length;                         // size of the descriptor in bytes
   usb_descriptor_type_t descriptor_type;  // CONFIGURATION or OTHER_SPEED_CONFIG descriptor type
-  uint16_t total_length;                  // total length in bytes: \
-                                             if descriptor are constant size:\
-  total_length = ConfigDescriptor.length +  \
-                 numInterface*InterfaceDescriptor.length + \
-                 Interface.num_endpoint*endpoint.length(foreach Interface)
-  uint8_t  num_interfaces;                // number of interfaces in this configuration
-  uint8_t  config_value;           // Value used by SetConfiguration request to select this configuration
-  uint8_t  config_string_index;    // 0 if no description STRING descriptor
-  uint8_t  attributes;                    // 0x80, defaut
-                                          // | bit6: self powered 
-                                          // | bit5: remote wakeup
-  uint8_t  max_power;                     // max current in 2mA steps
-  usb_iface_desc_t ifaces[1];             //FIXME should be a pointer, but gcc will complain about flexible array in struct
+  uint16_t total_length;  
+  /* 
+     total length in bytes: 
+     if descriptor are constant size:
+     total_length = ConfigDescriptor.length + 
+     numInterface*InterfaceDescriptor.length +
+     Interface.num_endpoint*endpoint.length(foreach Interface)
+  */
+  uint8_t  num_interfaces;      // number of interfaces in this configuration
+  uint8_t  config_value;        // Value used by SetConfiguration request to select this configuration
+  uint8_t  config_string_index; // 0 if no description STRING descriptor
+  uint8_t  attributes;          // 0x80, defaut
+                                // | bit6: self powered 
+                                // | bit5: remote wakeup
+  uint8_t  max_power;           // max current in 2mA steps
+  usb_iface_desc_t ifaces[1];   //FIXME should be a pointer, but gcc will complain about flexible array in struct
 } __attribute__((packed)) usb_config_desc_t;
 
 

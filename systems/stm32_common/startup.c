@@ -7,6 +7,8 @@
 #include "stack.h"
 //#include "watchdog.h"
 
+void __libc_init_array(); // apparently this isn't defined in a newlib header?
+
 extern uint32_t _srelocate_flash, _srelocate, _erelocate, _ebss, _sbss;
 extern int main();
 

@@ -20,7 +20,7 @@ utils/bin/console:
 
 $(SYSTEMS): %: build/%
 	@echo $@
-	cd build/$@ && cmake ../.. -DSYSTEM=$@ -Dfreertps_standalone=ON && make
+	cd build/$@ && cmake ../.. -DSYSTEM=$@ -Dfreertps_standalone=ON && make --no-print-directory
 
 build/%:
 	mkdir -p $@

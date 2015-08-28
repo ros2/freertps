@@ -2,6 +2,7 @@
 #include "actuators/rk043fn48h.h"
 // This file implements init function for dcmi and dma mo,dules to talk to a camera
 #include <stdlib.h>
+#include <stdio.h>
 
 // buffsize = 1/2 frame, if resolution VGA: 640*480/2 = 0x2580
 #define BUFFER_SIZE 0x2850
@@ -164,7 +165,7 @@ RCC->AHB1RSTR &= ~RCC_AHB1RSTR_DMA2RST ;  // Release DMA2 controller
 //  printf("working adress:0x%X, LCD address:%X",aDST_Buffer,(uint32_t)(LTDC_Layer1_BASE + 0xC4));
   //RAM Working
 // using a RAM random address while debugging LCD
-  DMA2_Stream1->M0AR =  aDST_Buffer        ;
+  DMA2_Stream1->M0AR = (uint32_t)aDST_Buffer;
 
   DMA2_Stream1->CR &= ~DMA_SxCR_CHSEL_1 & // Select Channel 1
                       ~DMA_SxCR_CHSEL_2 ; // Idem
@@ -204,7 +205,7 @@ void dma2_stream1_vector(){
     //printf("Transmit complete, %X\r\n",(DMA2->LISR & DMA_LISR_TCIF1));
     g_dma_cb();
 //    printf("%8X\r\n",LTDC_Layer1->CFBAR[0]);
-    printf("%8X\r\n",aDST_Buffer[0]);
+    printf("%8X\r\n", (unsigned)aDST_Buffer[0]);
     DMA2->LIFCR |= DMA_LIFCR_CTCIF1;
 //  }
 }
@@ -220,7 +221,7 @@ void dcmi_vector(){
     else{
       for(int i=0; i<BUFFER_SIZE;i++){
   //      printf("%2X,",(aDST_Buffer[i]>>24)&0xFF); // print first byte
-        printf("%2X,",(aDST_Buffer[i]&0x00FF0000)>>16); // print second byte
+        printf("%2X,", (unsigned)(aDST_Buffer[i]&0x00FF0000)>>16); // print second byte
   //      printf("%2X,",(aDST_Buffer[i]&0xFF00)>>8); // print third byte
       }
     }

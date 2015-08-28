@@ -309,7 +309,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
       if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_LAST)
       {
 #ifdef SEDP_VERBOSE
-        printf("    history QoS: [keep last %d]\n", qos->depth);
+        printf("    history QoS: [keep last %d]\n", (int)qos->depth);
 #endif
       }
       else if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_ALL)
@@ -325,7 +325,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
     {
 #ifdef SEDP_VERBOSE
       uint32_t priority = *((uint32_t *)pval);
-      printf("    transport priority: %d\n", priority);
+      printf("    transport priority: %d\n", (int)priority);
 #endif
     }
     // now, advance to next item in list...

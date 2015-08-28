@@ -1,5 +1,7 @@
 #include "camera.h"
 #include <stdio.h>
+#include "delay.h"
+
 //FIXME this code is highly correlated to the OV9655 camera. 
 //The registers are valids only for this specific chip
 //#define DEBUG 

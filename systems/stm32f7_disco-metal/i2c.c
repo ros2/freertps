@@ -1,4 +1,5 @@
 #include "i2c.h"
+#include <stdio.h>
 
 // assuming rising time 700n and falling time 100n
 
@@ -109,9 +110,9 @@ void i2c_read(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t R
 
   //TODO call NVIC functions according to I2C_Typedef provided
 void I2C1_ev_vector(){
-  printf("\r\nI2C1_ev_vector %X\r\n",I2C1->ISR);
+  printf("\r\nI2C1_ev_vector %X\r\n", (unsigned)I2C1->ISR);
   if(I2C1->ISR & I2C_ISR_RXNE){
-    printf("received new data byte: %X\r\n",I2C1->RXDR);
+    printf("received new data byte: %X\r\n", (unsigned)I2C1->RXDR);
   }
   else if(I2C1->ISR & I2C_ISR_TC){
     printf("transmission complete !\r\n");
@@ -128,7 +129,7 @@ void I2C1_ev_vector(){
 
 void I2C1_er_vector(){
   printf("I2C1_er_vector\r\n");
-  printf("ISR %X\r\n",I2C1->ISR);
+  printf("ISR %X\r\n", (unsigned)I2C1->ISR);
 }
 
 /*Interrupt list */

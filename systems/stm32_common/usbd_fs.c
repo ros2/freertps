@@ -2,6 +2,8 @@
 #include "peripheral/usb.h"
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 // application functions
 extern void usb_ep1_txf_empty() __attribute__((weak));
@@ -165,7 +167,7 @@ void usbd_fs_init(uint8_t nbEPIn,uint8_t nbEPOut,uint16_t maxPktSize){
                          USB_OTG_GINTMSK_SOFM     ; // Start of Frame INT
   while((USB_OTG_FS->GINTSTS & USB_OTG_GINTSTS_USBRST) != USB_OTG_GINTSTS_USBRST); // wait for reset 
   while((USB_OTG_FS->GINTSTS &  USB_OTG_GINTSTS_ENUMDNE) != USB_OTG_GINTSTS_ENUMDNE); // wait for end of enumeration
-  uint8_t enum_speed = (g_usbd->DSTS & USB_OTG_DSTS_ENUMSPD)>>1;
+  //uint8_t enum_speed = (g_usbd->DSTS & USB_OTG_DSTS_ENUMSPD)>>1;
   //TODO Program the MPSIZ field in OTG_DIEPCTL0 to set the maximum packet size.
   
   //The maximum packet size for a control endpoint depends on the enumeration speed. ??? How do we determine packet size accordign to speed ?
@@ -196,7 +198,7 @@ __attribute__((weak)) void _process_data_pkt(){
 }
 
 bool process_setup_request(uint8_t *buffer,uint16_t byte_cnt){
-  usb_setup_request_t* req= buffer;
+  usb_setup_request_t* req = (usb_setup_request_t *)buffer;
 //  switch(buffer[0]&0x80){ //check direction of the request
   switch(req->request_type&0x80){ //check direction of the request
     case 0x80:                              // Host asking data
@@ -250,7 +252,7 @@ bool process_setup_request(uint8_t *buffer,uint16_t byte_cnt){
           status = 0;           // TODO check if endpoint is halted to set LSb of status.
         else
           status =0;
-        return usb_tx(0, &status, sizeof(status)); // send a status packet back
+        return usb_tx(0, (uint8_t *)&status, sizeof(status)); // send a status packet back
         break;
 
       } 

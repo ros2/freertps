@@ -35,7 +35,7 @@ bool frudp_part_create()
     return false;
   }
   FREERTPS_INFO("frudp_part_create() on domain_id %d\r\n",
-                g_frudp_config.domain_id);
+                (int)g_frudp_config.domain_id);
   //g_frudp_config.domain_id = domain_id;
   if (!frudp_init_participant_id())
   {
