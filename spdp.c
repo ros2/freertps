@@ -434,7 +434,7 @@ void frudp_spdp_tick()
   if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second
   //if (fr_time_diff(&t, &frudp_spdp_last_bcast).fraction >= 1000000000) // every second
   {
-    printf("spdp bcast\r\n");
+    //printf("spdp bcast\r\n");
     frudp_spdp_bcast();
     frudp_spdp_last_bcast = t;
     //printf("%d participants known\n", (int)g_frudp_discovery_num_participants);

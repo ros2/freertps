@@ -85,6 +85,7 @@ void timer_cb()
   uint32_t cdr_len = sizeof(imu) + header_len;
   //printf("cdr len = %d header_len = %d\n", (int)cdr_len, (int)header_len);
   freertps_publish(g_pub, (uint8_t *)msg, cdr_len);
+  //printf("pub\n");
   /*
   static char __attribute__((aligned(4))) msg[256] = {0};
   static int pub_count = 0;
@@ -99,16 +100,16 @@ int main(int argc, char **argv)
 {
   imu_init();
   freertps_system_init();
-  freertps_timer_set_freq(1000, timer_cb);
+  freertps_timer_set_freq(10, timer_cb);
+  //freertps_timer_set_freq(1000, timer_cb);
   printf("hello, world!\r\n");
-  freertps_system_init();
   g_pub = freertps_create_pub
             ("imu", "sensor_msgs::msg::dds_::Imu_");
+  frudp_disco_start();
   while (freertps_system_ok())
   {
     frudp_listen(1000000);
     frudp_disco_tick();
-    //printf("sending: [%s]\n", &msg[4]);
   }
   frudp_fini();
   return 0;

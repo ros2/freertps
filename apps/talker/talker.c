@@ -20,7 +20,7 @@ int main(int argc, char **argv)
     uint32_t rtps_string_len = strlen(&msg[4]) + 1;
     *((uint32_t *)msg) = rtps_string_len;
     freertps_publish(pub, (uint8_t *)msg, rtps_string_len + 4);
-    //printf("sending: [%s]\n", &msg[4]);
+    printf("sending: [%s]\n", &msg[4]);
   }
   frudp_fini();
   return 0;
