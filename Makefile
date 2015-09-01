@@ -26,7 +26,7 @@ build/%:
 	mkdir -p $@
 
 clean:
-	-rm -rf build*
+	-rm -rf build
 
 OPENOCD=/usr/local/bin/openocd -f stm32/openocd/stlink-v2-1.cfg -f stm32/openocd/stm32f7-disco.cfg 
 IMAGE=build.stm32/examples/listener.bin
@@ -35,7 +35,11 @@ IMAGE_START=0x08000000
 list-apps:
 	@echo $(PROGRAM_TARGETS)
 
-.PHONY: $(PROGRAM_TARGETS) $(RESET_TARGETS) $(GDB_SERVER_TARGETS) $(GDB_TARGETS)
+genmsg:
+	r2/mega_genmsg.py
+
+.PHONY: $(PROGRAM_TARGETS) $(RESET_TARGETS) $(GDB_SERVER_TARGETS) $(GDB_TARGETS) list-apps genmsg
+
 $(PROGRAM_TARGETS) : 
 	scripts/task_runner program $(subst program-,,$@)
 
