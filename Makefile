@@ -8,7 +8,7 @@ APPS=listener talker
 .PHONY: all clean $(SYSTEMS)
 all: utils/bin/console $(SYSTEMS)
 
-BUILT_SYSTEMS:=$(shell ls build)
+BUILT_SYSTEMS:=$(filter-out msgs,$(shell ls build))
 BUILT_APPS:=$(foreach SYSTEM, $(BUILT_SYSTEMS), $(foreach APP, $(shell ls build/$(SYSTEM)/apps), $(APP)-$(SYSTEM)))
 PROGRAM_TARGETS:=$(foreach APP, $(BUILT_APPS), program-$(APP))
 GDB_TARGETS:=$(foreach APP, $(BUILT_APPS), gdb-$(APP))
