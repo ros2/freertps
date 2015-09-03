@@ -23,6 +23,7 @@ void console_init()
   // we want 1 megabit. do this with mantissa=5 and fraction (sixteenths)=4
   g_console_usart->BRR  = (((uint16_t)5) << 4) | 4;
   g_console_usart->CR1 |=  USART_CR1_UE;
+  g_console_init_complete = true;
 }
 
 void console_send_block(const uint8_t *buf, uint32_t len)

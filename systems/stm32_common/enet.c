@@ -96,9 +96,11 @@ void enet_init()
   RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN; // enable the sysconfig block
   RCC->AHB1RSTR |= RCC_AHB1RSTR_ETHMACRST;
   for (volatile int i = 0; i < 1000; i++) { } // wait for sysconfig to come up
-  // hold the MAC in reset while we set it to RMII mode
+  // hold the MAC in reset while we (optionally) set it to RMII mode
   for (volatile int i = 0; i < 1000; i++) { } // wait for sysconfig to come up
+#ifndef ENET_USE_MII
   SYSCFG->PMC |= SYSCFG_PMC_MII_RMII_SEL; // set the MAC in RMII mode
+#endif
   for (volatile int i = 0; i < 100000; i++) { } // wait for sysconfig to come up
   RCC->AHB1ENR |= RCC_AHB1ENR_ETHMACRXEN  |
                   RCC_AHB1ENR_ETHMACTXEN  |
@@ -106,7 +108,7 @@ void enet_init()
   for (volatile int i = 0; i < 100000; i++) { } // wait
   RCC->AHB1RSTR &= ~RCC_AHB1RSTR_ETHMACRST; // release MAC reset
   for (volatile int i = 0; i < 100000; i++) { } // wait
-  RCC->AHB1RSTR |= RCC_AHB1RSTR_ETHMACRST;
+  RCC->AHB1RSTR |= RCC_AHB1RSTR_ETHMACRST; // what am i doing
   for (volatile int i = 0; i < 100000; i++) { } // wait
   RCC->AHB1RSTR &= ~RCC_AHB1RSTR_ETHMACRST; // release MAC reset
   for (volatile int i = 0; i < 100000; i++) { } // wait for sysconfig ... (?)
