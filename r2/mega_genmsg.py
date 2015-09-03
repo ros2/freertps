@@ -24,20 +24,50 @@ primitive_type_map = {
   'string'  : 'char *'
 }
 
-def camelcase_to_underscores(camelcase):
-  # from http://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-camel-case
-  s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', camelcase)
-  return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+def uncamelcase(camelcase):
+  lower = ""
+  upper_run_len = 0
+  for idx in xrange(0, len(camelcase)):
+    #print(camelcase[idx])
+    if (camelcase[idx].isupper()):
+      next_lower = idx < len(camelcase)-1 and camelcase[idx+1].islower()
+      if (idx > 0 and upper_run_len == 0) or (idx > 1 and next_lower):
+        lower += '_'
+      lower += camelcase[idx].lower()
+      upper_run_len += 1
+    else:
+      lower += camelcase[idx]
+      upper_run_len = 0
+  return lower
+
+def print_uncamelcase(c):
+  print("%s -> %s" % (c, uncamelcase(c)))
+  
+def camelcase_to_lower_samples():
+  print_uncamelcase("String")
+  print_uncamelcase("UInt32")
+  print_uncamelcase("UInt32MultiArray")
+  print_uncamelcase("MultiArrayLayout")
+  print_uncamelcase("NavSatStatus")
+  print_uncamelcase("MultiDOFJointState")
+  print_uncamelcase("RegionOfInterest")
+  print_uncamelcase("PointCloud2")
+  print_uncamelcase("PointField")
+  print_uncamelcase("MultiEchoLaserScan")
 
 def c_type(rosidl_type):
   if rosidl_type.type in primitive_type_map:
     c_typename = primitive_type_map[rosidl_type.type]
   else:
-    lcase_type = camelcase_to_underscores(rosidl_type.type)
-    c_typename = ("%s_%s_t" % (rosidl_type.pkg_name, lcase_type)).lower()
-  if rosidl_type.is_array and rosidl_type.array_size:
-    c_typename += "[%d]" % rosidl_type.array_size
+    lcase_type = uncamelcase(rosidl_type.type)
+    c_typename = ("struct %s_%s" % (rosidl_type.pkg_name, lcase_type)).lower()
   return c_typename
+
+def c_decl_suffix(rosidl_type):
+  if rosidl_type.is_array and rosidl_type.array_size:
+    return "[%d]" % rosidl_type.array_size
+  return ""
+
   #if rosidl_type.pkg_name:
   #  print "   context for %s = %s" % (rosidl_type.type, rosidl_type.pkg_name)
   #return "ahhhh___%s" % rosidl_type.type
@@ -46,7 +76,7 @@ def c_includes(msg_spec):
   types = []
   for field in msg_spec.fields:
     if not field.type.type in primitive_type_map:
-      lcase_type = camelcase_to_underscores(field.type.type)
+      lcase_type = uncamelcase(field.type.type)
       include = "%s/%s.h" % (field.type.pkg_name, lcase_type)
       if not include in types:
         types.append(include)
@@ -80,19 +110,24 @@ for pkg_name in os.listdir(ifaces_path):
       msg_spec = rosidl_parser.parse_message_file(pkg_name, msg_filename)
       msg_name = '.'.join(line.rstrip().split('.')[0:-1])
       print("  %s/%s" % (pkg_name, msg_name))
-      of = open(os.path.join(pkg_output_path, msg_name) + '.h', 'w')
-      include_guard = ("R2_%s_%s" % (pkg_name, msg_name)).upper()
+      ofn = os.path.join(pkg_output_path, uncamelcase(msg_name)) + '.h'
+      of = open(ofn, 'w')
+      include_guard = ("R2_%s_%s" % (pkg_name, uncamelcase(msg_name))).upper()
       of.write("#ifndef %s\n" % include_guard)
       of.write("#define %s\n\n" % include_guard)
+      of.write("#include <stdint.h>\n")
       includes = c_includes(msg_spec)
       if includes:
         for include in includes:
           of.write("#include \"%s\"\n" % include)
       of.write("\n")
-      struct_type = ("%s_%s_t" % (pkg_name, msg_name)).lower()
+      
+      struct_type = "%s_%s" % (pkg_name, uncamelcase(msg_name))
+      of.write("#define _%s_RTPS_TYPENAME \"%s::msg::dds_::%s_\"\n\n" % (struct_type, pkg_name, msg_name))
+
       of.write("typedef struct %s\n{\n" % struct_type)
       for field in msg_spec.fields:
         print("    " + field.type.type + " " + field.name)
-        of.write("  %s %s;\n" % (c_type(field.type), field.name))
-      of.write("}\n\n")
+        of.write("  %s %s%s;\n" % (c_type(field.type), field.name, c_decl_suffix(field.type)))
+      of.write("} %s_t;\n\n" % struct_type)
       of.write("#endif\n")

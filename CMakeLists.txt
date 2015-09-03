@@ -84,4 +84,16 @@ else()
   foreach(app ${SYSTEM_APPS})
     add_subdirectory(apps/${app})
   endforeach()
+
+  # try to build the apps that use ROS messages
+  # TODO: trigger the ROS message generator build here
+  if(DEFINED ENV{AMENT_PREFIX_PATH})
+    include_directories(build/msgs)
+    if(DEFINED SYSTEM_ROSMSG_APPS)
+      string(REGEX REPLACE " " ";" SYSTEM_ROSMSG_APPS ${SYSTEM_ROSMSG_APPS})
+      foreach(app ${SYSTEM_ROSMSG_APPS})
+        add_subdirectory(rosmsg_apps/${app})
+      endforeach()
+    endif()
+  endif()
 endif()
