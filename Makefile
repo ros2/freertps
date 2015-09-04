@@ -1,9 +1,9 @@
-SYSTEMS=native-posix               \
-        stm32f7_disco-metal        \
-				stm32f4_disco-metal        \
-				stm3240g_eval-metal
+SYSTEMS=native-posix                \
+        stm32f7_disco-metal         \
+				stm32f4_disco-metal         \
+				stm3240g_eval-metal         \
 
-APPS=listener talker
+#				samv71_xplained_ultra-metal 
 
 .PHONY: all clean $(SYSTEMS)
 all: utils/bin/console $(SYSTEMS)
