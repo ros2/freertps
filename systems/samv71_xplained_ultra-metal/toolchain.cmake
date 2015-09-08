@@ -3,10 +3,16 @@
 set(CMAKE_SYSTEM_NAME Generic)
 include(CMakeForceCompiler)
 CMAKE_FORCE_C_COMPILER(arm-none-eabi-gcc GNU)
-set(FPU_FLAGS "-mfloat-abi=hard -mfpu=fpv4-sp-d16")
+set(FPU_FLAGS "-mfloat-abi=hard -mfpu=fpv5-d16")
+set(CPU "-mcpu=cortex-m7")
+set(ARCH "${CPU} -mthumb")
+#set(FPU_FLAGS "-mfloat-abi=hard -mfpu=fpv4-sp-d16")
+# todo: figure out how to use FPU on this chip
+#set(FPU_FLAGS "-mfloat-abi=softfp")
 #include_directories(${PROJECT_SOURCE_DIR}/systems/samv71_xplained_ultra-metal/libchip_samv7)
 include_directories(${PROJECT_SOURCE_DIR}/systems/samv71_xplained_ultra-metal/samv7)
-include_directories(${PROJECT_SOURCE_DIR}/systems/samv71_xplained_ultra-metal/cmsis)
+include_directories(${PROJECT_SOURCE_DIR}/systems/cortex_m_common/cmsis)
+include_directories(${PROJECT_SOURCE_DIR}/systems/metal_common)
 # todo: include chip header here explicitly, so this can be shared by lots
 # of SAM-based boards, like stm32_common does?
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections")
@@ -31,7 +37,7 @@ function(make_bin exe elf bin)
   add_custom_target(${exe}_objdump ALL DEPENDS ${elf}.objdump)
 endfunction()
 # add FPU stuff for fancy SAM7 chips
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FPU_FLAGS} -mcpu=cortex-m4 -mthumb")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FPU_FLAGS} -mcpu=cortex-m4 -mthumb")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FPU_FLAGS} ${ARCH}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FPU_FLAGS} ${ARCH}")
 # todo: dig up linker script from an old project somewhere
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FPU_FLAGS} -mcpu=cortex-m4 -T ${PROJECT_SOURCE_DIR}/systems/stm32_common/ld/stm32f4xx.ld")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FPU_FLAGS} ${CPU} -T ${PROJECT_SOURCE_DIR}/systems/samv71_xplained_ultra-metal/samv71q21.ld")

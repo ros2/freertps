@@ -1,27 +1,30 @@
 #include "actuators/led.h"
 #include "pin.h"
 
-// TODO: look up pin assignments on STM32f4-disco board
+// let's use LED4, since it's green, and green means that everything is OK
+#define LED_PIN 12
+#define LED_GPIO GPIOD
 
-#define PORTI_LED 1
+// this board has lots of LEDs though. maybe we should refactor this library
+// so that it can take the index of LED to turn on.
 
 void led_init()
 {
-  pin_set_output(GPIOI, PORTI_LED, 0);
+  pin_set_output(LED_GPIO, LED_PIN, 0);
 }
 
 void led_on()
 {
-  pin_set_output_state(GPIOI, PORTI_LED, 1);
+  pin_set_output_state(LED_GPIO, LED_PIN, 1);
 }
 
 void led_off()
 {
-  pin_set_output_state(GPIOI, PORTI_LED, 0);
+  pin_set_output_state(LED_GPIO, LED_PIN, 0);
 }
 
 void led_toggle()
 {
-  GPIOI->ODR ^= 1 << PORTI_LED;
+  LED_GPIO->ODR ^= 1 << LED_PIN;
 }
 

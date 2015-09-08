@@ -1,15 +1,17 @@
 MEMORY
 {
-  flash (rx) : ORIGIN = 0x08000000, LENGTH = 1024K 
-  sram (rwx) : ORIGIN = 0x20000000, LENGTH =  128K
+  flash (rx) : ORIGIN = 0x00400000, LENGTH = 2048K 
+  /* for now, let's ignore the memory complexity and use normal SRAM */
+  sram (rwx) : ORIGIN = 0x20400000, LENGTH =  384K
 }
 
-ENTRY(dummy_reset_vector)
+ENTRY(placeholder_reset_vector)
 
 SECTIONS
 {
-  .text :
+  .text 0x400000 :
   {
+    _sfixed = .;
     KEEP(*(.vectors .vectors.*))
     . = 0x400; /* make it obvious when the vector table is missing */
     *(.text .text.* .gnu.linkonce.t*)
@@ -20,12 +22,12 @@ SECTIONS
     KEEP(*(.init))
     . = ALIGN(4);
     __preinit_array_start = .;
-    KEEP(*(.preinit_array*))
+    KEEP(*(.preinit_array))
     __preinit_array_end = .;
     . = ALIGN(4);
     __init_array_start = .;
     KEEP(*(SORT(.init_array.*)))
-    KEEP(*(.init_array*))
+    KEEP(*(.init_array))
     __init_array_end = .;
     . = ALIGN(4);
     KEEP(*(.fini))
@@ -59,8 +61,9 @@ SECTIONS
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     __exidx_end = .;
   } > flash
- 
 
+  _etext = .;
+ 
   _srelocate_flash = .;
   .relocate : AT(_srelocate_flash)
   {
@@ -76,11 +79,13 @@ SECTIONS
   {
     . = ALIGN(4);
     _sbss = .;
+    _szero = .;
     __bss_start__ = .;
     *(.bss .bss.*)
     *(COMMON)
     . = ALIGN(4);
     _ebss = .;
+    _ezero = .;
     __bss_end__ = .;
   } > sram
 

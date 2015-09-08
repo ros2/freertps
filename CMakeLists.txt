@@ -44,11 +44,14 @@ include(systems/${SYSTEM}/toolchain.cmake)
 add_subdirectory(systems/${SYSTEM})
 
 # and any other required system libraries
-foreach(syslib ${SYSTEM_EXTRA_LIBS})
-  #include(systems/${syslib})
-  add_subdirectory(systems/${syslib})
-endforeach()
-message("SYSTEM_APPS = ${SYSTEM_APPS}")
+if(NOT "${SYSTEM_EXTRA_LIBS}" STREQUAL "")
+  message("SYSTEM_APPS = ${SYSTEM_APPS}")
+  string(REGEX REPLACE " " ";" SYSTEM_EXTRA_LIBS ${SYSTEM_EXTRA_LIBS})
+  foreach(syslib ${SYSTEM_EXTRA_LIBS})
+    #include(systems/${syslib})
+    add_subdirectory(systems/${syslib})
+  endforeach()
+endif()
 
 # build the portable library
 add_library(freertps disco.c

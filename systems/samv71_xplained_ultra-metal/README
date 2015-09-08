@@ -1,11 +1,7 @@
-when we have more than one board with this chip, we'll need to factor this 
-library into a SOMETHING_common library and a board-specific library, like
-is done for, e.g., {stm32_common, stm32f4_disco-metal}
+when we have more than one board with this chip family, we'll need to 
+factor this library into a SOMETHING_common library and a board-specific 
+library, like is done for, e.g., {stm32_common, stm32f4_disco-metal}
 
-also, we can probably unify a lof general ARM stuff into an arm_common
+also, we can probably unify a lot of general ARM stuff into an arm_common
 or an arm_cortex_m_common or something like that, since the cmsis and other
 scripting stuff is typically identical (or almost identical).
-
-since i haven't yet been able to program this using OpenOCD, this is all
-currently broken. it's a work in progress. Once OpenOCD has a driver for this
-chip, we'll revisit this port.
