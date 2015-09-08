@@ -40,6 +40,8 @@ void frudp_fini()
 
 bool frudp_listen(const uint32_t max_usec)
 {
+  return true;
+  /*
   // just busy-wait here for the requested amount of time
   volatile uint32_t t_start = systime_usecs();
   while (1)
@@ -50,6 +52,7 @@ bool frudp_listen(const uint32_t max_usec)
     enet_process_rx_ring();
   }
   return true;
+  */
 }
 
 bool frudp_tx(const uint32_t dst_addr,
@@ -57,6 +60,8 @@ bool frudp_tx(const uint32_t dst_addr,
               const uint8_t *tx_data,
               const uint16_t tx_len)
 {
+  return true;
+  /*
   if ((dst_addr & 0xe0000000) == 0xe0000000)
   {
     // ipv4 multicast
@@ -70,6 +75,7 @@ bool frudp_tx(const uint32_t dst_addr,
                         FRUDP_IP4_ADDR, dst_port,
                         tx_data, tx_len);
   }
+  */
   return true;
 }
 
