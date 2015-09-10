@@ -3,7 +3,7 @@ add_library(freertps_system_samv71_xplained_ultra-metal
             startup.c
             console.c
             led.c
-            enet.c
+            enet_mac.c
             udp.c
             time.c)
 #            systime.c

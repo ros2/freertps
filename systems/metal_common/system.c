@@ -1,12 +1,11 @@
 #include "freertps/system.h"
 #include "freertps/udp.h"
 #include "freertps/freertps.h"
-#include "metal.h"
+#include "metal/metal.h"
 
 void freertps_system_init()
 {
   frudp_init();
-  frudp_generic_init();
   freertps_metal_enable_irq();
 }
 

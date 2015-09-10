@@ -17,7 +17,7 @@
  */
 
 #include <stdint.h>
-#include "stack.h"
+#include "metal/stack.h"
 
 // reset_vector has to exist, but we'll declare the rest as weak vectors 
 // and map them to the "unmapped_vector()" trap.

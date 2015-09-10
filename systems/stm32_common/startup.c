@@ -1,10 +1,10 @@
 #include <stdint.h>
 #include "actuators/led.h"
 #include "delay.h"
-#include "systime.h"
-#include "console.h"
+#include "metal/systime.h"
+#include "metal/console.h"
 #include "flash.h"
-#include "stack.h"
+#include "metal/stack.h"
 //#include "watchdog.h"
 
 void __libc_init_array(); // apparently this isn't defined in a newlib header?

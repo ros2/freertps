@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 #include "samv71q21.h"
-#include "stack.h"
+#include "metal/stack.h"
 
 extern uint32_t _sfixed, _efixed, _etext;
 extern uint32_t _srelocate, _erelocate, _szero, _ezero;

@@ -5,37 +5,37 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "net_config.h"
-#include "enet.h"
-#include "systime.h"
+#include "metal/enet_config.h"
+#include "metal/enet.h"
+#include "metal/systime.h"
 
 bool frudp_init()
 {
   enet_init();
-  FREERTPS_INFO("stm32 udp init()\n");
+  FREERTPS_INFO("metal udp init()\n");
   FREERTPS_INFO("using address %d.%d.%d.%d for unicast\n",
                 (FRUDP_IP4_ADDR >> 24) & 0xff,
                 (FRUDP_IP4_ADDR >> 16) & 0xff,
                 (FRUDP_IP4_ADDR >>  8) & 0xff,
                 (FRUDP_IP4_ADDR      ) & 0xff);
   g_frudp_config.unicast_addr = freertps_htonl(FRUDP_IP4_ADDR);
-  frudp_generic_init();
-  // not sure about endianness here.
   g_frudp_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
   g_frudp_config.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
   memcpy(&g_frudp_config.guid_prefix.prefix[2], g_enet_mac, 6);
+  frudp_generic_init();
+  // not sure about endianness here.
   // 4 bytes left. let's use the system time in microseconds since power-up
   // todo: init ethernet PHY. after PHY link is up,
   // store system time in the guid_prefix.
   //memcpy(&g_frudp_config.guid_prefix.prefix[8], &pid, 4);
-  frudp_disco_init();
+  //frudp_disco_init();
   return true;
 }
 
 void frudp_fini()
 {
   frudp_disco_fini();
-  FREERTPS_INFO("udp_stm32 fini\n");
+  FREERTPS_INFO("metal udp fini\n");
 }
 
 bool frudp_listen(const uint32_t max_usec)
@@ -75,12 +75,11 @@ bool frudp_tx(const uint32_t dst_addr,
 
 bool frudp_add_mcast_rx(uint32_t group, uint16_t port)
 {
-  // sure, whatever
-  return true;
+  // todo: multicast group filtering
+  return enet_allow_udp_port(port);
 }
 
 bool frudp_add_ucast_rx(const uint16_t port)
 {
-  // sure, whatever
-  return true;
+  return enet_allow_udp_port(port);
 }

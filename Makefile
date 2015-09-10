@@ -1,8 +1,8 @@
-SYSTEMS=native-posix                \
-        stm32f7_disco-metal         \
-				stm32f4_disco-metal         \
-				stm3240g_eval-metal         \
-				samv71_xplained_ultra-metal
+SYSTEMS ?= native-posix                \
+           stm32f7_disco-metal         \
+           stm32f4_disco-metal         \
+           stm3240g_eval-metal         \
+           samv71_xplained_ultra-metal
 
 .PHONY: all clean $(SYSTEMS)
 all: utils/bin/console $(SYSTEMS)

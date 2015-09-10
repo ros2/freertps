@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include "console.h"
+#include "metal/console.h"
 
 extern int _end;
 

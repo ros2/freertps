@@ -1,7 +1,7 @@
 #include "samv71q21.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "console.h"
+#include "metal/console.h"
 #include "actuators/led.h"
 
 // hardware connections wired to EDBG:
