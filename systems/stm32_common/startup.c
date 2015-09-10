@@ -1,11 +1,12 @@
 #include <stdint.h>
 #include "actuators/led.h"
 #include "delay.h"
-#include "systime.h"
-#include "console.h"
+#include "metal/systime.h"
+#include "metal/console.h"
 #include "flash.h"
-#include "stack.h"
+#include "metal/stack.h"
 //#include "watchdog.h"
+#include <stdio.h>
 
 void __libc_init_array(); // apparently this isn't defined in a newlib header?
 
@@ -72,6 +73,8 @@ void reset_vector()
   RCC->CFGR |= RCC_CFGR_SW_PLL; // select PLL as clock source
   while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) { } // wait for it...
   // hooray we're done! we're now running at 168 MHz.
+  static char metal_stdout_buf[1024];
+  setvbuf(stdout, metal_stdout_buf, _IOLBF, sizeof(metal_stdout_buf));
   systime_init();
   led_init();
   console_init();

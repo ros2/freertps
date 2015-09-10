@@ -5,9 +5,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "net_config.h"
-#include "enet.h"
-#include "systime.h"
+#include "metal/enet_config.h"
+#include "metal/enet.h"
+#include "metal/systime.h"
 
 bool frudp_init()
 {

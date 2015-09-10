@@ -1,6 +1,6 @@
 #include "delay.h"
 #include <stdint.h>
-#include "systime.h"
+#include "metal/systime.h"
 
 // these functions assume that systime is running at microsecond resolution
 

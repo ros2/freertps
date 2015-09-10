@@ -19,9 +19,9 @@
 
 // PHY: LAN8742A-CZ
 
-void enet_init_pins()
+void enet_mac_init_pins()
 {
-  printf("enet_init_pins()\r\n");
+  printf("enet_mac_init_pins()\r\n");
 
   pin_set_alternate_function(GPIOA, PORTA_ETH_REFCLK, AF_ENET);
   pin_set_alternate_function(GPIOA, PORTA_ETH_MDIO  , AF_ENET);

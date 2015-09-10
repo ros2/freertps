@@ -23,7 +23,7 @@ function(freertps_add_executable exe srcs)
     #include(systems/${syslib})
   endforeach()
 
-  target_link_libraries(${exe} freertps -Wl,--start-group freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
+  target_link_libraries(${exe} -Wl,--start-group freertps freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
   if(${make_binfiles})
     make_bin(${exe} ${CMAKE_CURRENT_BINARY_DIR}/${exe}.elf ${CMAKE_CURRENT_BINARY_DIR}/${exe}.bin)
   endif()
