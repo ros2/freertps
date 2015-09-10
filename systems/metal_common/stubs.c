@@ -5,6 +5,8 @@
 
 extern int _end;
 
+//#define PRINT_SBRK_CALLS
+
 #ifdef PRINT_SBRK_CALLS
 void write_integer_inefficiently(int x)
 {
@@ -28,7 +30,7 @@ caddr_t _sbrk(int incr)
   static unsigned char *heap = NULL ;
   unsigned char *prev_heap ;
   if ( heap == NULL )
-    heap = (unsigned char *)&_end ;
+    heap = (unsigned char *)&_end;
   prev_heap = heap;
   heap += incr ;
   return (caddr_t) prev_heap ;
