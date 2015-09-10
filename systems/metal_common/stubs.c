@@ -5,8 +5,26 @@
 
 extern int _end;
 
+#ifdef PRINT_SBRK_CALLS
+void write_integer_inefficiently(int x)
+{
+  int remainder = x;
+  for (int order = 1000000000; order; order /= 10)
+  {
+    uint8_t digit = '0' + remainder / order;
+    remainder -= (digit - '0') * order;
+    console_send_block(&digit, 1);
+  }
+}
+#endif
+
 caddr_t _sbrk(int incr)
 {
+#ifdef PRINT_SBRK_CALLS
+  console_send_block("sbrk ", 5);
+  write_integer_inefficiently(incr);
+  console_send_block("\r\n", 2);
+#endif
   static unsigned char *heap = NULL ;
   unsigned char *prev_heap ;
   if ( heap == NULL )

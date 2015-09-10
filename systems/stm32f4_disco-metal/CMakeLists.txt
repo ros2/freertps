@@ -9,8 +9,7 @@ add_library(freertps_system_stm32f4_disco-metal console.c
                                 usb_fs_init_pins.c
                                 ../stm32_common/stm32f4_vectors.c)
 set(SYSTEM_EXTRA_LIBS  "stm32_common metal_common" CACHE STRING "extra system libs")
-set(SYSTEM_APPS  "talker" CACHE STRING "applications for this system")
-#set(SYSTEM_APPS  "listener talker talker_stm32_timer imu led blink hello_world cpp_test" CACHE STRING "applications for this system")
+set(SYSTEM_APPS  "listener talker talker_stm32_timer imu led blink hello_world cpp_test" CACHE STRING "applications for this system")
 if (NOT freertps_standalone)
   ament_export_libraries(freertps_system_${SYSTEM})
 endif()
