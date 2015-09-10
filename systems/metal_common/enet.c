@@ -24,10 +24,6 @@ static uint16_t g_enet_allowed_udp_ports_wpos;
 const uint8_t g_enet_mac[6] = ENET_MAC;
 static uint8_t  g_enet_udpbuf[1500] __attribute__((aligned(8)));
 
-// todo: parameterize this nicely for a makefile
-//static uint8_t g_enet_master_mac[6] = {0};
-//static bool g_enet_arp_valid = false;
-
 ///////////////////////////////////////////////////////////////////////////
 // local functions
 ///////////////////////////////////////////////////////////////////////////
@@ -381,10 +377,12 @@ static bool enet_dispatch_udp(const uint8_t *data, const uint16_t len)
     return true;
   }
 
+/*
   if (port == frudp_ucast_builtin_port() ||
       port == frudp_mcast_builtin_port() ||
       port == frudp_ucast_user_port()    ||
       port == frudp_mcast_user_port())
+*/
   printf("unhandled udp: port = %d  payload_len = %d\r\n", port, payload_len);
   return false;
 }
@@ -395,6 +393,7 @@ static bool enet_dispatch_udp(const uint8_t *data, const uint16_t len)
 bool enet_allow_udp_port(const uint16_t port)
 {
   // make sure we aren't already listening to this port
+  printf("enet_allow_udp_port(%d)\r\n", port);
   for (int i = 0; i < ENET_MAX_ALLOWED_UDP_PORTS; i++)
     if (g_enet_allowed_udp_ports[i] == port)
       return true; // it's already allowed

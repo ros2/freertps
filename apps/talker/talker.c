@@ -9,8 +9,8 @@ int main(int argc, char **argv)
   frudp_pub_t *pub = freertps_create_pub
                        ("chatter",
                         "std_msgs::msg::dds_::String_");
-  int pub_count = 0;
   frudp_disco_start();
+  int pub_count = 0;
   while (freertps_system_ok())
   {
     frudp_listen(500000);

@@ -169,7 +169,8 @@ void enet_mac_init()
   ETH->DMAOMR |= ETH_DMAOMR_ST | ETH_DMAOMR_SR; // enable ethernet DMA tx/rx
 }
 
-void enet_vector()
+// this *must* be named "eth_vector" to override the weak ISR symbol
+void eth_vector()
 {
   volatile uint32_t dmasr = ETH->DMASR;
   ETH->DMASR = dmasr; // clear pending bits in the status register
@@ -181,8 +182,7 @@ void enet_vector()
       // todo: check all of the error status bits in des0...
       const uint8_t *rxp = (const uint8_t *)g_enet_dma_rx_next_desc->des2;
       const uint16_t rxn = (g_enet_dma_rx_next_desc->des0 & 0x3fff0000) >> 16;
-      printf("enet rx %d\r\n", (int)rxn);
-      //enet_rx_raw(rxp, rxn);
+      enet_rx_raw(rxp, rxn);
       g_enet_dma_rx_next_desc->des0 |= 0x80000000; // give it back to the DMA
       // advance the rx pointer for next time
       g_enet_dma_rx_next_desc = (enet_dma_desc_t *)g_enet_dma_rx_next_desc->des3;
