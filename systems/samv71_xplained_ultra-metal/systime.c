@@ -3,6 +3,11 @@
 
 void systime_init()
 {
+  // let's use TC0 for the system timer.
+  // we'll use the first counter to divide down to microseconds,
+  // and chain the second 16-bit counter into the third counter
+  // to result in a 32-bit count of microseconds since power-up.
+  PMC->PMC_PCER0 |= (1 << ID_TC0);
 #if 0
   // todo; use TIM2 since it's a 32-bit counter. just have it count
   // microseconds since powerup or something.

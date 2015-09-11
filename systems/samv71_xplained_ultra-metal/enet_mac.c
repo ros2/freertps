@@ -180,8 +180,6 @@ void enet_mac_init()
 
 void gmac_vector()
 {
-  printf("gmac_vector()\r\n");
-#if 0
   // read the flags to reset the interrupt 
   volatile uint32_t enet_isr = GMAC->GMAC_ISR;
   volatile uint32_t enet_rsr = GMAC->GMAC_RSR;
@@ -189,8 +187,8 @@ void gmac_vector()
   if ((enet_isr & GMAC_ISR_RCOMP) || (enet_rsr & GMAC_RSR_REC))
   {
     volatile uint32_t rsr_clear_flag = GMAC_RSR_REC;
-    if (enet_rsr & GMAC_RSR_OVR)
-      rsr_clear_flag |= GMAC_RSR_OVR;
+    if (enet_rsr & GMAC_RSR_RXOVR)
+      rsr_clear_flag |= GMAC_RSR_RXOVR;
     if (enet_rsr & GMAC_RSR_BNA)
       rsr_clear_flag |= GMAC_RSR_BNA;
     GMAC->GMAC_RSR = rsr_clear_flag;
@@ -225,32 +223,28 @@ void gmac_vector()
       }
       if (desc->status.bm.b_eof)
       {
+        printf("enet rx %d bytes\r\n", s_rx_pkt_write_idx);
         enet_rx_raw(g_enet_rx_full_packet, s_rx_pkt_write_idx);
         s_rx_pkt_write_idx = 0; // to be really^n sure this gets reset... 
       }
       s_rx_buf_idx = ++s_rx_buf_idx % ENET_RX_BUFFERS; // advance in ring
     }
   }
-#endif
 }
 
 void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
 {
-#if 0
   g_enet_tx_desc[0].status.bm.b_used = 0; // we're monkeying with it
   // for now, we just crush whatever is in the tx buffer.
   if (pkt_len > ENET_TX_UNITSIZE)
     pkt_len = ENET_TX_UNITSIZE; // save memory from being brutally crushed
-  /*
-  printf("enet_tx_raw %d bytes:\r\n", pkt_len)
-  for (int i = 0; i < pkt_len; i++)
-    printf("%d: 0x%02x\r\n", i, pkt[i]);
-  */
+  printf("enet_tx_raw %d bytes:\r\n", pkt_len);
+  //for (int i = 0; i < pkt_len; i++)
+  //  printf("%d: 0x%02x\r\n", i, pkt[i]);
   memcpy((uint8_t *)g_enet_tx_buf, pkt, pkt_len);
   g_enet_tx_desc[0].status.bm.b_last_buffer = 1;
   g_enet_tx_desc[0].status.bm.len = pkt_len;
   GMAC->GMAC_NCR |= GMAC_NCR_TSTART; // kick off TX DMA
-#endif
 }
 
 /*
