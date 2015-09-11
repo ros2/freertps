@@ -19,6 +19,10 @@
 #include <stdint.h>
 #include "samv71q21.h"
 #include "metal/stack.h"
+#include <stdio.h>
+#include "metal/systime.h"
+#include "metal/console.h"
+#include "actuators/led.h"
 
 extern uint32_t _sfixed, _efixed, _etext;
 extern uint32_t _srelocate, _erelocate, _szero, _ezero;
@@ -113,6 +117,11 @@ void reset_vector()
     SCB->VTOR |= 1 << 29; // TBLBASE bit 
   enable_fpu();
   __libc_init_array();
+  static char metal_stdout_buf[1024];
+  setvbuf(stdout, metal_stdout_buf, _IOLBF, sizeof(metal_stdout_buf));
+  systime_init();
+  led_init();
+  console_init();
   main();
   //_mainCRTStartup(); // jump to application main()
   while (1) { } // hopefully we never get here...

@@ -1,5 +1,5 @@
 #include "systime.h"
-#include "delay.h"
+#include <stdio.h>
 
 void systime_init()
 {
@@ -17,6 +17,9 @@ void systime_init()
 
 uint32_t systime_usecs()
 {
+  printf("woah! systime not implemented yet...\r\n");
+  while(1);
+  return 0;
 #if 0
   return TIM2->CNT;
 #endif

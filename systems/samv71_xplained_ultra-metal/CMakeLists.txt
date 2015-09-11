@@ -5,8 +5,9 @@ add_library(freertps_system_samv71_xplained_ultra-metal
             led.c
             enet_mac.c
             udp.c
-            time.c)
-#            systime.c
+            systime.c
+            time.c
+            pin.c)
 #            flash.c
 #            dcmi.c
 #            i2c.c

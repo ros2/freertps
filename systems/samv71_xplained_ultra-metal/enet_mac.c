@@ -22,13 +22,14 @@
 #include <string.h>
 #include "metal/enet.h"
 #include "metal/enet_config.h"
+#include "pin.h"
 
-// PHY is KSZ8061RNBVA in RMII mode:
+// PHY is KSZ8061RNBVA in RMII mode, wired to Peripheral A of port D:
 //   PD0 = REFCLK
 //   PD1 = TXEN
 //   PD2 = TXD0
 //   PD3 = TXD1
-//   PD4 = CRS_DV
+//   PD4 = RXDV
 //   PD5 = RXD0
 //   PD6 = RXD1
 //   PD7 = RXER
@@ -125,32 +126,29 @@ uint16_t enet_read_phy_reg(const uint8_t reg_idx)
 void enet_mac_init()
 {
   printf("samv71 enet mac init\r\n");
-  // TODO: these are all wrong
   PMC->PMC_PCER0 |= (1 << ID_PIOD);
   PMC->PMC_PCER1 |= (1 << (ID_GMAC - 32));
-#if 0
-  PIOD->PIO_ABSR &= ~(PIO_PB0A_ETXCK | PIO_PB1A_ETXEN | 
-                      PIO_PB2A_ETX0  | PIO_PB3A_ETX1  |
-                      PIO_PB4A_ERXDV | PIO_PB7A_ERXER |
-                      PIO_PB5A_ERX0  | PIO_PB6A_ERX1) ; // select peripheral A
-  PIOD->PIO_PDR = PIO_PB0A_ETXCK | PIO_PB1A_ETXEN | 
-                  PIO_PB2A_ETX0  | PIO_PB3A_ETX1  |
-                  PIO_PB4A_ERXDV | PIO_PB7A_ERXER |
-                  PIO_PB5A_ERX0  | PIO_PB6A_ERX1  ; // set peripheral control
-  GMAC->EMAC_NCR = 0; // disable everything
-  GMAC->EMAC_IDR = 0xffffffff; // disable all interrupts
-  GMAC->EMAC_NCR |= GMAC_NCR_CLRSTAT; // reset statistics
-  GMAC->EMAC_USRIO = GMAC_USRIO_RMII | EMAC_USRIO_CLKEN; // select RMII mode
-  GMAC->EMAC_RSR = GMAC_RSR_OVR | GMAC_RSR_REC | GMAC_RSR_BNA; // clear rx flags
-  GMAC->EMAC_TSR = GMAC_TSR_UBR | GMAC_TSR_COL  | GMAC_TSR_RLES |
-                   GMAC_TSR_BEX | GMAC_TSR_COMP | GMAC_TSR_UND; // and tx flags
-  EMAC->EMAC_ISR; // drain interrupts
-  EMAC->EMAC_NCFGR = EMAC_NCFGR_DRFCS     |  // drop FCS from rx packets
-                     EMAC_NCFGR_PAE       |  // obey pause frames
-                     EMAC_NCFGR_CAF       |  // promiscuous mode
-                     EMAC_NCFGR_SPD       |  // 100 megabit
-                     EMAC_NCFGR_FD        |  // full duplex
-                     EMAC_NCFGR_CLK_MCK_64;  // mdio clock = mdc / 64
+
+  for (int i = 0; i < 10; i++)
+  {
+    pin_set_mux(PIOD, i, 0); // set peripheral A for PD0 -> PD9
+  }
+  GMAC->GMAC_NCR = 0; // disable everything
+  GMAC->GMAC_IDR = 0xffffffff; // disable all interrupts
+  GMAC->GMAC_NCR |= GMAC_NCR_CLRSTAT; // reset statistics
+  GMAC->GMAC_RSR = GMAC_RSR_RXOVR | GMAC_RSR_REC | GMAC_RSR_BNA; // clear flags
+  GMAC->GMAC_TSR = GMAC_TSR_UBR | GMAC_TSR_COL  | GMAC_TSR_RLE |
+                   GMAC_TSR_TFC | GMAC_TSR_TXCOMP | GMAC_TSR_TXCOMP; // clear
+  GMAC->GMAC_ISR; // drain interrupts
+  GMAC->GMAC_NCFGR = GMAC_NCFGR_RFCS      |  // drop FCS from rx packets
+                     GMAC_NCFGR_PEN       |  // obey pause frames
+                     GMAC_NCFGR_CAF       |  // promiscuous mode
+                     GMAC_NCFGR_SPD       |  // 100 megabit
+                     GMAC_NCFGR_FD        |  // full duplex
+                     GMAC_NCFGR_CLK_MCK_64;  // mdio clock = mdc / 64
+  // todo: PHY initalization using GMAC_MAN to set it to address 1
+  // look at MPE bit in GMAC_NCR
+  // also see what's going on with the RESET pin
 
   for (int i = 0; i < ENET_RX_BUFFERS; i++)
   {
@@ -159,7 +157,7 @@ void enet_mac_init()
     g_enet_rx_desc[i].status.val = 0; 
   }
   g_enet_rx_desc[ENET_RX_BUFFERS-1].addr.bm.b_wrap = 1; // end of ring buffer
-  EMAC->EMAC_RBQP = (uint32_t)g_enet_rx_desc & 0xfffffffc;
+  GMAC->GMAC_RBQB = (uint32_t)g_enet_rx_desc & 0xfffffffc;
 
   for (int i = 0; i < ENET_TX_BUFFERS; i++)
   {
@@ -168,34 +166,34 @@ void enet_mac_init()
     g_enet_tx_desc[i].status.bm.b_used = 1; // no need to send this guy
   }
   g_enet_tx_desc[ENET_TX_BUFFERS-1].status.bm.b_wrap = 1; // end of ring 
-  EMAC->EMAC_TBQP = (uint32_t)g_enet_tx_desc;
+  GMAC->GMAC_TBQB = (uint32_t)g_enet_tx_desc;
 
-  EMAC->EMAC_NCR |= EMAC_NCR_RE     | // enable receiver
-                    EMAC_NCR_WESTAT | // enable stats
-                    EMAC_NCR_TE;      // enable transmitter
-  EMAC->EMAC_IER = EMAC_IER_RXUBR | // receive used bit read (overrun?)
-                   EMAC_IER_ROVR  | // receive overrun
-                   EMAC_IER_RCOMP ; // receive complete
-  NVIC_SetPriority(EMAC_IRQn, 2);
-  NVIC_EnableIRQ(EMAC_IRQn);
-#endif
+  GMAC->GMAC_NCR |= GMAC_NCR_RXEN   | // enable receiver
+                    GMAC_NCR_WESTAT | // enable stats
+                    GMAC_NCR_TXEN;    // enable transmitter
+  GMAC->GMAC_IER = GMAC_IER_RXUBR | // receive used bit read (overrun?)
+                   GMAC_IER_ROVR  | // receive overrun
+                   GMAC_IER_RCOMP ; // receive complete
+  NVIC_SetPriority(GMAC_IRQn, 2);
+  NVIC_EnableIRQ(GMAC_IRQn);
 }
 
-void enet_vector()
+void gmac_vector()
 {
+  printf("gmac_vector()\r\n");
 #if 0
   // read the flags to reset the interrupt 
-  volatile uint32_t enet_isr = EMAC->EMAC_ISR;
-  volatile uint32_t enet_rsr = EMAC->EMAC_RSR;
-  volatile uint32_t enet_tsr = EMAC->EMAC_TSR;
-  if ((enet_isr & EMAC_ISR_RCOMP) || (enet_rsr & EMAC_RSR_REC))
+  volatile uint32_t enet_isr = GMAC->GMAC_ISR;
+  volatile uint32_t enet_rsr = GMAC->GMAC_RSR;
+  volatile uint32_t enet_tsr = GMAC->GMAC_TSR;
+  if ((enet_isr & GMAC_ISR_RCOMP) || (enet_rsr & GMAC_RSR_REC))
   {
-    volatile uint32_t rsr_clear_flag = EMAC_RSR_REC;
-    if (enet_rsr & EMAC_RSR_OVR)
-      rsr_clear_flag |= EMAC_RSR_OVR;
-    if (enet_rsr & EMAC_RSR_BNA)
-      rsr_clear_flag |= EMAC_RSR_BNA;
-    EMAC->EMAC_RSR = rsr_clear_flag;
+    volatile uint32_t rsr_clear_flag = GMAC_RSR_REC;
+    if (enet_rsr & GMAC_RSR_OVR)
+      rsr_clear_flag |= GMAC_RSR_OVR;
+    if (enet_rsr & GMAC_RSR_BNA)
+      rsr_clear_flag |= GMAC_RSR_BNA;
+    GMAC->GMAC_RSR = rsr_clear_flag;
     // spin through buffers and mark them as unowned
     // collect used buffers into single ethernet RX buffer
     static int s_rx_buf_idx = 0;
@@ -251,7 +249,7 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
   memcpy((uint8_t *)g_enet_tx_buf, pkt, pkt_len);
   g_enet_tx_desc[0].status.bm.b_last_buffer = 1;
   g_enet_tx_desc[0].status.bm.len = pkt_len;
-  EMAC->EMAC_NCR |= EMAC_NCR_TSTART; // kick off TX DMA
+  GMAC->GMAC_NCR |= GMAC_NCR_TSTART; // kick off TX DMA
 #endif
 }
 
