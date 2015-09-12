@@ -1,0 +1,1 @@
+freertps_add_executable(systime_test systime_test.c)

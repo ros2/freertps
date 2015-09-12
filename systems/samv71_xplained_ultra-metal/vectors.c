@@ -114,7 +114,7 @@ typedef void (*vector_func_t)();
 
 __attribute__((used,section(".vectors")))
 vector_func_t g_vectors[] = {
-    (vector_func_t)(&g_stack[STACK_SIZE-4]),
+    (vector_func_t)(&g_stack[STACK_SIZE-8]),
     reset_vector,
     nmi_vector,
     hard_fault_vector,

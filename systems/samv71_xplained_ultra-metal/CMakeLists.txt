@@ -17,5 +17,5 @@ add_library(freertps_system_samv71_xplained_ultra-metal
 #            lcd_init_pins.c
 #            usb_fs_init_pins.c
 set(SYSTEM_EXTRA_LIBS  "metal_common" CACHE STRING "extra system libs")
-set(SYSTEM_APPS "blink hello_world talker listener" CACHE STRING "applications")
+set(SYSTEM_APPS "blink hello_world talker listener systime_test" CACHE STRING "applications")
 #set(SYSTEM_APPS  "listener talker talker_stm32_timer cam_dm_130" CACHE STRING "applications for this system")
