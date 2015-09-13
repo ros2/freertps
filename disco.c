@@ -12,21 +12,21 @@ int g_frudp_disco_num_parts = 0;
 
 void frudp_disco_init()
 {
-  FREERTPS_INFO("discovery init\n");
+  FREERTPS_INFO("discovery init\r\n");
   frudp_spdp_init();
   frudp_sedp_init();
 }
 
 void frudp_disco_start()
 {
-  FREERTPS_INFO("discovery start\n");
+  FREERTPS_INFO("discovery start\r\n");
   frudp_spdp_start();
   frudp_sedp_start();
 }
 
 void frudp_disco_fini()
 {
-  FREERTPS_INFO("discovery fini\n");
+  FREERTPS_INFO("discovery fini\r\n");
   frudp_spdp_fini();
   frudp_sedp_fini();
 }

@@ -50,6 +50,7 @@ void systime_init()
 
   TC0->TC_CHANNEL[2].TC_CMR =
     TC_CMR_TCCLKS_XC2   |
+    TC_CMR_CLKI         |
     //TC_CMR_TCCLKS_TIMER_CLOCK2   |
     TC_CMR_WAVE         |
     TC_CMR_WAVSEL_UP_RC ;
@@ -64,11 +65,11 @@ uint32_t systime_usecs()
   uint32_t t1 = TC0->TC_CHANNEL[1].TC_CV;
   uint32_t t2 = TC0->TC_CHANNEL[2].TC_CV;
   __enable_irq();
+  //printf("           %d  %d\r\n", (int)t1, (int)t2);
   // todo: handle pathological case where t1 rolls over in between reads to
   // t1 and t2. that's extremely unlikely, but it will cause time to jump back
-  // and forth when that does happen, which could lead to badness.
+  // and forth 65ms when that does happen, which could lead to badness.
   uint32_t t = t1 | (t2 << 16);
-  //printf("%d\r\n", (int)t);
   return t;
   /*
   printf("%4d   %8d   %8d  , %08x %08x %08x\r\n",

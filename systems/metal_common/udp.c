@@ -12,8 +12,8 @@
 bool frudp_init()
 {
   enet_init();
-  FREERTPS_INFO("metal udp init()\n");
-  FREERTPS_INFO("using address %d.%d.%d.%d for unicast\n",
+  FREERTPS_INFO("metal udp init()\r\n");
+  FREERTPS_INFO("using address %d.%d.%d.%d for unicast\r\n",
                 (FRUDP_IP4_ADDR >> 24) & 0xff,
                 (FRUDP_IP4_ADDR >> 16) & 0xff,
                 (FRUDP_IP4_ADDR >>  8) & 0xff,
@@ -35,7 +35,7 @@ bool frudp_init()
 void frudp_fini()
 {
   frudp_disco_fini();
-  FREERTPS_INFO("metal udp fini\n");
+  FREERTPS_INFO("metal udp fini\r\n");
 }
 
 bool frudp_listen(const uint32_t max_usec)

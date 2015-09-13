@@ -83,7 +83,8 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
   h->ip.ecn = 0;
   h->ip.diff_serv = 0;
   h->ip.len = freertps_htons(20 + 8 + payload_len);
-  h->ip.id = 0;
+  static uint16_t id_increment = 0;
+  h->ip.id = 0x8000 + id_increment++;
   h->ip.flag_frag = freertps_htons(ENET_IP_DONT_FRAGMENT);
   h->ip.ttl = 10; // not sure here... probably will be used just for LAN, but...
   h->ip.proto = ENET_IP_PROTO_UDP;
@@ -239,7 +240,7 @@ static bool enet_dispatch_icmp(uint8_t *data, const uint16_t len)
   icmp_response->ip.ecn = 0;
   icmp_response->ip.diff_serv = 0;
   icmp_response->ip.len = freertps_htons(incoming_ip_len);
-  icmp_response->ip.id = 0;
+  icmp_response->ip.id = 0x8000;
   icmp_response->ip.flag_frag = freertps_htons(ENET_IP_DONT_FRAGMENT);
   icmp_response->ip.ttl = icmp->ip.ttl;
   icmp_response->ip.proto = ENET_IP_PROTO_ICMP;

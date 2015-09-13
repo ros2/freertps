@@ -16,7 +16,7 @@ bool freertps_system_ok()
 
 bool frudp_init_participant_id()
 {
-  FREERTPS_INFO("frudp_init_participant_id()\n");
+  FREERTPS_INFO("frudp_init_participant_id()\r\n");
   g_frudp_config.participant_id = 0;
   return true;
 }

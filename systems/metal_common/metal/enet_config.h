@@ -1,8 +1,8 @@
 #ifndef NET_CONFIG_H
 #define NET_CONFIG_H
 
-// hard-coded ip for now... 192.168.1.99.  TODO: something smarter
-#define FRUDP_IP4_ADDR 0xc0a80163
+// hard-coded ip for now... 192.168.2.99.  TODO: something smarter
+#define FRUDP_IP4_ADDR 0xc0a80263
 #define ENET_MAC { 0xa4, 0xf3, 0xc1, 0x0, 0x2, 0x0 };
 
 /*

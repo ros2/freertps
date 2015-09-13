@@ -216,7 +216,7 @@ static fr_time_t frudp_spdp_last_bcast;
 
 void frudp_spdp_init()
 {
-  FREERTPS_INFO("sdp init\n");
+  FREERTPS_INFO("sdp init\r\n");
   frudp_spdp_last_bcast.seconds = 0;
   frudp_spdp_last_bcast.fraction = 0;
   frudp_reader_t spdp_reader;

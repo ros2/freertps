@@ -45,7 +45,7 @@ static uint8_t g_sedp_msg_buf[SEDP_MSG_BUF_LEN];
 
 void frudp_sedp_init()
 {
-  FREERTPS_INFO("sedp init\n");
+  FREERTPS_INFO("sedp init\r\n");
   for (int i = 0; i < FRUDP_MAX_SUBS; i++)
   {
     frudp_submsg_data_t *d = 
@@ -99,7 +99,7 @@ void frudp_sedp_start()
 
 void frudp_sedp_fini()
 {
-  FREERTPS_INFO("sedp fini\n");
+  FREERTPS_INFO("sedp fini\r\n");
 }
 
 void frudp_sedp_tick()
@@ -175,10 +175,10 @@ static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
   }
 }
 
-#define SEDP_VERBOSE
+//#define SEDP_VERBOSE
 static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
 {
-  printf("sedp sub: [%s]\n", info->topic_name ? info->topic_name : "");
+  printf("sedp sub: [%s]\r\n", info->topic_name ? info->topic_name : "");
   // look to see if we publish this topic
   for (unsigned i = 0; i < g_frudp_num_pubs; i++)
   {
@@ -195,11 +195,11 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
       continue; // not the same topic. move along.
     if (strcmp(pub->type_name, info->type_name))
     {
-      printf("    SEDP type mismatch: [%s] != [%s]\n",
+      printf("    SEDP type mismatch: [%s] != [%s]\r\n",
              pub->type_name, info->type_name);
       continue;
     }
-    printf("    hooray! heard a request for a topic we publish: [%s]\n",
+    printf("    hooray! heard a request for a topic we publish: [%s]\r\n",
            pub->topic_name);
     // see if we already have a writer for this subscriber
     bool found = false;
@@ -226,11 +226,11 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
                                       const bool is_pub)
 {
 #ifdef SEDP_VERBOSE
-  printf("  sedp_writer data rx\n");
+  printf("  sedp_writer data rx\r\n");
 #endif
   if (scheme != FRUDP_SCHEME_PL_CDR_LE)
   {
-    FREERTPS_ERROR("expected sedp data to be PL_CDR_LE. bailing...\n");
+    FREERTPS_ERROR("expected sedp data to be PL_CDR_LE. bailing...\r\n");
     return;
   }
   memset(&g_topic_info, 0, sizeof(sedp_topic_info_t));
@@ -266,7 +266,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
                              (frudp_rtps_string_t *)pval))
       {
 #ifdef SEDP_PRINT_TOPICS
-        printf("    topic name: [%s]\n", g_topic_info.topic_name);
+        printf("    topic name: [%s]\r\n", g_topic_info.topic_name);
 #endif
       }
       else
@@ -279,11 +279,11 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
                              (frudp_rtps_string_t *)pval))
       {
 #ifdef SEDP_VERBOSE
-        printf("    type name: [%s]\n", g_topic_info.type_name);
+        printf("    type name: [%s]\r\n", g_topic_info.type_name);
 #endif
       }
       else
-        FREERTPS_ERROR("couldn't parse type name\n");
+        FREERTPS_ERROR("couldn't parse type name\r\n");
     }
     else if (pid == FRUDP_PID_RELIABILITY)
     {
@@ -291,17 +291,17 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
       if (qos->kind == FRUDP_QOS_RELIABILITY_KIND_BEST_EFFORT)
       {
 #ifdef SEDP_VERBOSE
-        printf("    reliability QoS: [best-effort]\n");
+        printf("    reliability QoS: [best-effort]\r\n");
 #endif
       }
       else if (qos->kind == FRUDP_QOS_RELIABILITY_KIND_RELIABLE)
       {
 #ifdef SEDP_VERBOSE
-        printf("    reliability QoS: [reliable]\n");
+        printf("    reliability QoS: [reliable]\r\n");
 #endif
       }
       else
-        FREERTPS_ERROR("unhandled reliability kind: %d\n", (int)qos->kind);
+        FREERTPS_ERROR("unhandled reliability kind: %d\r\n", (int)qos->kind);
     }
     else if (pid == FRUDP_PID_HISTORY)
     {
@@ -309,23 +309,23 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
       if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_LAST)
       {
 #ifdef SEDP_VERBOSE
-        printf("    history QoS: [keep last %d]\n", (int)qos->depth);
+        printf("    history QoS: [keep last %d]\r\n", (int)qos->depth);
 #endif
       }
       else if (qos->kind == FRUDP_QOS_HISTORY_KIND_KEEP_ALL)
       {
 #ifdef SEDP_VERBOSE
-        printf("    history QoS: [keep all]\n");
+        printf("    history QoS: [keep all]\r\n");
 #endif
       }
       else
-        FREERTPS_ERROR("unhandled history kind: %d\n", (int)qos->kind);
+        FREERTPS_ERROR("unhandled history kind: %d\r\n", (int)qos->kind);
     }
     else if (pid == FRUDP_PID_TRANSPORT_PRIORITY)
     {
 #ifdef SEDP_VERBOSE
       uint32_t priority = *((uint32_t *)pval);
-      printf("    transport priority: %d\n", (int)priority);
+      printf("    transport priority: %d\r\n", (int)priority);
 #endif
     }
     // now, advance to next item in list...
@@ -336,7 +336,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
       !strlen(g_topic_info.topic_name) ||
       frudp_guid_identical(&g_topic_info.guid, &g_frudp_guid_unknown))
   {
-    FREERTPS_ERROR("insufficient SEDP information\n");
+    FREERTPS_ERROR("insufficient SEDP information\r\n");
     return;
   }
   if (is_pub) // this is information about someone else's publication
@@ -356,7 +356,7 @@ static void sedp_publish(const char *topic_name,
                          frudp_pub_t *pub,
                          const frudp_eid_t eid)
 {
-  printf("sedp publish\n");
+  printf("sedp publish\r\n");
   frudp_submsg_data_t *d = (frudp_submsg_data_t *)g_sedp_msg_buf;
   d->header.id = FRUDP_SUBMSG_ID_DATA;
   d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
@@ -490,7 +490,7 @@ void sedp_add_builtin_endpoints(frudp_part_t *part)
 {
   printf("adding endpoints for ");
   frudp_print_guid_prefix(&part->guid_prefix);
-  printf("\n");
+  printf("\r\n");
 
   frudp_reader_t pub_reader; // this reads the remote peer's publications
   pub_reader.writer_guid = g_frudp_guid_unknown;

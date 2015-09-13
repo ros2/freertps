@@ -86,7 +86,7 @@ void frudp_print_guid(const frudp_guid_t *guid)
 
 frudp_eid_t frudp_create_user_id(const uint8_t entity_kind)
 {
-  printf("frudp_create_user_id()\n");
+  printf("frudp_create_user_id()\r\n");
   frudp_eid_t eid;
   eid.s.kind = entity_kind; // entity kind must be set by caller of this functionmust be overwritten by FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
   eid.s.key[0] = 0;

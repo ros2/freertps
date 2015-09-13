@@ -390,7 +390,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
 #ifdef VERBOSE_DATA
   printf("  DATA ");
   frudp_print_guid(&writer_guid);
-  printf(" => 0x%08x  : %d\n",
+  printf(" => 0x%08x  : %d\r\n",
          (unsigned)freertps_htonl(data_submsg->reader_id.u),
          (int)data_submsg->writer_sn.low);
 #endif
@@ -482,7 +482,7 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
 
 bool frudp_generic_init()
 {
-  FREERTPS_INFO("frudp_generic_init()\n");
+  FREERTPS_INFO("frudp_generic_init()\r\n");
   frudp_part_create();
   frudp_add_mcast_rx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP),
                      frudp_mcast_builtin_port());

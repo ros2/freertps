@@ -168,6 +168,8 @@ static int frudp_create_sock()
 bool frudp_add_ucast_rx(const uint16_t port)
 {
   FREERTPS_INFO("add ucast rx port %d\n", port);
+  if (port == frudp_ucast_builtin_port())
+    return true; // we already added this when searching for our participant ID
   int s = frudp_create_sock();
   if (s < 0)
     return false;
@@ -287,6 +289,7 @@ bool frudp_listen(const uint32_t max_usec)
                                 0,
                                 (struct sockaddr *)&src_addr,
                                 (socklen_t *)&addrlen);
+          printf("rx %d\r\n", nbytes);
           frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
                    rxs->addr, rxs->port,
                    s_frudp_listen_buf, nbytes);

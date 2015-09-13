@@ -22,6 +22,7 @@
 #include <string.h>
 #include "metal/enet.h"
 #include "metal/enet_config.h"
+#include "metal/systime.h"
 #include "pin.h"
 
 // PHY is KSZ8061RNBVA in RMII mode, wired to Peripheral A of port D:
@@ -37,6 +38,12 @@
 //   PD9 = MDIO
 //   PC10 = RESET
 // PHY address = 1
+static volatile int s_rx_buf_idx;
+static volatile int s_rx_pkt_write_idx;
+static volatile int s_tx_buf_idx;
+
+#define GMAC_TX_LAST_BUFFER_BIT (1<<15)
+#define GMAC_TX_WRAP_BIT (1<<30)
 
 // structure definitions taken from ASF 3.5.1,  /sam/drivers/emac/emac.h
 typedef struct emac_rx_descriptor {
@@ -92,12 +99,13 @@ typedef struct emac_tx_descriptor {
   } status;
 } __attribute__ ((packed, aligned(8))) emac_tx_descriptor_t;
 
-#define ENET_MAX_PKT_SIZE 1550
+#define ENET_MAX_PKT_SIZE 1536
 
 ////////////////////////////////////////////////////////////////////////////
 // globals
-#define ENET_RX_BUFFERS   16
+#define ENET_RX_BUFFERS  512
 #define ENET_RX_UNITSIZE 128
+//ENET_MAX_PKT_SIZE
 static volatile emac_rx_descriptor_t __attribute__((aligned(8)))
                    g_enet_rx_desc[ENET_RX_BUFFERS];
 static volatile uint8_t __attribute__((aligned(8))) 
@@ -106,14 +114,35 @@ static uint8_t __attribute__((aligned(8)))
                    g_enet_rx_full_packet[ENET_MAX_PKT_SIZE];
 
 // keep the TX path simple for now. single big buffer.
-#define ENET_TX_BUFFERS 1
+#define ENET_TX_BUFFERS 4
 #define ENET_TX_UNITSIZE ENET_MAX_PKT_SIZE
-volatile static emac_tx_descriptor_t __attribute__((aligned(8)))
+static volatile emac_tx_descriptor_t __attribute__((aligned(8)))
                    g_enet_tx_desc[ENET_TX_BUFFERS];
-volatile static uint8_t __attribute__((aligned(8)))
+static volatile emac_tx_descriptor_t __attribute__((aligned(8)))
+                   g_enet_tx_dummy_desc[1];
+static volatile uint8_t __attribute__((aligned(8)))
                    g_enet_tx_buf[ENET_TX_BUFFERS * ENET_TX_UNITSIZE];
-volatile static uint8_t __attribute__((aligned(8)))
-                   g_enet_udp_tx_buf[ENET_MAX_PKT_SIZE];
+
+#if 0
+void nonsense()
+{
+  static uint8_t nonsense_cache_flush[16384];
+  for (volatile uint32_t i = 0; i < 10000; i++)
+    nonsense_cache_flush[i] = i * 42;
+}
+#endif
+
+void memory_sync()
+{
+  __DSB();
+}
+
+void memory_barrier()
+{
+  __DMB();
+}
+
+int8_t enet_tx_avail();
 
 void enet_write_phy_reg(const uint8_t reg_idx, const uint16_t reg_val)
 {
@@ -123,28 +152,42 @@ uint16_t enet_read_phy_reg(const uint8_t reg_idx)
 {
   return 0;
 }
+
 void enet_mac_init()
 {
+  //SCB_EnableICache();
+  //SCB_EnableDCache();
   printf("samv71 enet mac init\r\n");
   PMC->PMC_PCER0 |= (1 << ID_PIOD);
   PMC->PMC_PCER1 |= (1 << (ID_GMAC - 32));
 
   for (int i = 0; i < 10; i++)
-  {
     pin_set_mux(PIOD, i, 0); // set peripheral A for PD0 -> PD9
-  }
+  for (int i = 1; i < 4; i++)
+    PIOD->PIO_DRIVER |= (1 << i); // set high-power / high-speed drive
+
   GMAC->GMAC_NCR = 0; // disable everything
   GMAC->GMAC_IDR = 0xffffffff; // disable all interrupts
-  GMAC->GMAC_NCR |= GMAC_NCR_CLRSTAT; // reset statistics
   GMAC->GMAC_RSR = GMAC_RSR_RXOVR | GMAC_RSR_REC | GMAC_RSR_BNA; // clear flags
-  GMAC->GMAC_TSR = GMAC_TSR_UBR | GMAC_TSR_COL  | GMAC_TSR_RLE |
-                   GMAC_TSR_TFC | GMAC_TSR_TXCOMP | GMAC_TSR_TXCOMP; // clear
+  GMAC->GMAC_TSR = 
+    GMAC_TSR_HRESP | GMAC_TSR_UBR | GMAC_TSR_COL  | GMAC_TSR_RLE |
+    GMAC_TSR_TFC | GMAC_TSR_TXCOMP | GMAC_TSR_TXCOMP; // clear
+  GMAC->GMAC_NCR |= GMAC_NCR_CLRSTAT; // reset statistics
   GMAC->GMAC_ISR; // drain interrupts
+
+  GMAC->GMAC_DCFGR = GMAC_DCFGR_FBLDO_SINGLE |
+    GMAC_DCFGR_DRBS(2)     | 
+    GMAC_DCFGR_RXBMS(3)    |
+    GMAC_DCFGR_FBLDO_INCR4 |
+    GMAC_DCFGR_TXCOEN      | // calculate and insert IPv4 and UDP checksums
+    GMAC_DCFGR_TXPBMS      ;
+
   GMAC->GMAC_NCFGR = GMAC_NCFGR_RFCS      |  // drop FCS from rx packets
-                     GMAC_NCFGR_PEN       |  // obey pause frames
+                     //GMAC_NCFGR_PEN       |  // obey pause frames
                      GMAC_NCFGR_CAF       |  // promiscuous mode
                      GMAC_NCFGR_SPD       |  // 100 megabit
                      GMAC_NCFGR_FD        |  // full duplex
+                     GMAC_NCFGR_MAXFS     |  // allow up to 1536 bytes RX
                      GMAC_NCFGR_CLK_MCK_64;  // mdio clock = mdc / 64
   // todo: PHY initalization using GMAC_MAN to set it to address 1
   // look at MPE bit in GMAC_NCR
@@ -157,16 +200,29 @@ void enet_mac_init()
     g_enet_rx_desc[i].status.val = 0; 
   }
   g_enet_rx_desc[ENET_RX_BUFFERS-1].addr.bm.b_wrap = 1; // end of ring buffer
-  GMAC->GMAC_RBQB = (uint32_t)g_enet_rx_desc & 0xfffffffc;
+  GMAC->GMAC_RBQB = (uint32_t)g_enet_rx_desc; // & 0xfffffffc;
 
   for (int i = 0; i < ENET_TX_BUFFERS; i++)
   {
-    g_enet_tx_desc[i].addr = (uint32_t)g_enet_tx_buf;
+    g_enet_tx_desc[i].addr = (uint32_t)&g_enet_tx_buf[i * ENET_TX_UNITSIZE];
     g_enet_tx_desc[i].status.val = 0; // clear all flags
     g_enet_tx_desc[i].status.bm.b_used = 1; // no need to send this guy
+    g_enet_tx_desc[i].status.bm.b_last_buffer = 1; // single-buffer packets
   }
   g_enet_tx_desc[ENET_TX_BUFFERS-1].status.bm.b_wrap = 1; // end of ring 
+
+  // set up dummy queues
+  g_enet_tx_dummy_desc[0].addr = (uint32_t)&g_enet_tx_buf[0];
+  g_enet_tx_dummy_desc[0].status.val = (1 << 31) |
+    GMAC_TX_LAST_BUFFER_BIT | GMAC_TX_WRAP_BIT;
+
+  memory_sync();
+  memory_barrier();
   GMAC->GMAC_TBQB = (uint32_t)g_enet_tx_desc;
+  GMAC->GMAC_TBQBAPQ[0] = (uint32_t)g_enet_tx_dummy_desc;
+  GMAC->GMAC_TBQBAPQ[1] = (uint32_t)g_enet_tx_dummy_desc;
+  memory_sync();
+  memory_barrier();
 
   GMAC->GMAC_NCR |= GMAC_NCR_RXEN   | // enable receiver
                     GMAC_NCR_WESTAT | // enable stats
@@ -176,6 +232,8 @@ void enet_mac_init()
                    GMAC_IER_RCOMP ; // receive complete
   NVIC_SetPriority(GMAC_IRQn, 2);
   NVIC_EnableIRQ(GMAC_IRQn);
+  memory_sync();
+  memory_barrier();
 }
 
 void gmac_vector()
@@ -183,9 +241,12 @@ void gmac_vector()
   // read the flags to reset the interrupt 
   volatile uint32_t enet_isr = GMAC->GMAC_ISR;
   volatile uint32_t enet_rsr = GMAC->GMAC_RSR;
-  volatile uint32_t enet_tsr = GMAC->GMAC_TSR;
+  //printf("  GMAC_ISR = %08x\r\n", (unsigned)enet_isr);
+  //volatile uint32_t enet_tsr = GMAC->GMAC_TSR;
   if ((enet_isr & GMAC_ISR_RCOMP) || (enet_rsr & GMAC_RSR_REC))
   {
+    memory_sync();
+    memory_barrier();
     volatile uint32_t rsr_clear_flag = GMAC_RSR_REC;
     if (enet_rsr & GMAC_RSR_RXOVR)
       rsr_clear_flag |= GMAC_RSR_RXOVR;
@@ -194,8 +255,6 @@ void gmac_vector()
     GMAC->GMAC_RSR = rsr_clear_flag;
     // spin through buffers and mark them as unowned
     // collect used buffers into single ethernet RX buffer
-    static int s_rx_buf_idx = 0;
-    static int s_rx_pkt_write_idx = 0;
     while (g_enet_rx_desc[s_rx_buf_idx].addr.bm.b_ownership)
     {
       volatile emac_rx_descriptor_t *desc = &g_enet_rx_desc[s_rx_buf_idx];
@@ -213,44 +272,92 @@ void gmac_vector()
       if (buf_data_len > 0 && 
           s_rx_pkt_write_idx + buf_data_len < ENET_MAX_PKT_SIZE)
       {
+        SCB_InvalidateDCache();
         memcpy(&g_enet_rx_full_packet[s_rx_pkt_write_idx], buf, buf_data_len);
         s_rx_pkt_write_idx += buf_data_len;
       }
       else
       {
-        printf("AAAHH enet rx buffer trashed\r\n");
+        printf("AAAHH enet rx buffer trashed: widx = %d buflen = %d\r\n",
+            (int)s_rx_pkt_write_idx, (int)buf_data_len);
         s_rx_pkt_write_idx = 0;
       }
       if (desc->status.bm.b_eof)
       {
-        printf("enet rx %d bytes\r\n", s_rx_pkt_write_idx);
+        //printf("enet rx %d bytes\r\n", s_rx_pkt_write_idx);
         enet_rx_raw(g_enet_rx_full_packet, s_rx_pkt_write_idx);
         s_rx_pkt_write_idx = 0; // to be really^n sure this gets reset... 
       }
-      s_rx_buf_idx = ++s_rx_buf_idx % ENET_RX_BUFFERS; // advance in ring
+      s_rx_buf_idx++;
+      s_rx_buf_idx = s_rx_buf_idx % ENET_RX_BUFFERS; // advance in ring
     }
   }
 }
 
 void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
 {
-  g_enet_tx_desc[0].status.bm.b_used = 0; // we're monkeying with it
+  //if (systime_usecs() < 2000000)
+  //  return;
+  /*
+  if (!enet_tx_avail())
+  {
+    printf("ethernet tx buffer full; ignoring tx request\r\n");
+    return;
+  }
+  */
   // for now, we just crush whatever is in the tx buffer.
   if (pkt_len > ENET_TX_UNITSIZE)
     pkt_len = ENET_TX_UNITSIZE; // save memory from being brutally crushed
+  /*
   printf("enet_tx_raw %d bytes:\r\n", pkt_len);
+  printf("   TSR: %08x desc addr,status = {%08x,%08x}\r\n", 
+      (unsigned)GMAC->GMAC_TSR, 
+      (unsigned)g_enet_tx_desc[0].addr,
+      (unsigned)g_enet_tx_desc[0].status.val);
+  printf("   FTX: %d\r\n", (unsigned)GMAC->GMAC_FT);
+  */
   //for (int i = 0; i < pkt_len; i++)
   //  printf("%d: 0x%02x\r\n", i, pkt[i]);
-  memcpy((uint8_t *)g_enet_tx_buf, pkt, pkt_len);
+  //printf("sending via tx buf %d\r\n", s_tx_buf_idx);
+  memcpy((void *)&g_enet_tx_buf[s_tx_buf_idx * ENET_TX_UNITSIZE], pkt, pkt_len);
+  //GMAC->GMAC_TBQB = (uint32_t)g_enet_tx_desc;
+  //g_enet_tx_desc[0].addr = (uint32_t)g_enet_tx_buf;
+  g_enet_tx_desc[s_tx_buf_idx].status.bm.b_used = 0; // we're monkeying with it
+  g_enet_tx_desc[s_tx_buf_idx].status.bm.len = pkt_len;
+  //uint32_t  status = GMAC_TX_WRAP_BIT        |
+  //                   GMAC_TX_LAST_BUFFER_BIT |
+  //                   pkt_len;
+  //g_enet_tx_desc[0].status.val = status;
+  /*
+  printf("     tx TSR: %08x  TBQB: %08x desc {addr,status} = {%08x,%08x}\r\n", 
+      (unsigned)GMAC->GMAC_TSR, 
+      (unsigned)GMAC->GMAC_TBQB,
+      (unsigned)g_enet_tx_desc[0].addr,
+      (unsigned)g_enet_tx_desc[0].status.val);
+  printf("       g_enet_tx_desc = %08x\r\n", (unsigned)g_enet_tx_desc);
+  SCB_CleanDCache();
+  SCB_InvalidateDCache();
+  */
+  /*
+  g_enet_tx_desc[0].status.bm.b_wrap = 1;
   g_enet_tx_desc[0].status.bm.b_last_buffer = 1;
-  g_enet_tx_desc[0].status.bm.len = pkt_len;
+  */
+  /*GMAC->GMAC_TSR = 
+    GMAC_TSR_HRESP | GMAC_TSR_UBR | GMAC_TSR_COL  | GMAC_TSR_RLE |
+    GMAC_TSR_TFC | GMAC_TSR_TXCOMP; // clear */
+  memory_sync();
+  memory_barrier();
   GMAC->GMAC_NCR |= GMAC_NCR_TSTART; // kick off TX DMA
+  //memory_sync();
+  //memory_barrier();
+  s_tx_buf_idx++;
+  if (s_tx_buf_idx >= ENET_TX_BUFFERS)
+    s_tx_buf_idx = 0;
 }
 
-/*
 // this could be useful someday (?)
 int8_t enet_tx_avail()
 {
-  return (g_enet_tx_desc[0].status.bm.b_last_buffer != 0);
+  return 1; // todo: fix this
+  //return (g_enet_tx_desc[0].status.bm.b_last_buffer != 0);
 }
-*/

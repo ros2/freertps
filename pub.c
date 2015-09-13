@@ -96,7 +96,7 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
          submsg->header.len - sizeof(frudp_submsg_data_t) + 4);
   //pub_sample->data_len = sample->data_len;
   // TODO: now, send DATA and HEARTBEAT submessages
-  printf("frudp publish %d bytes, seq num %d:%d\n",
+  printf("frudp publish %d bytes, seq num %d:%d\r\n",
          submsg->header.len,
          (int)pub_submsg->writer_sn.high,
          (int)pub_submsg->writer_sn.low);

@@ -49,7 +49,7 @@ void reset_vector()
   g_stack[0] = 0; // need to put a reference in here to the stack array
                   // to make sure the linker brings it in. I'm sure there
                   // is a more elegant way to do this, but this seems to work
-  EFC->EEFC_FMR = EEFC_FMR_FWS(4); // slow down flash for our blazing speed
+  EFC->EEFC_FMR = EEFC_FMR_FWS(5); // slow down flash for our blazing speed
   WDT->WDT_MR = WDT_MR_WDDIS; // disable watchdog for now
   // TODO: a block of code which can be ifdef'd in and out to source the
   // slow clock from a 32 kHz crystal rather than the (relatively) inaccurate
@@ -82,7 +82,7 @@ void reset_vector()
   PMC->CKGR_MCFR = CKGR_MCFR_CCSS   | // measure the crystal oscillator
                    CKGR_MCFR_RCMEAS ; // start a new measurement
   // PLLA must output between 150 MHz and 500 MHz
-  // board has 12 MHz crystal; let's multiply by 24 for 288 MHz CPU freq
+  // board has 12 MHz crystal; let's multiply by 24 for 288 MHz PLL freq
   #define MUL 23
   PMC->CKGR_PLLAR = CKGR_PLLAR_ONE         | // per datasheet, must set 1<<29
                     CKGR_PLLAR_MULA(MUL)   | // pll = crystal * (mul+1)/div
@@ -90,7 +90,7 @@ void reset_vector()
                     CKGR_PLLAR_PLLACOUNT(0x3f);
   while (!(PMC->PMC_SR & PMC_SR_LOCKA)) { } // spin until lock
   // don't use a divider... use the PLL output as CPU clock and divide CPU
-  // clock by 2 to get 150 MHz for the master clock
+  // clock by 2 to get 144 MHz for the master clock
   PMC->PMC_MCKR =  PMC_MCKR_CSS_MAIN_CLK | // | 
                    PMC_MCKR_MDIV_PCK_DIV2;
   while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) { } // spin until ready
@@ -98,7 +98,7 @@ void reset_vector()
   PMC->PMC_MCKR =  PMC_MCKR_CSS_PLLA_CLK | 
                    PMC_MCKR_MDIV_PCK_DIV2;
   while (!(PMC->PMC_SR & PMC_SR_MCKRDY)) { } // spin until selected
-  // now we're running the CPU at 300 MHz and the system at 150 MHz
+  // now we're running the CPU at 288 MHz and the system at 144 MHz
 
   uint32_t *pSrc, *pDest;
   // set up data segment
@@ -123,6 +123,5 @@ void reset_vector()
   led_init();
   console_init();
   main();
-  //_mainCRTStartup(); // jump to application main()
   while (1) { } // hopefully we never get here...
 }

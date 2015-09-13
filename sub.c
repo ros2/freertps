@@ -32,16 +32,18 @@ void frudp_add_reader(const frudp_reader_t *match)
 
   g_frudp_readers[g_frudp_num_readers] = *match;
   g_frudp_num_readers++;
+  /*
   printf("add_reader(");
   frudp_print_guid(&match->writer_guid);
-  printf(" => %08x)\n", (unsigned)freertps_htonl(match->reader_eid.u));
+  printf(" => %08x)\r\n", (unsigned)freertps_htonl(match->reader_eid.u));
+  */
 }
 
 void frudp_add_user_sub(const char *topic_name,
                         const char *type_name,
                         freertps_msg_cb_t msg_cb)
 {
-  printf("frudp_add_user_sub(%s, %s)\n", topic_name, type_name);
+  printf("frudp_add_user_sub(%s, %s)\r\n", topic_name, type_name);
   frudp_eid_t sub_eid = frudp_create_user_id
                           (FRUDP_ENTITY_KIND_USER_READER_NO_KEY);
   frudp_sub_t sub;
@@ -73,7 +75,7 @@ void frudp_print_readers()
     frudp_reader_t *match = &g_frudp_readers[i];
     printf("    sub %d: writer = ", (int)i); //%08x, reader = %08x\n",
     frudp_print_guid(&match->writer_guid);
-    printf(" => %08x\n", (unsigned)freertps_htonl(match->reader_eid.u));
+    printf(" => %08x\r\n", (unsigned)freertps_htonl(match->reader_eid.u));
   }
 }
 
