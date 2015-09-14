@@ -275,42 +275,52 @@ bool frudp_publish_user_msg_frag(
     const uint32_t frag_num, 
     const uint8_t *frag, 
     const uint32_t frag_len,
+    const uint32_t frag_used_len,
     const uint32_t msg_len)
 {
-  // todo: consolidate this with the non-fragmented TX function below...
-  // craft a tx packet and stuff it
+  //printf("publish frag %d : %d bytes\n", frag_num, frag_len);
+  // todo: consolidate this with the non-fragmented TX function...
   frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
-  fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
-  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
-  ts_submsg->header.len = 8;
-  memcpy(ts_submsg->contents, &t, 8);
-  submsg_wpos += 4 + 8;
-  // now, append the data submessage ////////////////////////////////////////
+
+  if (frag_num == 1)
+  {
+    // craft a tx packet and stuff it
+    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
+    ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
+    ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+    ts_submsg->header.len = 8;
+    fr_time_t t = fr_time_now();
+    memcpy(ts_submsg->contents, &t, 8);
+    submsg_wpos += 4 + 8;
+  }
+  // append the data frag submessage ////////////////////////////////////////
   frudp_submsg_data_frag_t *d =
     (frudp_submsg_data_frag_t *)&msg->submsgs[submsg_wpos];
   d->header.id = FRUDP_SUBMSG_ID_DATA_FRAG;
-  d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
-                    FRUDP_FLAGS_DATA_PRESENT;
-  d->header.len = sizeof(frudp_submsg_data_frag_t) /*+ 4*/ + frag_len;
+  d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  d->header.len = sizeof(frudp_submsg_data_frag_t) + frag_used_len;
   d->extraflags = 0;
-  d->octets_to_inline_qos = 16;
-  if (!frag_num)
-    pub->next_sn.low++; // todo: something smarter
+  d->octets_to_inline_qos = 28;
   d->writer_sn = pub->next_sn;
+  if (frag_num == 1)
+    pub->next_sn.low++; // todo: something smarter
   d->fragment_starting_number = frag_num;
   d->fragments_in_submessage = 1;
   d->fragment_size = frag_len;
-  d->sample_size = msg_len;
-  frudp_encapsulation_scheme_t *scheme =
-    (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
-  scheme->scheme = freertps_htons(FRUDP_SCHEME_CDR_LE);
-  scheme->options = 0;
-  uint8_t *outbound_frag_payload = (uint8_t *)(&d->data[4]);
-  memcpy(outbound_frag_payload, frag, frag_len);
-  submsg_wpos += 4 + d->header.len;
+  d->sample_size = msg_len; // + 4;
+  /*
+  if (frag_num == 1)
+  {
+    frudp_encapsulation_scheme_t *scheme =
+      (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
+    scheme->scheme = freertps_htons(FRUDP_SCHEME_CDR_LE);
+    scheme->options = 0;
+  }
+  */
+  uint8_t *outbound_frag_payload = (uint8_t *)&d->data[0];
+  memcpy(outbound_frag_payload, frag, frag_used_len);
+  submsg_wpos += d->header.len + 4;
   const int udp_payload_len = 
     (uint8_t *)&msg->submsgs[submsg_wpos] - (uint8_t *)msg;
   //printf("rtps udp payload = %d bytes\n", (int)udp_payload_len);

@@ -53,6 +53,7 @@ bool frudp_publish_user_msg_frag(
     const uint32_t frag_num, 
     const uint8_t *frag, 
     const uint32_t frag_len,
+    const uint32_t frag_used_len,
     const uint32_t msg_len);
 
 frudp_pub_t *frudp_pub_from_writer_id(const frudp_eid_t id);

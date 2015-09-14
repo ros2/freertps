@@ -19,7 +19,7 @@ include_directories(${PROJECT_SOURCE_DIR}/systems/metal_common)
 # similar to how the stm32 boards work
 set(SAM_CHIP_HEADER "samv71q21.h")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections -include ${SAM_CHIP_HEADER}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -ffunction-sections -fdata-sections -include ${SAM_CHIP_HEADER}")
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_EXE_LINKER_FLAGS "-lc -lgcc -mthumb -static -Wl,--print-gc-sections -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/map,--cref")
 #set(CMAKE_EXE_LINKER_FLAGS "-lc -lgcc -mthumb -static -Wl,--no-gc-sections -Wl,--print-gc-sections -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/map,--cref")

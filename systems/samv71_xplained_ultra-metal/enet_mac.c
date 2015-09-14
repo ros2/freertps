@@ -113,7 +113,6 @@ static volatile uint8_t __attribute__((aligned(8)))
 static uint8_t __attribute__((aligned(8)))
                    g_enet_rx_full_packet[ENET_MAX_PKT_SIZE];
 
-// keep the TX path simple for now. single big buffer.
 #define ENET_TX_BUFFERS 4
 #define ENET_TX_UNITSIZE ENET_MAX_PKT_SIZE
 static volatile emac_tx_descriptor_t __attribute__((aligned(8)))
@@ -308,8 +307,8 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
   // for now, we just crush whatever is in the tx buffer.
   if (pkt_len > ENET_TX_UNITSIZE)
     pkt_len = ENET_TX_UNITSIZE; // save memory from being brutally crushed
+  //printf("enet_tx_raw %d bytes\r\n", pkt_len);
   /*
-  printf("enet_tx_raw %d bytes:\r\n", pkt_len);
   printf("   TSR: %08x desc addr,status = {%08x,%08x}\r\n", 
       (unsigned)GMAC->GMAC_TSR, 
       (unsigned)g_enet_tx_desc[0].addr,
@@ -319,6 +318,20 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
   //for (int i = 0; i < pkt_len; i++)
   //  printf("%d: 0x%02x\r\n", i, pkt[i]);
   //printf("sending via tx buf %d\r\n", s_tx_buf_idx);
+
+  // wait until a TX buffer is ready
+  memory_sync();
+  memory_barrier();
+  int tx_wait_count = 0;
+  while (g_enet_tx_desc[s_tx_buf_idx].status.bm.b_used == 0)
+  {
+    memory_sync();
+    memory_barrier();
+    tx_wait_count++;
+  }
+  if (tx_wait_count)
+    printf("waited %d\r\n", tx_wait_count);
+
   memcpy((void *)&g_enet_tx_buf[s_tx_buf_idx * ENET_TX_UNITSIZE], pkt, pkt_len);
   //GMAC->GMAC_TBQB = (uint32_t)g_enet_tx_desc;
   //g_enet_tx_desc[0].addr = (uint32_t)g_enet_tx_buf;
@@ -358,6 +371,7 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
 // this could be useful someday (?)
 int8_t enet_tx_avail()
 {
-  return 1; // todo: fix this
+  return 1;
   //return (g_enet_tx_desc[0].status.bm.b_last_buffer != 0);
+  //return 1; // todo: fix this
 }
