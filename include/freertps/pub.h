@@ -46,8 +46,14 @@ void frudp_publish(frudp_pub_t *publication,
                    frudp_submsg_data_t *submsg);
 
 bool frudp_publish_user_msg(frudp_pub_t *publication,
-                            const uint8_t *msg,
-                            const uint32_t msg_len);
+    const uint8_t *msg, const uint32_t msg_len);
+
+bool frudp_publish_user_msg_frag(
+    frudp_pub_t *publication,
+    const uint32_t frag_num, 
+    const uint8_t *frag, 
+    const uint32_t frag_len,
+    const uint32_t msg_len);
 
 frudp_pub_t *frudp_pub_from_writer_id(const frudp_eid_t id);
 

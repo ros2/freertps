@@ -103,8 +103,7 @@ int main(int argc, char **argv)
   freertps_timer_set_freq(10, timer_cb);
   //freertps_timer_set_freq(1000, timer_cb);
   printf("hello, world!\r\n");
-  g_pub = freertps_create_pub
-            ("imu", "sensor_msgs::msg::dds_::Imu_");
+  g_pub = freertps_create_pub("imu", "sensor_msgs::msg::dds_::Imu_");
   frudp_disco_start();
   while (freertps_system_ok())
   {

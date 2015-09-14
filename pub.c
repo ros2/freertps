@@ -270,9 +270,76 @@ void frudp_add_writer(const frudp_writer_t *writer)
   printf(")\n");
 }
 
+bool frudp_publish_user_msg_frag(
+    frudp_pub_t *pub,
+    const uint32_t frag_num, 
+    const uint8_t *frag, 
+    const uint32_t frag_len,
+    const uint32_t msg_len)
+{
+  // todo: consolidate this with the non-fragmented TX function below...
+  // craft a tx packet and stuff it
+  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+  fr_time_t t = fr_time_now();
+  uint16_t submsg_wpos = 0;
+  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
+  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  ts_submsg->header.len = 8;
+  memcpy(ts_submsg->contents, &t, 8);
+  submsg_wpos += 4 + 8;
+  // now, append the data submessage ////////////////////////////////////////
+  frudp_submsg_data_frag_t *d =
+    (frudp_submsg_data_frag_t *)&msg->submsgs[submsg_wpos];
+  d->header.id = FRUDP_SUBMSG_ID_DATA_FRAG;
+  d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
+                    FRUDP_FLAGS_DATA_PRESENT;
+  d->header.len = sizeof(frudp_submsg_data_frag_t) /*+ 4*/ + frag_len;
+  d->extraflags = 0;
+  d->octets_to_inline_qos = 16;
+  if (!frag_num)
+    pub->next_sn.low++; // todo: something smarter
+  d->writer_sn = pub->next_sn;
+  d->fragment_starting_number = frag_num;
+  d->fragments_in_submessage = 1;
+  d->fragment_size = frag_len;
+  d->sample_size = msg_len;
+  frudp_encapsulation_scheme_t *scheme =
+    (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
+  scheme->scheme = freertps_htons(FRUDP_SCHEME_CDR_LE);
+  scheme->options = 0;
+  uint8_t *outbound_frag_payload = (uint8_t *)(&d->data[4]);
+  memcpy(outbound_frag_payload, frag, frag_len);
+  submsg_wpos += 4 + d->header.len;
+  const int udp_payload_len = 
+    (uint8_t *)&msg->submsgs[submsg_wpos] - (uint8_t *)msg;
+  //printf("rtps udp payload = %d bytes\n", (int)udp_payload_len);
+  // now, iterate through all matched-writers and send the message as needed
+  for (int i = 0; i < g_frudp_num_writers; i++)
+  {
+    frudp_writer_t *w = &g_frudp_writers[i];
+    if (w->writer_eid.u == pub->writer_eid.u)
+    {
+      // we want to send here. if we haven't already sent to the same
+      // locator, update the guid and send the message
+      // todo: figure out between sending to multicast and sending to unicast
+      // and don't re-multicast to the same domain
+      d->reader_id = w->reader_guid.eid; // todo copy here...
+      d->writer_id = w->writer_eid;
+      frudp_part_t *part = frudp_part_find(&w->reader_guid.prefix);
+      if (!part)
+        continue; // shouldn't happen; this implies inconsistency somewhere
+      frudp_tx(part->default_unicast_locator.addr.udp4.addr,
+               part->default_unicast_locator.port,
+               (const uint8_t *)msg,
+               udp_payload_len);
+    }
+  }
+  return true;
+}
+
 bool frudp_publish_user_msg(frudp_pub_t *pub,
-                            const uint8_t *payload,
-                            const uint32_t payload_len)
+    const uint8_t *payload, const uint32_t payload_len)
 {
   //printf("publish user msg %d bytes\n", (int)payload_len);
   if (pub->reliable)
