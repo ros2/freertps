@@ -353,12 +353,14 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       // we want to send here. if we haven't already sent to the same
       // locator, update the guid and send the message
       // todo: figure out between sending to multicast and sending to unicast
+      // and don't re-multicast to the same domain
       d->reader_id = w->reader_guid.eid; // todo copy here...
       d->writer_id = w->writer_eid;
       frudp_part_t *part = frudp_part_find(&w->reader_guid.prefix);
       if (!part)
         continue; // shouldn't happen; this implies inconsistency somewhere
       // also, update the reader/writer ID's for the heartbeat submsg
+      // actually.. i don't think we have to send heartbeats to best-effort..
       hb->reader_id = d->reader_id;
       hb->writer_id = d->writer_id;
       //frudp_locator_t *loc = part->default_unicast_locator;

@@ -16,7 +16,7 @@ typedef struct
   uint8_t minor;
 } frudp_pver_t; // protocol version
 
-typedef struct
+typedef struct frudp_header
 {
   uint32_t magic_word; // RTPS in ASCII
   frudp_pver_t pver; // protocol version
@@ -30,19 +30,21 @@ typedef struct
   uint8_t submsgs[];
 } frudp_msg_t;
 
-#define FRUDP_FLAGS_LITTLE_ENDIAN 0x01
-#define FRUDP_FLAGS_INLINE_QOS    0x02
-#define FRUDP_FLAGS_DATA_PRESENT  0x04
+#define FRUDP_FLAGS_LITTLE_ENDIAN      0x01
+#define FRUDP_FLAGS_INLINE_QOS         0x02
+#define FRUDP_FLAGS_DATA_PRESENT       0x04
 
-#define FRUDP_FLAGS_ACKNACK_FINAL 0x02
+#define FRUDP_FLAGS_ACKNACK_FINAL      0x02
 
-#define FRUDP_SUBMSG_ID_ACKNACK   0x06
-#define FRUDP_SUBMSG_ID_HEARTBEAT 0x07
-#define FRUDP_SUBMSG_ID_INFO_TS   0x09
-#define FRUDP_SUBMSG_ID_INFO_DEST 0x0e
-#define FRUDP_SUBMSG_ID_DATA      0x15
+#define FRUDP_SUBMSG_ID_ACKNACK        0x06
+#define FRUDP_SUBMSG_ID_HEARTBEAT      0x07
+#define FRUDP_SUBMSG_ID_INFO_TS        0x09
+#define FRUDP_SUBMSG_ID_INFO_DEST      0x0e
+#define FRUPG_SUBMSG_ID_HEARTBEAT_FRAG 0x13
+#define FRUDP_SUBMSG_ID_DATA           0x15
+#define FRUDP_SUBMSG_ID_DATA_FRAG      0x16
 
-typedef struct
+typedef struct frudp_submsg_header
 {
   uint8_t id;
   uint8_t flags;
@@ -96,6 +98,21 @@ typedef struct
   frudp_sn_t writer_sn;
   uint8_t data[];
 } __attribute__((packed)) frudp_submsg_data_t;
+
+typedef struct frudp_submsg_data_frag
+{
+  struct frudp_submsg_header header;
+  uint16_t extraflags;
+  uint16_t octets_to_inline_qos;
+  frudp_eid_t reader_id;
+  frudp_eid_t writer_id;
+  frudp_sn_t writer_sn;
+  uint32_t fragment_starting_number;
+  uint16_t fragments_in_submessage;
+  uint16_t fragment_size;
+  uint32_t sample_size;
+  uint8_t data[];
+} __attribute__((packed)) frudp_submsg_data_frag_t;
 
 typedef struct
 {

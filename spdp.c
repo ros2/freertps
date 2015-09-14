@@ -423,9 +423,10 @@ static void frudp_spdp_bcast()
   //int payload_len = ((uint8_t *)param_list) - ((uint8_t *)msg->submsgs);
   //int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg->submsgs);
   int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg);
-  frudp_tx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP), 
-           frudp_mcast_builtin_port(),
-           (const uint8_t *)msg, payload_len);
+  if (!frudp_tx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP), 
+        frudp_mcast_builtin_port(),
+        (const uint8_t *)msg, payload_len))
+    FREERTPS_ERROR("couldn't transmit SPDP broadcast message\r\n");
 }
 
 void frudp_spdp_tick()

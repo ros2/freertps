@@ -168,8 +168,14 @@ static int frudp_create_sock()
 bool frudp_add_ucast_rx(const uint16_t port)
 {
   FREERTPS_INFO("add ucast rx port %d\n", port);
-  if (port == frudp_ucast_builtin_port())
-    return true; // we already added this when searching for our participant ID
+  // we may have already added this when searching for our participant ID
+  // so, let's spin through and see if it's already there
+  for (int i = 0; i < g_frudp_rx_socks_used; i++)
+    if (g_frudp_rx_socks[i].port == port)
+    {
+      FREERTPS_INFO("  found port match in slot %d\n", i);
+      return true; // it's already here
+    }
   int s = frudp_create_sock();
   if (s < 0)
     return false;
@@ -189,6 +195,7 @@ bool frudp_add_ucast_rx(const uint16_t port)
   rxs->sock = s;
   rxs->port = port;
   rxs->addr = rx_bind_addr.sin_addr.s_addr;
+  FREERTPS_INFO("  added in rx sock slot %d\n", g_frudp_rx_socks_used);
   g_frudp_rx_socks_used++;
   return true;
 }
@@ -236,6 +243,7 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
   rxs->port = port;
   rxs->addr = g_frudp_tx_addr.sin_addr.s_addr;
   //g_freertps_udp_rx_socks[g_freertps_udp_rx_socks_used].cb = rx_cb;
+  FREERTPS_INFO("  added in rx sock slot %d\n", g_frudp_rx_socks_used);
   g_frudp_rx_socks_used++;
   return true;
 }
@@ -289,7 +297,7 @@ bool frudp_listen(const uint32_t max_usec)
                                 0,
                                 (struct sockaddr *)&src_addr,
                                 (socklen_t *)&addrlen);
-          printf("rx %d\r\n", nbytes);
+          //printf("rx %d\r\n", nbytes);
           frudp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
                    rxs->addr, rxs->port,
                    s_frudp_listen_buf, nbytes);
