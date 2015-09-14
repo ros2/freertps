@@ -327,6 +327,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
   submsg_wpos += 4 + d->header.len;
 
   ///////////////////////////////////////////////////////////////////////
+  /*
   frudp_submsg_heartbeat_t *hb = 
     (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
   hb->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
@@ -339,6 +340,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
   hb->count = hb_count++;
 
   submsg_wpos += 4 + hb->header.len;
+  */
 
   const int udp_payload_len = 
     (uint8_t *)&msg->submsgs[submsg_wpos] - (uint8_t *)msg;
@@ -361,8 +363,8 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
         continue; // shouldn't happen; this implies inconsistency somewhere
       // also, update the reader/writer ID's for the heartbeat submsg
       // actually.. i don't think we have to send heartbeats to best-effort..
-      hb->reader_id = d->reader_id;
-      hb->writer_id = d->writer_id;
+      //hb->reader_id = d->reader_id;
+      //hb->writer_id = d->writer_id;
       //frudp_locator_t *loc = part->default_unicast_locator;
       // todo: more than ipv4
       /*
