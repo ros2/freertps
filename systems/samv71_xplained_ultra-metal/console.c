@@ -41,18 +41,9 @@ void console_init()
 
 void console_send_block(const uint8_t *block, const uint32_t len)
 {
-  // if it ever matters, make this interrupt-driven
+  // if it ever matters, make this interrupt-driven or (bonus) dma driven
   if (!g_console_init_complete)
     console_init();
-  led_toggle();
-  /*
-  if (PIOB->PIO_PDSR & TX_PIN)
-    PIOB->PIO_CODR = TX_PIN;
-  else
-    PIOB->PIO_SODR = TX_PIN;
-  */
-
-  //CONSOLE_USART->US_THR = 'h'; //block[i];
   while ((CONSOLE_USART->US_CSR & US_CSR_TXRDY) == 0) { }
   for (uint32_t i = 0; i < len; i++)
   {
