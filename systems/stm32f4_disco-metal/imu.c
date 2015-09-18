@@ -1,7 +1,7 @@
 #include "sensors/imu.h"
 #include <stdio.h>
 #include "pin.h"
-#include "delay.h"
+#include "metal/delay.h"
 
 // stm32f4-disco has an ST LIS3DSH, connected as follows:
 // CS   = PE3

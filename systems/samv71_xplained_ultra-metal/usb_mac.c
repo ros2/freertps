@@ -1,5 +1,10 @@
 #include "metal/usb.h"
+//#include "samv71q21.h"
 #include <stdio.h>
+#include "metal/delay.h"
+#include <stdbool.h>
+
+//static bool g_usb_waiting_for_addr_in_pkt;
 
 void usb_init()
 {
@@ -18,7 +23,9 @@ void usb_init()
   USBHS->USBHS_DEVIER = USBHS_DEVIER_EORSTES; // enable end-of-reset interrupt
   NVIC_SetPriority(USBHS_IRQn, 1);
   NVIC_EnableIRQ(USBHS_IRQn);
-  USBHS->USBHS_DEVCTRL &= !USBHS_DEVCTRL_DETACH; // enable usb output pads
+  USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH; // disable usb output pads
+  delay_ms(10);
+  USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH; // enable usb output pads
 }
 
 static void usb_reset_ep0()
@@ -33,26 +40,6 @@ static void usb_reset_ep0()
   //printf("ep0 status: 0x%08x\r\n", (unsigned)USBHS->USBHS_DEVEPTISR[0]);
 }
 
-static void usb_handle_setup_request(uint8_t *req_pkt)
-{
-  const uint8_t  req_type  = req_pkt[0];
-  const uint8_t  req       = req_pkt[1];
-  const uint16_t req_val   = req_pkt[2] | (req_pkt[3] << 8);
-  const uint16_t req_index = req_pkt[4] | (req_pkt[5] << 8);
-  const uint16_t req_count = req_pkt[6] | (req_pkt[7] << 8);
-
-  printf("ep0 setup type %02x req %02x val %04x index %04x count %04x\r\n",
-      req_type, req, req_val, req_index, req_count);
-  if (req_type == 0x80 && req == 0x06) // get descriptor
-  {
-    if (req_val == 0x0100) // get device descriptor
-    {
-      // todo: transmit device descriptor
-      printf("TODO: transmit device descriptor\r\n");
-    }
-  }
-}
-
 void usbhs_vector()
 {
   //printf("usbhs_vector()\r\n");
@@ -64,22 +51,24 @@ void usbhs_vector()
   }
   else if (USBHS->USBHS_DEVISR & USBHS_DEVISR_PEP_0)
   {
-    printf("ep0 irq\r\n");
+    //printf("ep0 irq\r\n");
     if (USBHS->USBHS_DEVEPTISR[0] & USBHS_DEVEPTISR_RXSTPI)
     {
       uint32_t setup_pkt[2];
       volatile uint32_t *ep0_fifo = (volatile uint32_t *)USBHS_RAM_ADDR;
       setup_pkt[0] = *ep0_fifo;
-      memory_sync();
+      __DSB(); // memory sync
       setup_pkt[1] = *ep0_fifo;
-      memory_sync();
-      usb_handle_setup_request((uint8_t *)&setup_pkt[0]);
+      __DSB();
       USBHS->USBHS_DEVEPTICR[0] = USBHS_DEVEPTICR_RXSTPIC; // clear irq flag
+      usb_rx_setup((uint8_t *)&setup_pkt[0], 8); // always 8 bytes?
     }
     else
+    {
       printf("unknown ep0 irq. ep0 status = 0x%08x\r\n",
           (unsigned)USBHS->USBHS_DEVEPTISR[0]);
-    while(1); // trap!
+      while(1); // trap!
+    }
   }
   else
   {
@@ -89,3 +78,24 @@ void usbhs_vector()
   }
 }
 
+void usb_tx(const unsigned ep, const void *buf, const unsigned len)
+{
+  //printf("usb tx ep%d %d bytes\r\n", (int)ep, (int)len);
+  uint8_t *ep_fifo = (uint8_t *)(((volatile uint32_t *)USBHS_RAM_ADDR) 
+      + 16384 * ep); // ugly
+  const uint8_t *pkt_tx_ptr = buf;
+  for (int i = 0; i < len; i++)
+    *ep_fifo = *pkt_tx_ptr++;
+  //USBHS->USBHS_DEVEPTIFR[0] = USBHS_DEVEPTIFR_TXINIS; // send pkt plz
+  USBHS->USBHS_DEVEPTICR[0] = USBHS_DEVEPTICR_TXINIC; // send pkt plz
+}
+
+void usb_set_addr(const uint8_t addr)
+{
+  printf("usb set addr 0x%02x\r\n", (unsigned)addr);
+  USBHS->USBHS_DEVCTRL = addr & 0x7f; // ensure it's only a 7-bit addr
+  //g_usb_waiting_for_addr_in_pkt = true;
+  USBHS->USBHS_DEVEPTICR[0] = USBHS_DEVEPTICR_TXINIC; // send ZLP pkt
+  //delay_ms(2); // hack
+  USBHS->USBHS_DEVCTRL |= 0x80;
+}

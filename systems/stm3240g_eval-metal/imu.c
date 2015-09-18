@@ -1,7 +1,7 @@
 #include "sensors/imu.h"
 #include <stdio.h>
 #include "pin.h"
-#include "delay.h"
+#include "metal/delay.h"
 
 // stm3240g_eval doesn't have any IMU functions.
 
