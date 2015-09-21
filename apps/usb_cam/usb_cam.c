@@ -1,11 +1,14 @@
 #include <stdio.h>
-#include "freertps/periph/led.h"
+#include "actuators/led.h"
 #include <stdint.h>
 #include "freertps/freertps.h"
 #include "freertps/timer.h"
 #include <string.h>
-//#include "metal/systime.h"
+#include "metal/systime.h"
+#include "metal/usb.h"
+#include "metal/delay.h"
 
+#if 0
 // todo: auto-generate all of this nonsense
 typedef struct
 {
@@ -163,7 +166,7 @@ void timer_cb()
 {
   if (!g_pub)
     return;
-  //volatile uint32_t t_start = systime_usecs();
+  volatile uint32_t t_start = systime_usecs();
   if (!tx_header())
     return;
   // now, send the rows
@@ -171,8 +174,8 @@ void timer_cb()
     if (!tx_row(row))
       return;
   send_last_partial_block();
-  //volatile uint32_t t_end = systime_usecs();
-  //printf("sent image: %d usec\r\n", (int)(t_end - t_start));
+  volatile uint32_t t_end = systime_usecs();
+  printf("sent image: %d usec\r\n", (int)(t_end - t_start));
   
   /*
   memcpy(wpos, fake_image, WIDTH * HEIGHT * 3);
@@ -183,21 +186,29 @@ void timer_cb()
   freertps_publish(g_pub, (uint8_t *)msg, cdr_len);
   */
 }
+#endif
 
 int main()
 {
   printf("cam main()\r\n");
-  freertps_system_init();
+  usb_init();
+  __enable_irq();
+  //freertps_system_init();
   //SCB_EnableICache();
-  cam_init_test_image();
+  //cam_init_test_image();
   //freertps_timer_set_freq(1, timer_cb);
-  g_pub = freertps_create_pub("image", "sensor_msgs::msg::dds_::Image_");
-  frudp_disco_start();
-  while (freertps_system_ok())
+  //g_pub = freertps_create_pub("image", "sensor_msgs::msg::dds_::Image_");
+  //frudp_disco_start();
+  while (1) //freertps_system_ok())
   {
+    delay_ms(200);
+    led_toggle();
+
+    /*
     timer_cb();
     frudp_listen(1000000);
     frudp_disco_tick();
+    */
   }
   frudp_fini();
   return 0;

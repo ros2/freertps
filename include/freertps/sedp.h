@@ -16,4 +16,7 @@ void sedp_publish_pub(frudp_pub_t *pub);
 
 void sedp_add_builtin_endpoints(frudp_part_t *part);
 
+extern frudp_pub_t *g_sedp_sub_pub;
+extern frudp_pub_t *g_sedp_pub_pub;
+
 #endif

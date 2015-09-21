@@ -43,9 +43,10 @@ void frudp_add_user_sub(const char *topic_name,
                         const char *type_name,
                         freertps_msg_cb_t msg_cb)
 {
-  printf("frudp_add_user_sub(%s, %s)\r\n", topic_name, type_name);
   frudp_eid_t sub_eid = frudp_create_user_id
                           (FRUDP_ENTITY_KIND_USER_READER_NO_KEY);
+  printf("frudp_add_user_sub(%s, %s) on EID 0x%08x\r\n",
+      topic_name, type_name, (unsigned)freertps_htonl(sub_eid.u));
   frudp_sub_t sub;
   // for now, just copy the pointers. maybe in the future we can/should have
   // an option for storage of various kind (static, malloc, etc.) for copies.
@@ -56,7 +57,7 @@ void frudp_add_user_sub(const char *topic_name,
   sub.data_cb = NULL;
   sub.reliable = false;
   frudp_add_sub(&sub);
-  sedp_publish_sub(&sub);
+  //sedp_publish_sub(&sub); // can't do this yet; spdp hasn't started bcast
 }
 
 void frudp_add_sub(const frudp_sub_t *s)
@@ -64,6 +65,8 @@ void frudp_add_sub(const frudp_sub_t *s)
   if (g_frudp_num_subs >= FRUDP_MAX_SUBS - 1)
     return; // no room. sorry.
   g_frudp_subs[g_frudp_num_subs] = *s;
+  printf("sub %d: reader_eid = 0x%08x\r\n",
+      g_frudp_num_subs, freertps_htonl((unsigned)s->reader_eid.u));
   g_frudp_num_subs++;
   //frudp_subscribe(s->entity_id, g_frudp_entity_id_unknown, NULL, s->msg_cb);
 }

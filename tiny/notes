@@ -1,0 +1,32 @@
+freertps low-bandwidth frame format
+0: preamble = 0x42
+1: frame format. various formats defined for best-effort vs. realiable, self-contained vs. fragmented, etc.
+2: length. in format 0x1 (the most basic best-effort, self-contained frame format) this is just 1 byte
+3: destination address (8-bit)
+4: source address (8-bit)
+5: destination endpoint (8-bit)
+6: source endpoint (8-bit)
+7-N: data payload
+N+1: checksum low byte
+N+2: checksum high byte
+====
+address 0xff is the broadcast address, and has a pre-defined endpoints for node discovery and address allocation
+====
+what should this be called? 
+TRTPS:  tiny RTPS
+LBRTPS: low-bandwidth RTPS
+SRTPS:  small RTPS
+CRTPS:  compact RTPS
+c "namespace" (prefix) = frc = freertps "small"
+then rename "normal" rtps to "fru" for "freertps UDP" but that conflicts with "freertps usb"
+
+how about "fr" for "freertps" and then a 3-digit code for the transport:
+
+rtps_ is the prefix for all user-facing calls
+
+internal library prefixes:
+
+rtps_udp = udp transport library prefix, implements nominal RTPS spec
+rtps_usb = usb transport library prefix
+rtps_ser = unframed-serial transport library prefix
+rtps_compact = commonly-used stuff by rtps_usb and rtps_ser

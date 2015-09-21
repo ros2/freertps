@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "pin.h"
-#include "delay.h"
+#include "metal/delay.h"
 
 // TODO: look up pin assignments on STM32f4-disco board
 
