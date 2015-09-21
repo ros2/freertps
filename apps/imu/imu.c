@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "freertps/freertps.h"
 #include <string.h>
-#include "sensors/imu.h"
+#include "freertps/periph/imu.h"
 #include "freertps/timer.h"
 
 frudp_pub_t *g_pub = NULL;
