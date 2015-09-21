@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "freertps/id.h"
+//#include "freertps/psm.h"
 
 /////////////////////////////////////////////////////////////////////
 // TYPES
@@ -230,5 +231,7 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf);
             list_item = (frudp_parameter_list_item_t *) \
                         (((uint8_t *)list_item) + 4 + list_item->len); \
           } while (0)
+
+extern const struct rtps_psm g_rtps_psm_udp;
 
 #endif

@@ -195,7 +195,7 @@ bool frudp_add_ucast_rx(const uint16_t port)
   rxs->sock = s;
   rxs->port = port;
   rxs->addr = rx_bind_addr.sin_addr.s_addr;
-  FREERTPS_INFO("  added in rx sock slot %d\n", g_frudp_rx_socks_used);
+  //FREERTPS_INFO("  added in rx sock slot %d\n", g_frudp_rx_socks_used);
   g_frudp_rx_socks_used++;
   return true;
 }
@@ -243,7 +243,7 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
   rxs->port = port;
   rxs->addr = g_frudp_tx_addr.sin_addr.s_addr;
   //g_freertps_udp_rx_socks[g_freertps_udp_rx_socks_used].cb = rx_cb;
-  FREERTPS_INFO("  added in rx sock slot %d\n", g_frudp_rx_socks_used);
+  //FREERTPS_INFO("  added in rx sock slot %d\n", g_frudp_rx_socks_used);
   g_frudp_rx_socks_used++;
   return true;
 }

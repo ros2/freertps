@@ -9,4 +9,6 @@ void frudp_spdp_start();
 void frudp_spdp_tick();
 void frudp_spdp_fini();
 
+void frudp_spdp_bcast();
+
 #endif

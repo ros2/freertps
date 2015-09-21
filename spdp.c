@@ -206,6 +206,8 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
       //printf("    saved new participant in slot %d\n", p_idx);
       g_frudp_disco_num_parts++;
       sedp_add_builtin_endpoints(p);
+      // push this new participant our SEDP data to speed up the process
+      //frudp_send_sedp_
     }
     else
       printf("not enough room to save the new participant.\n");
@@ -269,7 +271,7 @@ uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
   //param_list = (frudp_parameter_list_item_t *)(((uint8_t *)param_list) + 4 + param_list->len);
 
 
-static void frudp_spdp_bcast()
+void frudp_spdp_bcast()
 {
   //FREERTPS_INFO("spdp bcast\n");
   frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_disco_tx_buf);

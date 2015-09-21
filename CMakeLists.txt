@@ -63,7 +63,8 @@ add_library(freertps disco.c
                      sub.c 
                      pub.c 
                      time.c 
-                     udp.c)
+                     udp.c
+                     psm/ser.c)
 target_link_libraries(freertps freertps_system_${SYSTEM})
 
 if (NOT freertps_standalone)

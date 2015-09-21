@@ -7,6 +7,12 @@
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
+#include "freertps/psm.h"
+
+const struct rtps_psm g_rtps_psm_udp =
+{
+  .init = frudp_init
+};
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants

@@ -1,6 +1,7 @@
 #include "freertps/sedp.h"
 #include "freertps/freertps.h"
 #include "freertps/qos.h"
+#include "freertps/spdp.h"
 #include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -95,6 +96,26 @@ void frudp_sedp_init()
 
 void frudp_sedp_start()
 {
+  // go through and send SEDP messages for all of our subscriptions
+  for (int i = 0; i < g_frudp_num_subs; i++)
+  {
+    if (g_frudp_subs[i].topic_name) // user subs have topic names
+    {
+      printf("sending SEDP message about subscription [%s]\r\n",
+         g_frudp_subs[i].topic_name);
+      sedp_publish_sub(&g_frudp_subs[i]);
+    }
+  }
+  // now go through and send SEDP messages for all our publications
+  for (int i = 0; i < g_frudp_num_pubs; i++)
+  {
+    if (g_frudp_pubs[i].topic_name)
+    {
+      printf("sending SEDP message about publication [%s]\r\n",
+          g_frudp_pubs[i].topic_name);
+      sedp_publish_pub(&g_frudp_pubs[i]);
+    }
+  }
 }
 
 void frudp_sedp_fini()
@@ -118,6 +139,7 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
                                    const uint16_t scheme,
                                    const uint8_t *data)
 {
+  printf("sedp rx pub data\r\n");
   frudp_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
 }
 
@@ -126,6 +148,7 @@ static void frudp_sedp_rx_sub_data(frudp_receiver_state_t *rcvr,
                                    const uint16_t scheme,
                                    const uint8_t *data)
 {
+  printf("sedp rx sub data\r\n");
   frudp_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
 }
 
@@ -207,7 +230,10 @@ static void frudp_sedp_rx_sub_info(const sedp_topic_info_t *info)
     {
       frudp_writer_t *w = &g_frudp_writers[j];
       if (frudp_guid_identical(&w->reader_guid, &info->guid))
+      {
+        printf("    nah, already had it in our list of readers\r\n");
         found = true;
+      }
     }
     if (!found)
     {
@@ -356,7 +382,9 @@ static void sedp_publish(const char *topic_name,
                          frudp_pub_t *pub,
                          const frudp_eid_t eid)
 {
-  printf("sedp publish\r\n");
+  // first make sure we have an spdp packet out first
+  printf("sedp publish [%s] via SEDP EID 0x%08x\r\n",
+      topic_name, (unsigned)freertps_htonl(pub->writer_eid.u));
   frudp_submsg_data_t *d = (frudp_submsg_data_t *)g_sedp_msg_buf;
   d->header.id = FRUDP_SUBMSG_ID_DATA;
   d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
@@ -466,6 +494,7 @@ void sedp_publish_sub(frudp_sub_t *sub)
            "you need to call frudp_part_create()\r\n");
     return;
   }
+  printf("sedp_publish_sub(%s)\r\n", sub->topic_name);
   sedp_publish(sub->topic_name,
                sub->type_name,
                g_sedp_sub_pub,
@@ -480,6 +509,7 @@ void sedp_publish_pub(frudp_pub_t *pub)
            "you need to call frudp_part_create()\r\n");
     return;
   }
+  printf("sedp_publish_pub(%s)\r\n", pub->topic_name);
   sedp_publish(pub->topic_name,
                pub->type_name,
                g_sedp_pub_pub,
@@ -517,6 +547,9 @@ void sedp_add_builtin_endpoints(frudp_part_t *part)
   sub_reader.msg_cb = NULL;
   sub_reader.reliable = true;
   frudp_add_reader(&sub_reader);
+
+  // blast our SEDP data at this participant
+  frudp_send_sedp_msgs(part);
 }
 
 
