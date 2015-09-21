@@ -1,6 +1,6 @@
 // initial minimal program to sanity-check systems
 #include <stdio.h>
-#include "actuators/led.h"
+#include "freertps/periph/led.h"
 
 int main(int argc, char **argv)
 {

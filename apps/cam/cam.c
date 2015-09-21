@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "actuators/led.h"
+#include "freertps/periph/led.h"
 #include <stdint.h>
 #include "freertps/freertps.h"
 #include "freertps/timer.h"
@@ -172,7 +172,7 @@ void timer_cb()
       return;
   send_last_partial_block();
   volatile uint32_t t_end = systime_usecs();
-  printf("sent image: %d usec\r\n", (int)(t_end - t_start));
+  //printf("sent image: %d usec\r\n", (int)(t_end - t_start));
   
   /*
   memcpy(wpos, fake_image, WIDTH * HEIGHT * 3);

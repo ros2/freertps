@@ -1,4 +1,4 @@
-#include "sensors/imu.h"
+#include "freertps/periph/imu.h"
 #include <stdio.h>
 
 void imu_init()
