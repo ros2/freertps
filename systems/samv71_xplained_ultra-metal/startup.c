@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include "metal/systime.h"
 #include "metal/console.h"
-#include "actuators/led.h"
+#include "freertps/periph/led.h"
 
 extern uint32_t _sfixed, _efixed, _etext;
 extern uint32_t _srelocate, _erelocate, _szero, _ezero;
