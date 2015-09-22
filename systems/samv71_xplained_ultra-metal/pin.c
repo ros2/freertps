@@ -32,6 +32,42 @@ void pin_set_mux(Pio *pio, const unsigned pin_idx,
   pio->PIO_PDR = pin_mask;
 }
 
+void pin_enable_pullup(Pio *pio, const unsigned pin_idx,
+    const bool enable_pullup)
+{
+  pin_enable_pio(pio);
+  pio->PIO_PUER |= 1 << pin_idx;
+}
+
+void pin_set_output(Pio *pio, const unsigned pin_idx,
+    const bool output_state)
+{
+  if (pin_idx > 31)
+    return; // adios amigo
+  pin_enable_pio(pio);
+  const unsigned pin_mask = 1 << pin_idx;
+  // set output register
+  if (output_state)
+    pio->PIO_SODR = pin_mask;
+  else
+    pio->PIO_CODR = pin_mask;
+  // enable GPIO control of pin
+  pio->PIO_OER = pin_mask;
+  pio->PIO_PER = pin_mask;
+}
+
+void pin_set_output_state(Pio *pio, const unsigned pin_idx,
+    const bool output_state)
+{
+  if (pin_idx > 31)
+    return; // adios amigo
+  const unsigned pin_mask = 1 << pin_idx;
+  if (output_state)
+    pio->PIO_SODR = pin_mask;
+  else
+    pio->PIO_CODR = pin_mask;
+}
+
 #if 0
 void pin_set_output_type(GPIO_TypeDef *gpio, 
                          const uint8_t pin_idx,

@@ -7,8 +7,23 @@
 
 // ported from the STM32 stuff... not yet all implemented
 
-void pin_set_mux(Pio *gpio, const unsigned pin_idx,
+void pin_set_mux(Pio *pio, const unsigned pin_idx,
     const unsigned function_idx);
+
+void pin_enable_pullup(Pio *pio, const unsigned pin_idx,
+    const bool enable_pullup);
+
+void pin_set_output(Pio *pio, const unsigned pin_idx,
+    const bool output_state);
+
+void pin_set_output_state(Pio *pio, const unsigned pin_idx,
+    const bool output_state);
+
+
+#define PERIPH_A 0
+#define PERIPH_B 1
+#define PERIPH_C 2
+#define PERIPH_D 3
 
 #if 0
 #define PIN_OUTPUT_TYPE_PUSH_PULL  0

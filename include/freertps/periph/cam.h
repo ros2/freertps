@@ -1,6 +1,9 @@
-#ifndef SENSOR_CAMERA_H
-#define SENSOR_CAMERA_H
+#ifndef FREERTPS_CAM_H
+#define FREERTPS_CAM_H
 
+void cam_init();      // image_cb_t cb, image_cb_t dma_cb);
+
+#if 0
 #define BUFFER_SIZE 0x2850
 static uint32_t __attribute__((unused)) aDST_Buffer[BUFFER_SIZE];
 
@@ -35,11 +38,10 @@ void camera_decrease_brightness();
 void camera_increase_contrast();
 void camera_decrease_contrast();
 
-
 // BSP Functions
-void camera_init_pins();  // provided in a board-specific file
 void camera_power_up();  // Idem
 void camera_power_down();  // Idem
+#endif
 
 
 #endif

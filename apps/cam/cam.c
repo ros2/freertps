@@ -189,6 +189,7 @@ int main()
   printf("cam main()\r\n");
   freertps_system_init();
   //SCB_EnableICache();
+  cam_init();
   cam_init_test_image();
   //freertps_timer_set_freq(1, timer_cb);
   g_pub = freertps_create_pub("image", "sensor_msgs::msg::dds_::Image_");
