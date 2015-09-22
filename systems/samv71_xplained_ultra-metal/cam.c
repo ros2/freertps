@@ -29,7 +29,7 @@ static uint16_t cam_read_reg(const uint8_t reg_addr)
 
 static bool cam_write_reg(const uint8_t reg_addr, const uint16_t reg_val)
 {
-  uint8_t reg_val_swapped[2] = { reg_val & 0xff, (reg_val >> 8) & 0xff };
+  uint8_t reg_val_swapped[2] = { (reg_val >> 8) & 0xff, reg_val & 0xff };
   if (!i2c_write(TWIHS0, CAM_I2C_ADDR, reg_addr, 2, reg_val_swapped))
   {
     printf("error writing register 0x%02x\r\n", reg_addr);
