@@ -3,6 +3,8 @@
 #include "freertps/periph/i2c.h"
 #include "pin.h"
 #include "metal/delay.h"
+#include "metal/systime.h"
+#include "freertps/periph/led.h"
 
 // my bench-setup board is hard-wired to a MT9V034 board hard-wired to i2c 0x58
 #define CAM_I2C_ADDR 0x58
@@ -10,6 +12,10 @@
 #define MT9V034_REG_VER          0x00
 #define MT9V034_REG_COL_START    0x01
 #define MT9V034_REG_ROW_START    0x02
+#define MT9V034_REG_WIN_HEIGHT   0x03
+#define MT9V034_REG_WIN_WIDTH    0x04
+#define MT9V034_REG_HORIZ_BLANK  0x05
+#define MT9V034_REG_VERT_BLANK   0x06
 #define MT9V034_REG_CONTROL      0x07
 #define MT9V034_REG_RESET        0x0c
 #define MT9V034_REG_TEST_PATTERN 0x7f
@@ -55,6 +61,16 @@ static void cam_print_reg(const uint8_t reg_idx)
   uint16_t reg_val = cam_read_reg(reg_idx);
   printf("reg 0x%02x (%s) = 0x%04x\r\n", reg_idx, reg_name, reg_val);
 }
+
+struct isi_dma_desc_t
+{
+  uint32_t frame_buffer_addr;
+  uint32_t ctrl;
+  uint32_t next_desc;
+};
+
+static struct isi_dma_desc_t g_isi_dma_desc_t;
+uint8_t g_cam_frame_buf[640*360];
 
 void cam_init()
 {
@@ -105,8 +121,11 @@ void cam_init()
   delay_ms(1);
   cam_write_reg(MT9V034_REG_CONTROL, 0x0188);
   cam_write_reg(MT9V034_REG_TEST_PATTERN, 0x05);
+  cam_write_reg(MT9V034_REG_WIN_WIDTH, 640);
+  cam_write_reg(MT9V034_REG_WIN_HEIGHT, 240);
+  cam_write_reg(MT9V034_REG_VERT_BLANK, 500);
   delay_ms(1);
-  // transfer registers with soft-reset
+  // transfer shadowed registers with soft-reset
   cam_write_reg(MT9V034_REG_RESET, 1);
   delay_ms(1);
   cam_write_reg(MT9V034_REG_RESET, 0);
@@ -115,4 +134,54 @@ void cam_init()
   cam_print_reg(MT9V034_REG_CONTROL);
   cam_print_reg(MT9V034_REG_TEST_PATTERN);
   cam_print_reg(MT9V034_REG_LOCK);
+
+  ISI->ISI_CFG1 = 
+    ISI_CFG1_FRATE(7) | // only use every 8th frame
+    ISI_CFG1_DISCR; // codec datapath DMA automatically restarts
+  // Bayer imager needs the "grayscale" mode of ISI
+  ISI->ISI_CFG2 = 
+    ISI_CFG2_IM_VSIZE(240) |
+    ISI_CFG2_IM_HSIZE(319) ; // needs to be img size / 2
+
+  g_isi_dma_desc_t.frame_buffer_addr = (uint32_t)g_cam_frame_buf;
+  g_isi_dma_desc_t.ctrl = 
+    ISI_DMA_C_CTRL_C_FETCH |
+    ISI_DMA_C_CTRL_C_WB    ; // what is the writeback bit? doc says to use it
+  g_isi_dma_desc_t.next_desc = (uint32_t)&g_isi_dma_desc_t; // loop to itself
+  __DSB(); // memory sync
+
+  ISI->ISI_DMA_C_ADDR = (uint32_t)&g_isi_dma_desc_t;
+  ISI->ISI_DMA_C_CTRL = ISI_DMA_C_CTRL_C_FETCH;
+  ISI->ISI_DMA_CHER = ISI_DMA_CHER_C_CH_EN; // enable codec DMA channel
+  __DSB(); // memory sync
+
+  __disable_irq();
+  NVIC_SetPriority(ISI_IRQn, 4);
+  NVIC_EnableIRQ(ISI_IRQn);
+  ISI->ISI_CR = ISI_CR_ISI_EN;// | ISI_CR_ISI_CDC; // start your engines
+  ISI->ISI_CR = ISI_CR_ISI_CDC;
+  ISI->ISI_IER = ISI_IER_CXFR_DONE; // enable interrupt on frame-complete
+  __enable_irq();
+  printf("isi_sr = %08x\r\n", (unsigned)ISI->ISI_SR);
+}
+
+void isi_vector()
+{
+  printf("isi\r\n");
+  //ISI->ISI_DMA_CH
+  //ISI->ISI_DMA_C_ADDR = (uint32_t)&g_isi_dma_desc_t;
+  ISI->ISI_DMA_CHER = ISI_DMA_CHER_C_CH_EN; // enable codec DMA channel
+  volatile uint32_t isi_sr __attribute__((unused)) = ISI->ISI_SR;
+  /*
+  uint32_t t = systime_usecs();
+  static uint32_t t_prev;
+  if (t > 2000000)
+  {
+    //printf("t=%08d frame\r\n", (unsigned)t);
+    uint32_t dt = t - t_prev;
+    t_prev = t;
+    //printf("dt = %08d\r\n", (unsigned)dt);
+  }
+  */
+  led_toggle();
 }

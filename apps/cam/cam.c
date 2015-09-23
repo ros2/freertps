@@ -4,6 +4,7 @@
 #include "freertps/freertps.h"
 #include "freertps/timer.h"
 #include <string.h>
+#include "freertps/periph/cam.h"
 //#include "metal/systime.h"
 
 // todo: auto-generate all of this nonsense
@@ -188,9 +189,9 @@ int main()
 {
   printf("cam main()\r\n");
   freertps_system_init();
-  //SCB_EnableICache();
   cam_init();
   cam_init_test_image();
+  //SCB_EnableICache();
   //freertps_timer_set_freq(1, timer_cb);
   g_pub = freertps_create_pub("image", "sensor_msgs::msg::dds_::Image_");
   frudp_disco_start();
@@ -199,6 +200,7 @@ int main()
     timer_cb();
     frudp_listen(1000000);
     frudp_disco_tick();
+    printf("tick\r\n");
   }
   frudp_fini();
   return 0;
