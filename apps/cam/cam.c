@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "freertps/freertps.h"
 #include "freertps/timer.h"
+//#include "sensor_msgs/image.h"
 #include <string.h>
 #include "freertps/periph/cam.h"
 #include "metal/delay.h"

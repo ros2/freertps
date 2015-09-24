@@ -60,7 +60,7 @@ def c_type(rosidl_type):
     c_typename = primitive_type_map[rosidl_type.type]
   else:
     lcase_type = uncamelcase(rosidl_type.type)
-    c_typename = ("struct %s_%s" % (rosidl_type.pkg_name, lcase_type)).lower()
+    c_typename = ("struct %s__%s" % (rosidl_type.pkg_name, lcase_type)).lower()
   return c_typename
 
 def c_decl_suffix(rosidl_type):
@@ -112,7 +112,7 @@ for pkg_name in os.listdir(ifaces_path):
       print("  %s/%s" % (pkg_name, msg_name))
       ofn = os.path.join(pkg_output_path, uncamelcase(msg_name)) + '.h'
       of = open(ofn, 'w')
-      include_guard = ("R2_%s_%s" % (pkg_name, uncamelcase(msg_name))).upper()
+      include_guard = ("R2_%s__%s" % (pkg_name, uncamelcase(msg_name))).upper()
       of.write("#ifndef %s\n" % include_guard)
       of.write("#define %s\n\n" % include_guard)
       of.write("#include <stdint.h>\n")
@@ -122,7 +122,7 @@ for pkg_name in os.listdir(ifaces_path):
           of.write("#include \"%s\"\n" % include)
       of.write("\n")
       
-      struct_type = "%s_%s" % (pkg_name, uncamelcase(msg_name))
+      struct_type = "%s__%s" % (pkg_name, uncamelcase(msg_name))
       of.write("#define _%s_RTPS_TYPENAME \"%s::msg::dds_::%s_\"\n\n" % (struct_type, pkg_name, msg_name))
 
       of.write("typedef struct %s\n{\n" % struct_type)
