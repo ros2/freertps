@@ -44,10 +44,10 @@ bool frudp_listen(const uint32_t max_usec)
   volatile uint32_t t_start = systime_usecs();
   while (1)
   {
+    enet_process_rx_ring();
     volatile uint32_t t = systime_usecs();
     if (t - t_start >= max_usec)
       break;
-    enet_process_rx_ring();
   }
   return true;
 }

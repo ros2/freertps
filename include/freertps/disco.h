@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include "freertps/part.h"
+#include "freertps/config.h"
 
 #define FRUDP_PID_PAD                           0x0000
 #define FRUDP_PID_SENTINEL                      0x0001
@@ -50,11 +51,10 @@ void frudp_disco_fini();
 void frudp_disco_start(); /// must be called to kick off discovery
 void frudp_disco_tick();  /// must be called periodically to broadcast SPDP
 
-#define FRUDP_DISCO_TX_BUFLEN 4096
+#define FRUDP_DISCO_TX_BUFLEN 1536
 extern uint8_t g_frudp_disco_tx_buf[FRUDP_DISCO_TX_BUFLEN];
 extern uint16_t g_frudp_disco_tx_buf_wpos;
 
-#define FRUDP_DISCO_MAX_PARTS 20
 extern frudp_part_t g_frudp_disco_parts[FRUDP_DISCO_MAX_PARTS];
 extern int g_frudp_disco_num_parts;
 

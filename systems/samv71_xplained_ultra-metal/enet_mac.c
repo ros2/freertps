@@ -103,7 +103,7 @@ typedef struct emac_tx_descriptor {
 
 ////////////////////////////////////////////////////////////////////////////
 // globals
-#define ENET_RX_BUFFERS  512
+#define ENET_RX_BUFFERS   64
 #define ENET_RX_UNITSIZE 128
 //ENET_MAX_PKT_SIZE
 static volatile emac_rx_descriptor_t __attribute__((aligned(8)))
@@ -329,8 +329,10 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
     memory_barrier();
     tx_wait_count++;
   }
+  /*
   if (tx_wait_count)
     printf("waited %d\r\n", tx_wait_count);
+  */
 
   memcpy((void *)&g_enet_tx_buf[s_tx_buf_idx * ENET_TX_UNITSIZE], pkt, pkt_len);
   //GMAC->GMAC_TBQB = (uint32_t)g_enet_tx_desc;

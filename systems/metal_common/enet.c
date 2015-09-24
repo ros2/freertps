@@ -8,8 +8,8 @@
 
 #define ALIGN4 __attribute__((aligned(4)));
 
-#define ENET_RXPOOL_LEN    16384
-#define ENET_RXPOOL_NPTR     128
+#define ENET_RXPOOL_LEN     8192
+#define ENET_RXPOOL_NPTR      64
 #define ENET_RXPOOL_OFFSET     2
 static volatile uint8_t  g_enet_rxpool[ENET_RXPOOL_LEN] ALIGN4;
 static volatile uint16_t g_enet_rxpool_wpos = ENET_RXPOOL_OFFSET;

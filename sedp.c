@@ -139,7 +139,6 @@ static void frudp_sedp_rx_pub_data(frudp_receiver_state_t *rcvr,
                                    const uint16_t scheme,
                                    const uint8_t *data)
 {
-  printf("sedp rx pub data\r\n");
   frudp_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
 }
 
@@ -148,7 +147,6 @@ static void frudp_sedp_rx_sub_data(frudp_receiver_state_t *rcvr,
                                    const uint16_t scheme,
                                    const uint8_t *data)
 {
-  printf("sedp rx sub data\r\n");
   frudp_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
 }
 
@@ -162,7 +160,7 @@ static sedp_topic_info_t g_topic_info;
 
 static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
 {
-  printf("sedp pub: [%s]\n", info->topic_name ? info->topic_name : "");
+  printf("sedp pub: [%s]\r\n", info->topic_name ? info->topic_name : "");
   // look to see if we are subscribed to this topic
   for (unsigned i = 0; i < g_frudp_num_subs; i++)
   {

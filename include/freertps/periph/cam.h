@@ -1,13 +1,21 @@
 #ifndef FREERTPS_CAM_H
 #define FREERTPS_CAM_H
 
+#include <stdbool.h>
+
 void cam_init();      // image_cb_t cb, image_cb_t dma_cb);
+extern volatile uint8_t *g_cam_frame_buffer;
+
+typedef void (*cam_image_cb_t)();
+void cam_set_image_cb(cam_image_cb_t cb);
+
+void cam_start_image_capture();
+bool cam_image_ready();
 
 #if 0
 #define BUFFER_SIZE 0x2850
 static uint32_t __attribute__((unused)) aDST_Buffer[BUFFER_SIZE];
 
-typedef void (*image_cb_t)();
 
 typedef enum{CAMERA_FRAMERATE_15FPS,CAMERA_FRAMERATE_30FPS} camera_framerate_t;
 typedef enum{CAMERA_COLOR_RGB_565,CAMERA_COLOR_RGB_555,CAMERA_COLOR_YUV} camera_colorspace_t;

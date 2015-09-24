@@ -21,6 +21,7 @@
 #define MT9V034_REG_TEST_PATTERN 0x7f
 #define MT9V034_REG_LOCK         0xfe
 
+volatile uint8_t *g_cam_frame_buffer;
 
 static uint16_t cam_read_reg(const uint8_t reg_addr)
 {
@@ -69,12 +70,15 @@ struct isi_dma_desc_t
   uint32_t next_desc;
 };
 
-static struct isi_dma_desc_t g_isi_dma_desc_t;
-uint8_t g_cam_frame_buf[640*360];
+#define IMG_WIDTH  640
+#define IMG_HEIGHT 480
+static struct isi_dma_desc_t g_isi_dma_desc;
+volatile uint8_t g_cam_frame_buf[IMG_WIDTH*IMG_HEIGHT] __attribute__((aligned(4)));
 
 void cam_init()
 {
   printf("cam_init()\r\n");
+  g_cam_frame_buffer = g_cam_frame_buf;
   PMC->PMC_PCER0 |= (1 << ID_PIOA) | (1 << ID_PIOB) | (1 << ID_PIOD);
   PMC->PMC_PCER1 |=  1 << (ID_ISI - 32);
   // pin mux assignments as per p.535 of SAM V71 datasheet
@@ -121,9 +125,9 @@ void cam_init()
   delay_ms(1);
   cam_write_reg(MT9V034_REG_CONTROL, 0x0188);
   cam_write_reg(MT9V034_REG_TEST_PATTERN, 0x05);
-  cam_write_reg(MT9V034_REG_WIN_WIDTH, 640);
-  cam_write_reg(MT9V034_REG_WIN_HEIGHT, 240);
-  cam_write_reg(MT9V034_REG_VERT_BLANK, 500);
+  cam_write_reg(MT9V034_REG_WIN_WIDTH, IMG_WIDTH);
+  cam_write_reg(MT9V034_REG_WIN_HEIGHT, IMG_HEIGHT);
+  cam_write_reg(MT9V034_REG_VERT_BLANK, 45); //4000); //450);
   delay_ms(1);
   // transfer shadowed registers with soft-reset
   cam_write_reg(MT9V034_REG_RESET, 1);
@@ -135,24 +139,27 @@ void cam_init()
   cam_print_reg(MT9V034_REG_TEST_PATTERN);
   cam_print_reg(MT9V034_REG_LOCK);
 
-  ISI->ISI_CFG1 = 
-    ISI_CFG1_FRATE(7) | // only use every 8th frame
-    ISI_CFG1_DISCR; // codec datapath DMA automatically restarts
+  ISI->ISI_CFG1 = ISI_CFG1_THMASK(2);
+    //ISI_CFG1_FRATE(0) | // only use every 8th frame
+    //ISI_CFG1_DISCR; // codec datapath DMA automatically restarts
   // Bayer imager needs the "grayscale" mode of ISI
   ISI->ISI_CFG2 = 
-    ISI_CFG2_IM_VSIZE(240) |
-    ISI_CFG2_IM_HSIZE(319) ; // needs to be img size / 2
+    ISI_CFG2_IM_VSIZE(IMG_HEIGHT-1) |
+    ISI_CFG2_IM_HSIZE(IMG_WIDTH/2-1) ; // needs to be img size / 2
 
-  g_isi_dma_desc_t.frame_buffer_addr = (uint32_t)g_cam_frame_buf;
-  g_isi_dma_desc_t.ctrl = 
-    ISI_DMA_C_CTRL_C_FETCH |
-    ISI_DMA_C_CTRL_C_WB    ; // what is the writeback bit? doc says to use it
-  g_isi_dma_desc_t.next_desc = (uint32_t)&g_isi_dma_desc_t; // loop to itself
+  g_isi_dma_desc.frame_buffer_addr = (uint32_t)g_cam_frame_buf;
+  g_isi_dma_desc.ctrl = 
+    ISI_DMA_C_CTRL_C_FETCH ;
+    //ISI_DMA_C_CTRL_C_WB    ;
+  g_isi_dma_desc.next_desc = (uint32_t)&g_isi_dma_desc; // loop to itself
   __DSB(); // memory sync
 
-  ISI->ISI_DMA_C_ADDR = (uint32_t)&g_isi_dma_desc_t;
-  ISI->ISI_DMA_C_CTRL = ISI_DMA_C_CTRL_C_FETCH;
+  ISI->ISI_DMA_C_ADDR = (uint32_t)g_cam_frame_buf;
+  ISI->ISI_DMA_C_CTRL = 
+    ISI_DMA_C_CTRL_C_FETCH |
+    ISI_DMA_C_CTRL_C_WB;
   ISI->ISI_DMA_CHER = ISI_DMA_CHER_C_CH_EN; // enable codec DMA channel
+  ISI->ISI_DMA_C_DSCR = (uint32_t)&g_isi_dma_desc;
   __DSB(); // memory sync
 
   __disable_irq();
@@ -160,28 +167,71 @@ void cam_init()
   NVIC_EnableIRQ(ISI_IRQn);
   ISI->ISI_CR = ISI_CR_ISI_EN;// | ISI_CR_ISI_CDC; // start your engines
   ISI->ISI_CR = ISI_CR_ISI_CDC;
+  ISI->ISI_SR; // clear status flags
   ISI->ISI_IER = ISI_IER_CXFR_DONE; // enable interrupt on frame-complete
   __enable_irq();
   printf("isi_sr = %08x\r\n", (unsigned)ISI->ISI_SR);
 }
 
+static volatile cam_image_cb_t g_cam_image_cb;
+void cam_set_image_cb(cam_image_cb_t cb)
+{
+  g_cam_image_cb = cb;
+}
+
+void cam_start_image_capture()
+{
+  /*
+  ISI->ISI_DMA_C_ADDR = (uint32_t)g_cam_frame_buf;
+  ISI->ISI_DMA_C_CTRL = ISI_DMA_C_CTRL_C_FETCH;
+  ISI->ISI_DMA_CHER = ISI_DMA_CHER_C_CH_EN; // enable codec DMA channel
+  ISI->ISI_DMA_C_DSCR = (uint32_t)&g_isi_dma_desc_t;
+  */
+
+  ISI->ISI_DMA_C_CTRL = 
+    ISI_DMA_C_CTRL_C_FETCH |
+    ISI_DMA_C_CTRL_C_WB    ;
+  ISI->ISI_CR = ISI_CR_ISI_CDC;
+
+  //printf("  start: isi_sr = %08x\r\n", ISI->ISI_SR);
+  //printf("%08d img cap\r\n", systime_usecs());
+}
+
 void isi_vector()
 {
-  printf("isi\r\n");
+  /*
+  printf("%08dus isi caddr = 0x%08x cscr = 0x%08x\r\n", 
+    (unsigned)systime_usecs(), 
+    (unsigned)ISI->ISI_DMA_C_ADDR,
+    (unsigned)ISI->ISI_DMA_C_DSCR);
+  */
   //ISI->ISI_DMA_CH
   //ISI->ISI_DMA_C_ADDR = (uint32_t)&g_isi_dma_desc_t;
-  ISI->ISI_DMA_CHER = ISI_DMA_CHER_C_CH_EN; // enable codec DMA channel
+  //ISI->ISI_DMA_CHER = ISI_DMA_CHER_C_CH_EN; // enable codec DMA channel
   volatile uint32_t isi_sr __attribute__((unused)) = ISI->ISI_SR;
+  //printf("isi_sr = %08x\r\n", isi_sr);
+  //uint32_t t = systime_usecs();
+  //static uint32_t t_prev;
   /*
-  uint32_t t = systime_usecs();
-  static uint32_t t_prev;
   if (t > 2000000)
   {
     //printf("t=%08d frame\r\n", (unsigned)t);
     uint32_t dt = t - t_prev;
     t_prev = t;
-    //printf("dt = %08d\r\n", (unsigned)dt);
+    printf("dt = %08d\r\n", (unsigned)dt);
   }
   */
   led_toggle();
+  //ISI->ISI_CR = ISI_CR_ISI_CDC;
+  //cam_start_image_capture();
+  if (g_cam_image_cb)
+    g_cam_image_cb();
+}
+
+bool cam_image_ready()
+{
+  bool ready = g_isi_dma_desc.ctrl & ISI_DMA_C_CTRL_C_WB;
+  if (ready)
+    g_isi_dma_desc.ctrl &= ~ISI_DMA_C_CTRL_C_WB;
+  return ready;
 }

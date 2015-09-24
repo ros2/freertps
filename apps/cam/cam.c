@@ -5,7 +5,8 @@
 #include "freertps/timer.h"
 #include <string.h>
 #include "freertps/periph/cam.h"
-//#include "metal/systime.h"
+#include "metal/delay.h"
+#include "metal/systime.h"
 
 // todo: auto-generate all of this nonsense
 typedef struct
@@ -84,8 +85,10 @@ bool send_last_partial_block()
   return true;
 }
 
+/*
 #define WIDTH 376
 #define HEIGHT 240
+
 static uint8_t g_img_line[WIDTH*3];
 
 void cam_init_test_image()
@@ -97,15 +100,22 @@ void cam_init_test_image()
     g_img_line[3*i+2] = 255-i/2;
   }
 }
+*/
+
+#define WIDTH  640
+#define HEIGHT 480
+#define BYTES_PER_PIXEL 1
+static const char *encoding = "mono8";
 
 bool tx_row(const int row)
 {
-  return enqueue_block(g_img_line, WIDTH * 3);
+  return enqueue_block((uint8_t *)&g_cam_frame_buffer[row*WIDTH], WIDTH); 
+  //return enqueue_block(g_img_line, WIDTH * 3);
 }
 
 bool tx_header()
 {
-  uint8_t __attribute__((aligned(4))) msg[1024] = {0};
+  static uint8_t __attribute__((aligned(4))) msg[1024] = {0};
   // prepend the CDR serialization scheme header
   msg[0] = 0;
   msg[1] = 1;
@@ -124,7 +134,6 @@ bool tx_header()
   wpos += 4;
   memcpy(wpos, &width, 4);
   wpos += 4;
-  const char *encoding = "bgr8";
   uint32_t encoding_len = strlen(encoding) + 1;
   memcpy(wpos, &encoding_len, 4);
   wpos += 4;
@@ -136,14 +145,14 @@ bool tx_header()
   // get back to 32-bit alignment
   if ((uint32_t)wpos & 0x3)
     wpos += 4 - ((uint32_t)wpos & 0x3);
-  uint32_t step = WIDTH * 3;
+  uint32_t step = WIDTH * BYTES_PER_PIXEL;
   memcpy(wpos, &step, 4);
   wpos += 4;
-  uint32_t data_size = WIDTH * HEIGHT * 3;
+  uint32_t data_size = WIDTH * HEIGHT * BYTES_PER_PIXEL;
   memcpy(wpos, &data_size, 4);
   wpos += 4;
   uint32_t header_len = wpos - (uint8_t *)msg;
-  g_msg_len = header_len + WIDTH * HEIGHT * 3;
+  g_msg_len = header_len + WIDTH * HEIGHT * BYTES_PER_PIXEL;
   //printf("image header len: %d\n", (int)header_len);
   // send the header
   return enqueue_block(msg, header_len);
@@ -160,8 +169,10 @@ bool tx_header()
     }
 #endif
 
-void timer_cb()
+void send_image()
 {
+  uint32_t t_start = systime_usecs();
+  __DSB();
   if (!g_pub)
     return;
   //volatile uint32_t t_start = systime_usecs();
@@ -170,7 +181,10 @@ void timer_cb()
   // now, send the rows
   for (int row = 0; row < HEIGHT; row++)
     if (!tx_row(row))
+    {
+      printf("couldn't send block\r\n");
       return;
+    }
   send_last_partial_block();
   //volatile uint32_t t_end = systime_usecs();
   //printf("sent image: %d usec\r\n", (int)(t_end - t_start));
@@ -183,24 +197,42 @@ void timer_cb()
   printf("publishing %d bytes\r\n", (int)cdr_len);
   freertps_publish(g_pub, (uint8_t *)msg, cdr_len);
   */
+  uint32_t t_end = systime_usecs();
+  static uint32_t t_last_start;
+  uint32_t dt = t_start - t_last_start;
+  t_last_start = t_start;
+  printf("dt = %d\ttx %d\r\n", 
+      (int)dt,
+      (int)(t_end - t_start));
+}
+
+static volatile bool g_image_ready;
+void image_cb()
+{
+  __DSB();
+  g_image_ready = true;
 }
 
 int main()
 {
   printf("cam main()\r\n");
+  SCB_EnableICache();
   freertps_system_init();
   cam_init();
-  cam_init_test_image();
-  //SCB_EnableICache();
-  //freertps_timer_set_freq(1, timer_cb);
   g_pub = freertps_create_pub("image", "sensor_msgs::msg::dds_::Image_");
   frudp_disco_start();
+  cam_set_image_cb(image_cb);
+  cam_start_image_capture();
   while (freertps_system_ok())
   {
-    timer_cb();
-    frudp_listen(1000000);
-    frudp_disco_tick();
-    printf("tick\r\n");
+    if (g_image_ready)
+    {
+      g_image_ready = false;
+      cam_start_image_capture(); // start grabbing the next one while we send
+      send_image();
+      frudp_disco_tick();
+    }
+    frudp_listen(0);
   }
   frudp_fini();
   return 0;
