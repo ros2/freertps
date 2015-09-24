@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "freertps/freertps.h"
-#include "std_msgs/string.h"
+//#include "std_msgs/string.h"
 
 int main(int argc, char **argv)
 {
