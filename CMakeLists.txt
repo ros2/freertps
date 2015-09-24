@@ -23,7 +23,7 @@ function(freertps_add_executable exe)
     #include(systems/${syslib})
   endforeach()
 
-  target_link_libraries(${exe} -Wl,--start-group freertps freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
+  target_link_libraries(${exe} msgs -Wl,--start-group freertps freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
   if(${make_binfiles})
     make_bin(${exe} ${CMAKE_CURRENT_BINARY_DIR}/${exe}.elf ${CMAKE_CURRENT_BINARY_DIR}/${exe}.bin)
   endif()
@@ -67,6 +67,11 @@ add_library(freertps disco.c
                      psm/ser.c)
 target_link_libraries(freertps freertps_system_${SYSTEM})
 
+include_directories(build/msgs)
+# TODO: trigger the ROS message generator build here
+file(GLOB msgs_SOURCES "build/msgs/src/*.c")
+add_library(msgs ${msgs_SOURCES})
+
 if (NOT freertps_standalone)
   ament_export_libraries(freertps)
   #ament_export_libraries(freertps_system_${SYSTEM})
@@ -90,14 +95,12 @@ else()
   endforeach()
 
   # try to build the apps that use ROS messages
-  # TODO: trigger the ROS message generator build here
-  if(DEFINED ENV{AMENT_PREFIX_PATH})
-    include_directories(build/msgs)
-    if(DEFINED SYSTEM_ROSMSG_APPS)
-      string(REGEX REPLACE " " ";" SYSTEM_ROSMSG_APPS ${SYSTEM_ROSMSG_APPS})
-      foreach(app ${SYSTEM_ROSMSG_APPS})
-        add_subdirectory(rosmsg_apps/${app})
-      endforeach()
-    endif()
-  endif()
+  #if(DEFINED ENV{AMENT_PREFIX_PATH})
+  #  if(DEFINED SYSTEM_ROSMSG_APPS)
+  #    string(REGEX REPLACE " " ";" SYSTEM_ROSMSG_APPS ${SYSTEM_ROSMSG_APPS})
+  #    foreach(app ${SYSTEM_ROSMSG_APPS})
+  #      add_subdirectory(rosmsg_apps/${app})
+  #    endforeach()
+  #  endif()
+  #endif()
 endif()
