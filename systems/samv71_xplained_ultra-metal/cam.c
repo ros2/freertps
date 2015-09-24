@@ -140,9 +140,8 @@ void cam_init()
   cam_print_reg(MT9V034_REG_LOCK);
 
   ISI->ISI_CFG1 = ISI_CFG1_THMASK(2);
-    //ISI_CFG1_FRATE(0) | // only use every 8th frame
     //ISI_CFG1_DISCR; // codec datapath DMA automatically restarts
-  // Bayer imager needs the "grayscale" mode of ISI
+  // we want the "grayscale" mode of ISI
   ISI->ISI_CFG2 = 
     ISI_CFG2_IM_VSIZE(IMG_HEIGHT-1) |
     ISI_CFG2_IM_HSIZE(IMG_WIDTH/2-1) ; // needs to be img size / 2
