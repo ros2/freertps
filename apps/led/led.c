@@ -1,17 +1,20 @@
 #include <stdio.h>
 #include "freertps/freertps.h"
-#include "std_msgs/uint8.h"
+#include "freertps/periph/led.h"
 
 void led_cb(const void *msg)
 {
   uint8_t led = *((uint8_t *)msg);
-  printf("led state: %d\r\n", led);
+  if (led)
+    led_on();
+  else
+    led_off();
 }
 
 int main(int argc, char **argv)
 {
   freertps_system_init();
-  freertps_create_sub("led", "std_msgs::msg::dds_::UInt8_", led_cb);
+  freertps_create_sub("led", "std_msgs::msg::dds_::Bool_", led_cb);
   freertps_start();
   while (freertps_system_ok())
   {

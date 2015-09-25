@@ -160,11 +160,19 @@ static sedp_topic_info_t g_topic_info;
 
 static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
 {
-  printf("sedp pub: [%s]\r\n", info->topic_name ? info->topic_name : "");
+  printf("sedp pub: [%s / %s] num_subs = %d\r\n",
+      info->topic_name ? info->topic_name : "",
+      info->type_name ? info->type_name : "",
+      (int)g_frudp_num_subs);
   // look to see if we are subscribed to this topic
   for (unsigned i = 0; i < g_frudp_num_subs; i++)
   {
     frudp_sub_t *sub = &g_frudp_subs[i];
+#ifdef SEDP_VERBOSE
+    printf("comparing incoming SEDP pub to our subscriber %s of type %s\r\n",
+           (sub->topic_name ? sub->topic_name : "(no name)"),
+           (sub->type_name  ? sub->type_name  : "(no type)"));
+#endif
     if (!sub->topic_name || !sub->type_name)
       continue; // sanity check. some built-ins don't have names.
     if (!strcmp(sub->topic_name, info->topic_name) &&

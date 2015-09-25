@@ -14,26 +14,22 @@
 
 #include <iostream>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/uint8.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
   auto node = rclcpp::node::Node::make_shared("led_blink");
-
   rmw_qos_profile_t qos;
   qos.reliability = RMW_QOS_POLICY_BEST_EFFORT;
   qos.history = RMW_QOS_POLICY_KEEP_LAST_HISTORY;
   qos.depth = 1;
-  auto pub = node->create_publisher<std_msgs::msg::UInt8>("led", qos);
+  auto pub = node->create_publisher<std_msgs::msg::Bool>("led", qos);
+  auto msg = std::make_shared<std_msgs::msg::Bool>();
   rclcpp::WallRate loop_rate(4);
-  auto msg = std::make_shared<sensor_msgs::msg::UInt8>();
   while (rclcpp::ok())
   {
-    if (msg.data)
-      msg.data = 255;
-    else
-      msg.data = 0;
+    msg->data = !msg->data;
     pub->publish(msg);
     rclcpp::spin_some(node);
     loop_rate.sleep();
