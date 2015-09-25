@@ -85,11 +85,11 @@ if (NOT freertps_standalone)
     RUNTIME DESTINATION bin
   )
 else()
-  if(DEFINED ENV{AMENT_PREFIX_PATH})
-    # TODO: trigger the ROS message generator build here
+  file(GLOB msgs_SOURCES "build/msgs/src/*.c")
+  if(msgs_SOURCES STREQUAL "" AND DEFINED ENV{AMENT_PREFIX_PATH})
+    execute_process(COMMAND r2/mega_genmsg.py WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
   endif()
 
-  file(GLOB msgs_SOURCES "build/msgs/src/*.c")
   if (NOT msgs_SOURCES STREQUAL "")
     # try to build the apps that use ROS messages
     add_library(msgs ${msgs_SOURCES})
