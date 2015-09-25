@@ -88,6 +88,7 @@ else()
   file(GLOB msgs_SOURCES "build/msgs/src/*.c")
   if(msgs_SOURCES STREQUAL "" AND DEFINED ENV{AMENT_PREFIX_PATH})
     execute_process(COMMAND r2/mega_genmsg.py WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    file(GLOB msgs_SOURCES "build/msgs/src/*.c")
   endif()
 
   if (NOT msgs_SOURCES STREQUAL "")

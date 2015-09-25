@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   freertps_create_sub("chatter", 
                       "std_msgs::msg::dds_::String_",
                       chatter_cb);
-  frudp_disco_start(); // we're alive now; announce ourselves to the world
+  freertps_start(); // all pubs/subs are created. let's start!
   while (freertps_system_ok())
   {
     frudp_listen(1000000);

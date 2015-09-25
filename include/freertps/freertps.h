@@ -57,4 +57,7 @@ bool freertps_publish(frudp_pub_t *pub,
 //void freertps_perish_if(bool b, const char *msg);
 
 extern bool g_freertps_init_complete;
+
+void freertps_start();
+
 #endif

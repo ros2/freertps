@@ -1,22 +1,18 @@
 #include <stdio.h>
 #include "freertps/freertps.h"
+#include "std_msgs/uint8.h"
 
-void chatter_cb(const void *msg)
+void led_cb(const void *msg)
 {
-  uint32_t str_len = *((uint32_t *)msg);
-  char buf[128] = {0};
-  for (int i = 0; i < str_len && i < sizeof(buf)-1; i++)
-    buf[i] = ((uint8_t *)msg)[4+i];
-  printf("I heard: [%s]\n", buf);
+  uint8_t led = *((uint8_t *)msg);
+  printf("led state: %d\r\n", led);
 }
 
 int main(int argc, char **argv)
 {
-  printf("hello, world!\r\n");
   freertps_system_init();
-  freertps_create_sub("chatter", 
-                      "std_interfaces::msg::dds_::String_",
-                      chatter_cb);
+  freertps_create_sub("led", "std_msgs::msg::dds_::UInt8_", led_cb);
+  freertps_start();
   while (freertps_system_ok())
   {
     frudp_listen(1000000);
