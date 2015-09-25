@@ -452,7 +452,8 @@ static void sedp_publish(const char *topic_name,
     FRUDP_PLIST_ADVANCE(param);
     param->pid = FRUDP_PID_TYPE_NAME;
     int type_len = strlen(type_name);
-    *((uint32_t *)param->value) = type_len + 1;
+    uint32_t *value = (uint32_t *)param->value;
+    *value = type_len + 1;
     memcpy(param->value + 4, type_name, type_len + 1);
     param->len = (4 + type_len + 1 + 3) & ~0x3; // params must be 32-bit aligned
   }

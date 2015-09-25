@@ -1,0 +1,1 @@
+freertps_add_executable(talker_no_rosidl talker_no_rosidl.c)

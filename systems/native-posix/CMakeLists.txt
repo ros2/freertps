@@ -9,7 +9,7 @@ target_link_libraries(freertps_system_${SYSTEM} freertps)
 set(SYSTEM_EXTRA_LIBS  "" CACHE STRING "")
 set(SYSTEM_BONUS_LIBS "m" CACHE STRING "") # not the best variable name
 set(SYSTEM_APPS  "talker listener imu" CACHE STRING "")
-set(SYSTEM_ROSMSG_APPS "rosmsg_talker" CACHE STRING "")
+set(SYSTEM_NO_ROSIDL_APPS "talker_no_rosidl listener_no_rosidl" CACHE STRING "")
 install(
   TARGETS freertps_system_${SYSTEM}
   ARCHIVE DESTINATION lib
