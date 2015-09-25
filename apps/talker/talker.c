@@ -1,22 +1,22 @@
 #include <stdio.h>
-#include <string.h>
 #include "freertps/freertps.h"
 #include "std_msgs/string.h"
 
 int main(int argc, char **argv)
 {
-  printf("hello, world!\r\n");
   freertps_system_init();
   frudp_pub_t *pub = freertps_create_pub
                        ("chatter",
                         std_msgs__string__type.rtps_typename);
   frudp_disco_start();
-  int pub_count = 0;
-  char data_buf[64] = {0};
+
   struct std_msgs__string msg;
+  char data_buf[64] = {0};
   msg.data = data_buf;
+
   uint8_t cdr[68] = {0};
 
+  int pub_count = 0;
   while (freertps_system_ok())
   {
     frudp_listen(500000);
