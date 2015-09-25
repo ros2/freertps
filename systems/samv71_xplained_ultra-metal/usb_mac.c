@@ -23,9 +23,9 @@ void usb_init()
   USBHS->USBHS_DEVIER = USBHS_DEVIER_EORSTES; // enable end-of-reset interrupt
   NVIC_SetPriority(USBHS_IRQn, 1);
   NVIC_EnableIRQ(USBHS_IRQn);
-  USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH; // disable usb output pads
-  delay_ms(10);
-  USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH; // enable usb output pads
+  //USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH; // disable usb output pads
+  //delay_ms(10);
+  //USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH; // enable usb output pads
 }
 
 static void usb_reset_ep0()
