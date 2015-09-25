@@ -10,7 +10,7 @@ int main(int argc, char **argv)
   // frudp_pub_t *pub = freertps_create_pub("chatter", &std_msgs__string_);
   frudp_pub_t *pub = freertps_create_pub
                        ("chatter",
-                        std_msgs__string_.rtps_typename); //"std_msgs::msg::dds_::String_");
+                        std_msgs__string__type.rtps_typename);
   frudp_disco_start();
   int pub_count = 0;
   char data_buf[64] = {0};
