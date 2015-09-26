@@ -29,14 +29,13 @@ void usb_rx_setup(const uint8_t *buf, const unsigned len)
   const uint16_t req_index = buf[4] | (buf[5] << 8);
   const uint16_t req_count = buf[6] | (buf[7] << 8);
 
-  /*
   printf("ep0 setup type %02x req %02x val %04x index %04x count %04x\r\n",
       req_type, req, req_val, req_index, req_count);
-  */
   if (req_type == 0x80 && req == 0x06) // get descriptor
   {
     if (req_val == 0x0100) // get device descriptor
     {
+      printf("req dev desc\r\n");
       usb_tx(0, &g_usb_device_desc, sizeof(g_usb_device_desc));
       //printf("transmit device descriptor\r\n");
     }
