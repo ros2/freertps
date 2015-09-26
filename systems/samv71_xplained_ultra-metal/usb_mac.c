@@ -83,7 +83,7 @@ void usbhs_vector()
 void usb_tx(const unsigned ep, const void *buf, const unsigned len)
 {
   printf("usb tx ep%d %d bytes\r\n", (int)ep, (int)len);
-  uint8_t *ep_fifo = (uint8_t *)(((volatile uint32_t *)USBHS_RAM_ADDR) 
+  volatile uint8_t *ep_fifo = (uint8_t *)(((volatile uint32_t *)USBHS_RAM_ADDR) 
       + 16384 * ep); // ugly
   const uint8_t *pkt_tx_ptr = buf;
   for (int i = 0; i < len; i++)
