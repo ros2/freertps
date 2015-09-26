@@ -39,7 +39,8 @@ static void usb_reset_ep0()
   USBHS->USBHS_DEVEPT |= USBHS_DEVEPT_EPEN0; // enable endpoint
   USBHS->USBHS_DEVEPTCFG[0] = USBHS_DEVEPTCFG_EPSIZE(3); // EP0 is 64-byte
   USBHS->USBHS_DEVEPTCFG[0] |= USBHS_DEVEPTCFG_ALLOC; // alloc some dpram
-  USBHS->USBHS_DEVEPTIER[0] = USBHS_DEVEPTIER_RXSTPES;
+  USBHS->USBHS_DEVEPTIER[0] = USBHS_DEVEPTIER_RXSTPES | // enable setup IRQ
+                              USBHS_DEVEPTIER_RSTDTS; // reset data-toggle seq
   USBHS->USBHS_DEVIER = USBHS_DEVIER_PEP_0; // enable interrupt for EP0
 }
 
