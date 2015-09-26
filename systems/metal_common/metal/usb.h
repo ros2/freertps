@@ -56,9 +56,10 @@ typedef struct usb_device_desc
 {
   uint8_t  len;
   uint8_t  desc_type;
-  uint16_t proto_ver;
+  uint16_t usb_ver;
   uint8_t  dev_class;
   uint8_t  dev_subclass;
+  uint8_t  dev_protocol;
   uint8_t  max_ep0_pkt_size;
   uint16_t  vid;
   uint16_t  pid;

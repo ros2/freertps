@@ -10,9 +10,8 @@ void usb_init()
 {
   //printf("usb_init()\r\n");
   PMC->PMC_PCER1 |= 1 << (ID_USBHS - 32);
-  USBHS->USBHS_CTRL = 
-    USBHS_CTRL_UIMOD | // device mode
-    USBHS_CTRL_USBE  ; // enable USB
+  USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD; // device mode
+  USBHS->USBHS_CTRL = USBHS_CTRL_USBE;  // enable USB
   PMC->CKGR_UCKR =
     CKGR_UCKR_UPLLEN        | // enable usb pll
     CKGR_UCKR_UPLLCOUNT(0xf); // set lock time
@@ -22,9 +21,7 @@ void usb_init()
     PMC_USB_USBDIV(9) ; // FSUSB clock is 480 Mhz / (9 + 1) = 48 MHz
 
   USBHS->USBHS_DEVIER = USBHS_DEVIER_EORSTES; // enable end-of-reset interrupt
-  USBHS->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH; // disable usb output pads
-  delay_ms(5);
-  USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH; // enable usb output pads
+  USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH; // attach USB pads
   NVIC_SetPriority(USBHS_IRQn, 1);
   NVIC_EnableIRQ(USBHS_IRQn);
 }
@@ -39,8 +36,7 @@ static void usb_reset_ep0()
   USBHS->USBHS_DEVEPT |= USBHS_DEVEPT_EPEN0; // enable endpoint
   USBHS->USBHS_DEVEPTCFG[0] = USBHS_DEVEPTCFG_EPSIZE(3); // EP0 is 64-byte
   USBHS->USBHS_DEVEPTCFG[0] |= USBHS_DEVEPTCFG_ALLOC; // alloc some dpram
-  USBHS->USBHS_DEVEPTIER[0] = USBHS_DEVEPTIER_RXSTPES | // enable setup IRQ
-                              USBHS_DEVEPTIER_RSTDTS; // reset data-toggle seq
+  USBHS->USBHS_DEVEPTIER[0] = USBHS_DEVEPTIER_RXSTPES; // enable setup IRQ
   USBHS->USBHS_DEVIER = USBHS_DEVIER_PEP_0; // enable interrupt for EP0
 }
 

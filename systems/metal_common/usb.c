@@ -16,7 +16,8 @@ const struct usb_device_desc g_usb_default_device_desc =
   METAL_USB_BCD_DEV,
   METAL_USB_NO_MFGR_STR,
   METAL_USB_NO_PROD_STR,
-  METAL_USB_NO_SERIAL_STR
+  METAL_USB_NO_SERIAL_STR,
+  1 // one configuration
 }; 
 
 extern const struct usb_device_desc g_usb_device_desc __attribute__((weak, alias("g_usb_default_device_desc")));
