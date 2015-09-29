@@ -23,7 +23,7 @@ function(freertps_add_executable exe)
     #include(systems/${syslib})
   endforeach()
 
-  target_link_libraries(${exe} -Wl,--start-group freertps freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
+  target_link_libraries(${exe} ${ROSIDL_LIBS} -Wl,--start-group freertps freertps_system_${SYSTEM} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS} -Wl,--end-group)
   if(${make_binfiles})
     make_bin(${exe} ${CMAKE_CURRENT_BINARY_DIR}/${exe}.elf ${CMAKE_CURRENT_BINARY_DIR}/${exe}.bin)
   endif()
@@ -67,6 +67,8 @@ add_library(freertps disco.c
                      psm/ser.c)
 target_link_libraries(freertps freertps_system_${SYSTEM})
 
+include_directories(build/msgs)
+
 if (NOT freertps_standalone)
   ament_export_libraries(freertps)
   #ament_export_libraries(freertps_system_${SYSTEM})
@@ -83,21 +85,31 @@ if (NOT freertps_standalone)
     RUNTIME DESTINATION bin
   )
 else()
-  # build the applications for this system
-  string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
-  foreach(app ${SYSTEM_APPS})
-    add_subdirectory(apps/${app})
-  endforeach()
+  file(GLOB msgs_SOURCES "build/msgs/src/*.c")
+  if(msgs_SOURCES STREQUAL "" AND DEFINED ENV{AMENT_PREFIX_PATH})
+    execute_process(COMMAND r2/mega_genmsg.py WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    file(GLOB msgs_SOURCES "build/msgs/src/*.c")
+  endif()
 
-  # try to build the apps that use ROS messages
-  # TODO: trigger the ROS message generator build here
-  if(DEFINED ENV{AMENT_PREFIX_PATH})
-    include_directories(build/msgs)
-    if(DEFINED SYSTEM_ROSMSG_APPS)
-      string(REGEX REPLACE " " ";" SYSTEM_ROSMSG_APPS ${SYSTEM_ROSMSG_APPS})
-      foreach(app ${SYSTEM_ROSMSG_APPS})
-        add_subdirectory(rosmsg_apps/${app})
-      endforeach()
-    endif()
+  if (NOT msgs_SOURCES STREQUAL "")
+    # try to build the apps that use ROS messages
+    add_library(msgs ${msgs_SOURCES})
+    set(ROSIDL_LIBS "msgs" CACHE STRING "")
+    # build the applications for this system
+    string(REGEX REPLACE " " ";" SYSTEM_APPS ${SYSTEM_APPS})
+    foreach(app ${SYSTEM_APPS})
+      add_subdirectory(apps/${app})
+    endforeach()
+  else()
+    set(ROSIDL_LIBS "" CACHE STRING "") # no ROS IDL library exists; don't try
+  endif()
+
+  # now, build the standalone apps. this lets at least some things build
+  # on systems without the ROS2 messages installed
+  if(DEFINED SYSTEM_NO_ROSIDL_APPS)
+    string(REGEX REPLACE " " ";" SYSTEM_NO_ROSIDL_APPS ${SYSTEM_NO_ROSIDL_APPS})
+    foreach(app ${SYSTEM_NO_ROSIDL_APPS})
+      add_subdirectory(apps/${app})
+    endforeach()
   endif()
 endif()

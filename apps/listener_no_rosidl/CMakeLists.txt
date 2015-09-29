@@ -1,0 +1,1 @@
+freertps_add_executable(listener_no_rosidl listener_no_rosidl.c)

@@ -7,6 +7,7 @@
 #include <string.h>
 #include "freertps/freertps.h"
 #include "freertps/sedp.h"
+#include "freertps/spdp.h"
 
 frudp_writer_t g_frudp_writers[FRUDP_MAX_WRITERS];
 uint32_t g_frudp_num_writers;

@@ -10,6 +10,7 @@ add_library(freertps_system_stm3240g_eval-metal console.c
                                 ../stm32_common/stm32f4_vectors.c)
 set(SYSTEM_EXTRA_LIBS  "stm32_common metal_common" CACHE STRING "extra system libs")
 set(SYSTEM_APPS  "listener talker talker_stm32_timer led" CACHE STRING "applications for this system")
+set(SYSTEM_NO_ROSIDL_APPS "talker_no_rosidl listener_no_rosidl" CACHE STRING "")
 if (NOT freertps_standalone)
   ament_export_libraries(freertps_system_${SYSTEM})
 endif()

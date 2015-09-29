@@ -43,3 +43,9 @@ bool freertps_publish(frudp_pub_t *pub,
   // todo: other physical layers...
   return frudp_publish_user_msg(pub, msg, msg_len);
 }
+
+void freertps_start()
+{
+  // todo: other physical layers...
+  frudp_disco_start();
+}
