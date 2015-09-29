@@ -9,7 +9,6 @@ int main(int argc, char **argv)
 {
   usb_init();
   __enable_irq();
-  printf("hello world\r\n");
   uint32_t last_tx_time = 0;
   while (1)
   {
