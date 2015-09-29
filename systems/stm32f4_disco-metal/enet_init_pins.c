@@ -2,8 +2,6 @@
 #include "pin.h"
 #include "metal/delay.h"
 
-// TODO: look up pin assignments on STM32f4-disco board
-
 #define PORTA_ETH_REFCLK 1
 #define PORTE_PHY_RESET  2
 

@@ -15,7 +15,7 @@
 
 #define ENET_NBUF     2048
 #define ENET_DMA_NRXD   16
-#define ENET_DMA_NTXD    4
+#define ENET_DMA_NTXD    8
 
 typedef struct enet_dma_desc
 {
@@ -194,10 +194,12 @@ void eth_vector()
 
 void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
 {
+  __disable_irq();
   if (g_enet_dma_tx_next_desc->des0 & 0x80000000) // check the OWN bit
   {
     printf("dma ring full. aborting transmission.\r\n");// dmasr = 0x%08lu\r\n",
     //        (uint32_t)ETH->DMASR);
+    __enable_irq();
     return; // if it's set, then we have run out of ringbuffer room. can't tx.
   }
   uint8_t *buf = (uint8_t *)g_enet_dma_tx_next_desc->des2;
@@ -206,7 +208,7 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
   memcpy(buf, pkt, pkt_len);
   g_enet_dma_tx_next_desc->des1  = pkt_len;
   g_enet_dma_tx_next_desc->des0 |= 0x30000000 | // LS+FS = single-buffer packet
-                                  0x80000000 ; // give ownership to eth DMA
+                                   0x80000000 ; // give ownership to eth DMA
   delay_ns(1); // for unknown reasons, we need to have a function call here
                // to waste enough time for the DMA descriptor to synchronize 
                // i thought the d-cache was turned off by default, but who knows
@@ -217,4 +219,5 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
   if (tps == ETH_DMASR_TPS_Suspended)
     ETH->DMATPDR = 0; // transmit poll demand = kick it moving again
   g_enet_dma_tx_next_desc = (enet_dma_desc_t *)g_enet_dma_tx_next_desc->des3;
+  __enable_irq();
 }

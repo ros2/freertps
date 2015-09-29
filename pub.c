@@ -14,7 +14,8 @@ uint32_t g_frudp_num_writers;
 
 frudp_pub_t g_frudp_pubs[FRUDP_MAX_PUBS];
 uint32_t g_frudp_num_pubs = 0;
-static uint8_t g_pub_tx_buf[2048] = {0}; // just for now... so bad...
+static uint8_t g_pub_tx_buf[2048];
+static uint8_t g_pub_user_tx_buf[2048];
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -338,7 +339,7 @@ bool frudp_publish_user_msg_frag(
 {
   //printf("publish frag %d : %d bytes\n", frag_num, frag_len);
   // todo: consolidate this with the non-fragmented TX function...
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_user_tx_buf);
   uint16_t submsg_wpos = 0;
 
   if (frag_num == 1)
@@ -418,7 +419,7 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
     return false;
   }
   // craft a tx packet and stuff it
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_user_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
   frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
