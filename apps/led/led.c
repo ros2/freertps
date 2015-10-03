@@ -5,7 +5,7 @@
 void led_cb(const void *msg)
 {
   uint8_t led = *((uint8_t *)msg);
-  if (led)
+  if (led & 0x1)
     led_on();
   else
     led_off();
