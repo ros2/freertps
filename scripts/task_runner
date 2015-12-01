@@ -15,7 +15,7 @@ elf = "build/%s/apps/%s/%s.elf" % ( system, program, program )
 #image = "build/%s/apps/%s/%s.bin" % ( system, program, program )
 
 if verb == 'program':
-  cmd = "%s -c \"init; sleep 100; halt; sleep 100; flash write_image erase %s; halt; verify_image %s; sleep 100; reset run; sleep 100; shutdown\"" % (openocd, elf, elf)
+  cmd = "%s -c \"init; sleep 100; reset halt; sleep 100; flash write_image erase %s; halt; verify_image %s; sleep 100; reset run; sleep 100; shutdown\"" % (openocd, elf, elf)
 elif verb == 'reset':
   cmd = "%s -c \"init; sleep 100; halt; sleep 100; reset run; sleep 100; shutdown\"" % openocd
 elif verb == 'gdb_server':

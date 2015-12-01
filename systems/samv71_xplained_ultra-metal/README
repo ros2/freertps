@@ -1,3 +1,8 @@
 when we have more than one board with this chip family, we'll need to 
 factor this library into a SOMETHING_common library and a board-specific 
 library, like is done for, e.g., {stm32_common, stm32f4_disco-metal}
+
+NOTE: if you are starting with a fresh chip, you'll need to set the boot
+vector bit:
+
+openocd -f openocd.cfg -c init -c "reset halt" -c "atsamv gpnvm set 1" -c shutdown

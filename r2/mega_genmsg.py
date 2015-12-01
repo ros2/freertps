@@ -28,7 +28,9 @@ class PrimitiveType(object):
   def serialize(self, name, cur_alignment, f):
     raise RuntimeError("serialization of {0} not implemented!".format(self.name))
   def deserialize(self, name, cur_alignment, f):
-    raise RuntimeError("deserialization of {0} not implemented!".format(self.name))
+    #raise RuntimeError("deserialization of {0} not implemented!".format(self.name))
+    f.write("  printf(\"deserialization of {0} not implemented!\");\n".format(self.name))
+    f.write("  exit(1);\n")
 
 class BooleanType(PrimitiveType):
   def __init__(self):
@@ -45,7 +47,7 @@ class BooleanType(PrimitiveType):
     f.write("  }\n")
   def deserialize(self, field_name, cur_alignment, f):
     f.write("  _s->{0} = (**_p != 0);\n".format(field_name))
-    f.write("  *p = (*p) + 1;\n") #(*_p)++;\n")
+    f.write("  *_p += 1;\n") #(*_p)++;\n")
     f.write("  _len--;\n")
 
 class NumericType(PrimitiveType):
@@ -65,17 +67,31 @@ class NumericType(PrimitiveType):
     f.write("  }\n")
   def serialize_variable_array(self, field_name, cur_alignment, f):
     enforce_alignment(cur_alignment, 4, f) # align for the sequence count
-    size_var = "_s->_{0}_size".format(field_name)
+    size_var = "_s->{0}.size".format(field_name)
     f.write("  *((uint32_t *)_p) = {0};\n".format(size_var))
     f.write("  _p += 4;\n")
-    f.write("  memcpy(_p, _s->{0}, {1} * sizeof({1}));\n".format(field_name, size_var, self.name))
+    f.write("  memcpy(_p, _s->{0}.data, {1} * sizeof({1}));\n".format(field_name, size_var, self.name))
     f.write("  _p += {0} * sizeof({1});\n".format(size_var, self.name))
   def deserialize(self, field_name, cur_alignment, f):
-    f.write("  if (_len < sizeof({0}))\n    return false;\n".format(self.name))
-    f.write("  _s->{0} = *(({0} *)_p);\n".format(field_name, self.name))
+    f.write("  if (*_len < sizeof({0}))\n    return false;\n".format(self.name))
+    f.write("  _s->{0} = *(({1} *)*_p);\n".format(field_name, self.name))
     f.write("  *_p += sizeof({0});\n".format(self.name))
     f.write("  *_len -= sizeof({0});\n".format(self.name))
-
+  def deserialize_fixed_array(self, field_name, cur_alignment, array_size, f):
+    # this could be improved a lot
+    enforce_read_alignment(cur_alignment, self.align, f)
+    f.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < {1}; _{0}_idx++)\n".format(field_name, array_size))
+    f.write("  {\n")
+    f.write("    _s->{1}[_{1}_idx] = *(({0} *)*_p);\n".format(self.name, field_name))
+    f.write("    *_p += sizeof({0});\n".format(self.name))
+    f.write("  }\n")
+  def deserialize_variable_array(self, field_name, cur_alignment, f):
+    f.write("  printf(\"this is not yet complete.\");\n")
+    f.write("  return false;\n")
+    #f.write("  if (*_len < sizeof({0}))\n    return false;\n".format(self.name))
+    #f.write("  _s->{0} = *(({1} *)_p);\n".format(field_name, self.name))
+    #f.write("  **_p += sizeof({0});\n".format(self.name))
+    #f.write("  *_len -= sizeof({0});\n".format(self.name))
 
 class StringType(PrimitiveType):
   def __init__(self):
@@ -88,17 +104,22 @@ class StringType(PrimitiveType):
     f.write("  _p += _{0}_len;\n".format(field_name))
   def serialize_variable_array(self, field_name, cur_alignment, f):
     enforce_alignment(cur_alignment, 4, f) # align for the sequence count
-    size_var = "_s->_{0}_size".format(field_name)
+    size_var = "_s->{0}.size".format(field_name)
     f.write("  *((uint32_t *)_p) = {0};\n".format(size_var))
     f.write("  _p += 4;\n")
     f.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < {1}; _{0}_idx++)\n".format(field_name, size_var))
     f.write("  {\n")
     enforce_alignment(cur_alignment, 4, f, indent=4)
-    f.write("    size_t len = strlen(_s->{0}[_{0}_idx]) + 1;\n".format(field_name))
+    f.write("    size_t len = strlen(_s->{0}[_{0}_idx].data) + 1;\n".format(field_name))
     f.write("    _p += 4;\n")
     f.write("    memcpy(_p, _s->{0}[_{0}_idx], len);\n".format(field_name))
     f.write("    _p += len;\n".format(field_name))
     f.write("  }\n")
+
+  def deserialize_variable_array(self, field_name, cur_alignment, f):
+    f.write("  printf(\"deserialization of variable-length string arrays not implemented!\n\");")
+    f.write("  exit(1);\n")
+
 
 primitive_types = { }
 primitive_types['bool']    = BooleanType()
@@ -191,8 +212,8 @@ def serialize_field(field, align, f):
       sf.write("    _p += serialize_{0}(&_s->{1}[_{1}_idx], _p, _buf_size - (_p - _buf));\n".format(field_c_struct_name, field.name))
     else: # variable-length array of structs.
       # todo: i think the sequence length needs to be serialized first...
-      sf.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < _s->_{0}_size; _{0}_idx++)\n".format(field.name))
-      sf.write("    _p += serialize_{0}(&_s->{1}[_{1}_idx], _p, _buf_size - (_p - _buf));\n".format(field_c_struct_name, field.name))
+      sf.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < _s->{0}.size; _{0}_idx++)\n".format(field.name))
+      sf.write("    _p += serialize_{0}(&_s->{1}.data[_{1}_idx], _p, _buf_size - (_p - _buf));\n".format(field_c_struct_name, field.name))
     align = 1
   return align
 
@@ -220,10 +241,10 @@ def deserialize_field(field, align, f):
   else:
     field_c_struct_name = "{0}__{1}".format(field.type.pkg_name, uncamelcase(field.type.type)).lower()
     if not field.type.is_array:
-      sf.write("  if (!deserialize_{0}(_p, _len, &_s->{1})\n    return false;\n".format(field_c_struct_name, field.name))
+      sf.write("  if (!deserialize_{0}(_p, _len, &_s->{1}))\n    return false;\n".format(field_c_struct_name, field.name))
     elif field.type.array_size:
       sf.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < {1}; _{0}_idx++)\n".format(field.name, field.type.array_size))
-      sf.write("    if (!deserialize_{0}(_p, _len, &_s->{1}[_{1}_idx])\n    return false;\n".format(field_c_struct_name, field.name))
+      sf.write("    if (!deserialize_{0}(_p, _len, &_s->{1}[_{1}_idx]))\n    return false;\n".format(field_c_struct_name, field.name))
     else: # variable-length array of structs.
       sf.write("  printf(\"hmm... not sure how to deserialize dynamic arrays just yet.\");\n;  exit(1);\n")
       #sf.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < _s->_{0}_size; _{0}_idx++)\n".format(field.name))
@@ -280,27 +301,33 @@ for pkg_name in os.listdir(ifaces_path):
       for field in msg_spec.fields:
         print("    " + field.type.type + " " + field.name)
         c_typename = ""
+        #if not field.type.is_array:
+
         if field.type.type in primitive_types:
           c_typename = primitive_types[field.type.type].name
         else:
           c_typename = "struct {0}__{1}".format(field.type.pkg_name, uncamelcase(field.type.type)).lower()
-        c_decl_suffix = ""
-        if field.type.is_array:
-          if field.type.array_size:
-            c_decl_suffix = "[{0}]".format(field.type.array_size)
+
+        if field.type.is_array and not field.type.array_size:
+          if field.type.type in primitive_types:
+            hf.write("  struct freertps__{0}__array {1};\n".format(field.type.type, field.name))
           else:
-            hf.write("  uint32_t _{0}_size;\n".format(field.name))
-            c_typename += " *"
-        hf.write("  {0} {1}{2};\n".format(c_typename, field.name, c_decl_suffix))
+            hf.write("  struct freertps__{0}__{1}__array {2};\n".format(field.type.pkg_name, uncamelcase(field.type.type), field.name).lower())
+        elif field.type.is_array:
+          hf.write("  {0} {1}[{2}];\n".format(c_typename, field.name, field.type.array_size))
+        else:
+          hf.write("  {0} {1};\n".format(c_typename, field.name))
+
       hf.write("} %s_t;\n\n" % struct_type)
       type_obj_name = "%s__%s__type" % (pkg_name, uncamelcase(msg_name))
       hf.write("extern const struct freertps_type %s;\n\n" % type_obj_name)
       hf.write("uint32_t serialize_%s(void *_msg, uint8_t *_buf, uint32_t _buf_size);\n" % struct_type)
       for field in msg_spec.fields[1:]:
         hf.write("uint32_t serialize_{0}__until_{1}(void *_msg, uint8_t *_buf, uint32_t _buf_size);\n".format(struct_type, field.name))
-      hf.write("bool deserialize_%s(uint8_t **_buf, uint32_t _buf_size, void *_msg);\n" % struct_type)
+      hf.write("bool deserialize_%s(uint8_t **_p, uint32_t *_len, void *_msg);\n" % struct_type)
       #for field in msg_spec.fields[1:]:
       #  hf.write("bool deserialize_{0}__until_{1}(void *_msg, uint8_t *_buf, uint32_t _buf_size);\n".format(struct_type, field.name))
+      hf.write("\nFREERTPS_ARRAY({0}, {0}_t);\n".format(struct_type))
       hf.write("\n#endif\n")
       ####################
       source_fn = os.path.join(msg_tree_root, 'src', struct_type) + '.c'
@@ -353,8 +380,7 @@ for pkg_name in os.listdir(ifaces_path):
         for field in msg_spec.fields:
           if field == until_field:
             break
-          align = deserialize_field(field, align, sf)
-        sf.write("  return true;\n") #return _wpos - _buf;\n")
+          align = deserialize_field(field, align, sf) sf.write("  return true;\n") #return _wpos - _buf;\n")
         sf.write("}\n\n")
       '''
  
