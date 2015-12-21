@@ -200,6 +200,29 @@ bool frudp_add_ucast_rx(const uint16_t port)
   return true;
 }
 
+static bool set_sock_reuse(int s)
+{
+  int one = 1;
+
+#if defined(SO_REUSEPORT) && !defined(__linux__)
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one)) < 0)
+  {
+    FREERTPS_ERROR("couldn't set SO_REUSEPORT on an rx sock (%d, %s)\n",
+                   errno, strerror(errno));
+    return false;
+  }
+#else
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
+  {
+    FREERTPS_ERROR("couldn't set SO_REUSEADDR on an rx sock (%d, %s)\n",
+                   errno, strerror(errno));
+    return false;
+  }
+#endif
+
+  return true;
+}
+
 bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
                      //const freertps_udp_rx_callback_t rx_cb)
 {
@@ -207,14 +230,11 @@ bool frudp_add_mcast_rx(in_addr_t group, uint16_t port) //,
   int s = frudp_create_sock();
   if (s < 0)
     return false;
-  int result = 0, reuseaddr = 1;
-  result = setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
-                      &reuseaddr, sizeof(reuseaddr));
-  if (result < 0)
-  {
-    FREERTPS_ERROR("couldn't set SO_REUSEADDR on an rx sock\n");
+
+  if (!set_sock_reuse(s))
     return false;
-  }
+
+  int result;
   struct sockaddr_in rx_bind_addr;
   memset(&rx_bind_addr, 0, sizeof(rx_bind_addr));
   rx_bind_addr.sin_family = AF_INET;
