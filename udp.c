@@ -46,14 +46,12 @@ void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
 //////////////////////////////////////////////////////////////////////////
 
 
-//#define RX_VERBOSE
-
 bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
               const uint32_t dst_addr, const uint16_t dst_port,
               const uint8_t *rx_data  , const uint16_t rx_len)
 {
-#ifdef RX_VERBOSE
-  FREERTPS_INFO("freertps rx %d bytes\n", rx_len);
+#ifdef VERBOSE_MSG_RX
+  FREERTPS_INFO("====== freertps rx %d bytes\n", rx_len);
 #endif
   /*
   struct in_addr ina;
@@ -63,14 +61,14 @@ bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
   const frudp_msg_t *msg = (frudp_msg_t *)rx_data;
   if (msg->header.magic_word != 0x53505452) // todo: care about endianness
     return false; // it wasn't RTPS. no soup for you.
-#ifdef RX_VERBOSE
+#ifdef VERBOSE_MSG_RX
   FREERTPS_INFO("rx proto ver %d.%d\n",
                 msg->header.pver.major,
                 msg->header.pver.minor);
 #endif
   if (msg->header.pver.major != 2)
     return false; // we aren't cool enough to be oldschool
-#ifdef RX_VERBOSE
+#ifdef VERBOSE_MSG_RX
   FREERTPS_INFO("rx vendor 0x%04x = %s\n",
                 (unsigned)ntohs(msg->header.vid),
                 frudp_vendor(ntohs(msg->header.vid)));
@@ -80,16 +78,35 @@ bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
   rcvr.src_pver = msg->header.pver;
   rcvr.src_vid = msg->header.vid;
 
+  {
+    const uint8_t *p = g_frudp_config.guid_prefix.prefix;
+    printf("matching inbound prefix against our prefix = %02x%02x%02x%02x:"
+                                     "%02x%02x%02x%02x:"
+                                     "%02x%02x%02x%02x\n",
+           p[0], p[1], p[2], p[3],
+           p[4], p[5], p[6], p[7],
+           p[8], p[9], p[10], p[11]);
+  }
   bool our_guid = true;
-  for (int i = 0; i < 12; i++)
+  for (int i = 0; i < 12 && our_guid; i++)
+  {
     if (msg->header.guid_prefix.prefix[i] !=
         g_frudp_config.guid_prefix.prefix[i])
+    {
+      printf("  mismatch at digit %d : 0x%x != 0x%x\n",
+             i, (unsigned)msg->header.guid_prefix.prefix[i],
+             (unsigned)g_frudp_config.guid_prefix.prefix[i]);
       our_guid = false;
+    }
+  }
   if (our_guid)
+  {
+    printf("hey! that's our prefix!\n");
     return true; // don't process our own messages
+  }
 
   {
-#ifdef RX_VERBOSE
+#ifdef VERBOSE_MSG_RX
     const uint8_t *p = msg->header.guid_prefix.prefix;
     printf("RTPS sender guid prefix = %02x%02x%02x%02x:"
                                      "%02x%02x%02x%02x:"
@@ -119,7 +136,7 @@ bool frudp_rx(const uint32_t src_addr, const uint16_t src_port,
 static bool frudp_rx_submsg(frudp_receiver_state_t *rcvr,
                             const frudp_submsg_t *submsg)
 {
-#ifdef RX_VERBOSE
+#ifdef VERBOSE_MSG_RX
   FREERTPS_INFO("rx submsg ID %d len %d\n",
                 submsg->header.id,
                 submsg->header.len);
@@ -354,7 +371,7 @@ static bool frudp_rx_heartbeat_frag(RX_MSG_ARGS)
 static bool frudp_rx_data(RX_MSG_ARGS)
 {
   frudp_submsg_data_t *data_submsg = (frudp_submsg_data_t *)submsg;
-#ifdef RX_VERBOSE
+#ifdef VERBOSE_MSG_RX
   FREERTPS_INFO("rx data flags = %d\n", 0x0f7 & submsg->header.flags);
 #endif
   // todo: care about endianness
@@ -376,7 +393,7 @@ static bool frudp_rx_data(RX_MSG_ARGS)
     frudp_parameter_list_item_t *item = (frudp_parameter_list_item_t *)inline_qos_start;
     while ((uint8_t *)item < submsg->contents + submsg->header.len)
     {
-#ifdef RX_VERBOSE
+#ifdef VERBOSE_MSG_RX
       FREERTPS_INFO("data inline QoS param 0x%x len %d\n", (unsigned)item->pid, item->len);
 #endif
       const frudp_parameterid_t pid = item->pid;
@@ -560,6 +577,9 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
   msg->header.pver.major = 2;
   msg->header.pver.minor = 1;
   msg->header.vid = FREERTPS_VENDOR_ID;
+  printf("  sending msg from prefix: ");
+  frudp_print_guid_prefix(&g_frudp_config.guid_prefix);
+  printf("\n");
   memcpy(msg->header.guid_prefix.prefix,
          g_frudp_config.guid_prefix.prefix,
          FRUDP_GUID_PREFIX_LEN);

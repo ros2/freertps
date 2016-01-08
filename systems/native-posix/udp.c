@@ -95,7 +95,7 @@ bool frudp_init()
     FREERTPS_FATAL("couldn't set tx sock to allow multicast\n");
     return false;
   }
-  /*
+  
   int loopback = 0;
   result = setsockopt(g_frudp_tx_sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                       &loopback, sizeof(loopback));
@@ -104,7 +104,7 @@ bool frudp_init()
     FREERTPS_FATAL("couldn't disable outbound tx multicast loopback\n");
     return false;
   }
-  */
+  
   //if (!frudp_init_participant_id())
   //  return false;
   // some of the following stuff has been moved to frudp_part_create()
