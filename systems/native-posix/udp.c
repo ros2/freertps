@@ -95,13 +95,16 @@ bool frudp_init()
     FREERTPS_FATAL("couldn't set tx sock to allow multicast\n");
     return false;
   }
-  
-  int loopback = 0;
+
+  // because we may have multiple freertps processes listening to the
+  // multicast traffic on this host, we need to enable multicast loopback
+  // todo: I assume this is enabled by default, but let's set it anyway
+  int loopback = 1;
   result = setsockopt(g_frudp_tx_sock, IPPROTO_IP, IP_MULTICAST_LOOP,
                       &loopback, sizeof(loopback));
   if (result < 0)
   {
-    FREERTPS_FATAL("couldn't disable outbound tx multicast loopback\n");
+    FREERTPS_FATAL("couldn't enable outbound tx multicast loopback\n");
     return false;
   }
   

@@ -200,6 +200,8 @@ static void frudp_sedp_rx_pub_info(const sedp_topic_info_t *info)
         r.reliable = sub->reliable;
         frudp_add_reader(&r);
       }
+      else
+        printf("boring, we already knew about it.\n");
     }
   }
 }
@@ -386,7 +388,8 @@ static void frudp_sedp_bcast()
 static void sedp_publish(const char *topic_name,
                          const char *type_name,
                          frudp_pub_t *pub,
-                         const frudp_eid_t eid)
+                         const frudp_eid_t eid,
+                         const bool is_pub) // is this for a pub or a sub
 {
   // first make sure we have an spdp packet out first
   printf("sedp publish [%s] via SEDP EID 0x%08x\r\n",
@@ -399,11 +402,11 @@ static void sedp_publish(const char *topic_name,
   d->header.len = 0;
   d->extraflags = 0;
   d->octets_to_inline_qos = 16; // ?
-  d->reader_id = g_sedp_sub_reader_id;
-  d->writer_id = g_sedp_sub_writer_id;
+  d->reader_id = is_pub ? g_sedp_pub_reader_id : g_sedp_sub_reader_id;
+  d->writer_id = is_pub ? g_sedp_pub_writer_id : g_sedp_sub_writer_id;
   //d->writer_sn = g_frudp_sn_unknown;
   d->writer_sn.high = 0;
-  d->writer_sn.low = 0;
+  d->writer_sn.low = 0; // todo: increment this
   //frudp_parameter_list_item_t *inline_qos_param =
   //  (frudp_parameter_list_item_t *)d->data;
   /*
@@ -505,7 +508,8 @@ void sedp_publish_sub(frudp_sub_t *sub)
   sedp_publish(sub->topic_name,
                sub->type_name,
                g_sedp_sub_pub,
-               sub->reader_eid);
+               sub->reader_eid,
+               false); // false means "this is for a subscription"
 }
 
 void sedp_publish_pub(frudp_pub_t *pub)
@@ -520,7 +524,8 @@ void sedp_publish_pub(frudp_pub_t *pub)
   sedp_publish(pub->topic_name,
                pub->type_name,
                g_sedp_pub_pub,
-               pub->writer_eid);
+               pub->writer_eid,
+               true); // true means "this is for a publication"
 }
 
 void sedp_add_builtin_endpoints(frudp_part_t *part)

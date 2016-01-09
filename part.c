@@ -45,5 +45,8 @@ bool frudp_part_create()
   //frudp_generic_init();
   //frudp_disco_init();
   g_frudp_participant_init_complete = true;
+  printf("prefix: ");
+  frudp_print_guid_prefix(&g_frudp_config.guid_prefix);
+  printf("\n");
   return true;
 }

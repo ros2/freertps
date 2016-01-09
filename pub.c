@@ -82,9 +82,10 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
   // at it to help it join quickly
 
   // first, send the publications
-
   if (g_sedp_pub_pub->next_submsg_idx)
   {
+    printf("sending %d SEDP publication catchup messages\n",
+           g_sedp_pub_pub->next_submsg_idx);
     frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
     fr_time_t t = fr_time_now();
     uint16_t submsg_wpos = 0;
@@ -99,6 +100,7 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
     for (int i = 0; i < g_sedp_pub_pub->next_submsg_idx; i++)
     {
       // todo: make sure we don't overflow a single ethernet frame
+      // since that would be most non-triumphant
       frudp_submsg_data_t *pub_submsg = g_sedp_pub_pub->data_submsgs[i];
       memcpy(&msg->submsgs[submsg_wpos], pub_submsg, 
           4 + pub_submsg->header.len);
@@ -122,7 +124,57 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
     int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
     uint32_t dst_addr = part->metatraffic_unicast_locator.addr.udp4.addr;
     uint16_t dst_port = part->metatraffic_unicast_locator.port;
-    printf("sending %d bytes of SEDP catchup messages to 0x%08x:%d\r\n",
+    printf("sending %d bytes of SEDP pub catchup messages to 0x%08x:%d\r\n",
+           payload_len, dst_addr, dst_port);
+    frudp_tx(dst_addr, dst_port, (const uint8_t *)msg, payload_len);
+  }
+  else
+    printf("no SEDP pub data to send to new participant\r\n");
+
+  // now, send the subscriptions
+  if (g_sedp_sub_pub->next_submsg_idx)
+  {
+    printf("sending %d SEDP subscription catchup messages\n",
+           g_sedp_sub_pub->next_submsg_idx);
+    frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+    fr_time_t t = fr_time_now();
+    uint16_t submsg_wpos = 0;
+
+    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
+    ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
+    ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+    ts_submsg->header.len = 8;
+    memcpy(ts_submsg->contents, &t, 8);
+    submsg_wpos += 4 + 8;
+
+    for (int i = 0; i < g_sedp_sub_pub->next_submsg_idx; i++)
+    {
+      // todo: make sure we don't overflow a single ethernet frame,
+      // since that would be most non-triumphant
+      frudp_submsg_data_t *sub_submsg = g_sedp_sub_pub->data_submsgs[i];
+      memcpy(&msg->submsgs[submsg_wpos], sub_submsg, 
+          4 + sub_submsg->header.len);
+      submsg_wpos += 4 + sub_submsg->header.len;
+      printf("catchup SEDP msg %d addressed to reader EID 0x%08x\r\n",
+          i, freertps_htonl((unsigned)sub_submsg->reader_id.u));
+    }
+    frudp_submsg_heartbeat_t *hb_submsg = 
+      (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
+    hb_submsg->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
+    hb_submsg->header.flags = 0x3; // todo: spell this out
+    hb_submsg->header.len = 28;
+    hb_submsg->reader_id = g_sedp_sub_pub->data_submsgs[0]->reader_id;
+    hb_submsg->writer_id = g_sedp_sub_pub->data_submsgs[0]->writer_id;
+    hb_submsg->first_sn.low = 1; // todo
+    hb_submsg->first_sn.high = 0; // todo
+    hb_submsg->last_sn.low = g_sedp_sub_pub->next_submsg_idx;
+    hb_submsg->last_sn.high = 0; // todo
+    hb_submsg->count = 0;
+    submsg_wpos += 4 + hb_submsg->header.len;
+    int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
+    uint32_t dst_addr = part->metatraffic_unicast_locator.addr.udp4.addr;
+    uint16_t dst_port = part->metatraffic_unicast_locator.port;
+    printf("sending %d bytes of SEDP sub catchup messages to 0x%08x:%d\r\n",
            payload_len, dst_addr, dst_port);
     frudp_tx(dst_addr, dst_port, (const uint8_t *)msg, payload_len);
   }
