@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "freertps/freertps.h"
 
 static int n_msg_recv = 0; // cue the raptors plz
@@ -21,7 +22,7 @@ int main(int argc, char **argv)
     return 1;
   }
   const int target_n_msg_recv = atoi(argv[1]);
-  const int max_seconds = atoi(argv[2]);
+  const double max_seconds = atof(argv[2]);
   fr_time_t t_start = fr_time_now();
   freertps_system_init();
   freertps_create_sub("chatter", 
@@ -30,13 +31,13 @@ int main(int argc, char **argv)
   frudp_disco_start(); // we're alive now; announce ourselves to the world
   while (freertps_system_ok())
   {
-    frudp_listen(1000000);
-    frudp_disco_tick(); // stayin' alive
-    fr_time_t t;
-    // todo: calculate seconds_elapsed
-    int seconds_elapsed = 42;
+    frudp_listen(100000);
+    frudp_disco_tick(); // stayin' alive FLOOR-TOM FLOOR-TOM CYMBAL-CRASH
+    fr_time_t t = fr_time_now();
+    fr_duration_t dt = fr_time_diff(&t, &t_start);
+    double dt_secs = fr_duration_double(&dt);
     if (n_msg_recv >= target_n_msg_recv ||
-        seconds_elapsed > max_seconds)
+        dt_secs > max_seconds)
       break;
   }
   frudp_fini();

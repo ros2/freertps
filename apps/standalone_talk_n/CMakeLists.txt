@@ -1,0 +1,1 @@
+freertps_add_executable(standalone_talk_n standalone_talk_n.c)
