@@ -70,8 +70,7 @@ target_link_libraries(freertps freertps_system_${SYSTEM})
 include_directories(build/msgs)
 
 if (NOT freertps_standalone)
-  ament_export_libraries(freertps)
-  #ament_export_libraries(freertps_system_${SYSTEM})
+  ament_export_libraries(freertps freertps_system_${SYSTEM})
   ament_package()
   install(
     DIRECTORY include/
