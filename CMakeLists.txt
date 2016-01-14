@@ -83,8 +83,6 @@ if (NOT freertps_standalone)
     endif()
   endif()
 
-  #add_executable(standalone_talk_n apps/standalone_talk_n/standalone_talk_n.c)
-
   ament_package()
   install(
     DIRECTORY include/
