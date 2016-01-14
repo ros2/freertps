@@ -29,7 +29,7 @@ function(freertps_add_executable exe)
   endif()
 endfunction()
 
-set(SYSTEM "native-posix" CACHE STRING "the target system name") 
+set(SYSTEM "native-posix" CACHE STRING "the target system name")
 message("system: [${SYSTEM}]")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99 -Wall -g -O2 -fPIC")
@@ -71,12 +71,26 @@ include_directories(build/msgs)
 
 if (NOT freertps_standalone)
   ament_export_libraries(freertps freertps_system_${SYSTEM})
+
+  if (AMENT_ENABLE_TESTING)
+    find_package(ament_cmake_gtest REQUIRED)
+
+    ament_add_gtest(talker_listener_gtest "tests/talker_listener_test.cpp" TIMEOUT 30)
+    set_target_properties(talker_listener_gtest PROPERTIES LINKER_LANGUAGE CXX)
+    if (TARGET talker_listener_gtest)
+      ament_target_dependencies(talker_listener_gtest "freertps")
+      target_include_directories(talker_listener_gtest PUBLIC include)
+      target_link_libraries(talker_listener_gtest ${_AMENT_EXPORT_LIBRARY_TARGETS} ${SYSTEM_EXTRA_LIBS} ${SYSTEM_BONUS_LIBS})
+    endif()
+  endif()
+
+  #add_executable(standalone_talk_n apps/standalone_talk_n/standalone_talk_n.c)
+
   ament_package()
   install(
     DIRECTORY include/
     DESTINATION include
   )
-    #TARGETS freertps systems/freertps_system_${SYSTEM}
   install(
     TARGETS freertps
     ARCHIVE DESTINATION lib

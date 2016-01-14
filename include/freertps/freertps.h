@@ -1,6 +1,10 @@
 #ifndef FREERTPS_H
 #define FREERTPS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 // NOTE: the prefix freertps_udp_ is too long to type, so it will often
@@ -56,5 +60,9 @@ bool freertps_publish(frudp_pub_t *pub,
 extern bool g_freertps_init_complete;
 
 void freertps_start();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
