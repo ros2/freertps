@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.12)
 #SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 #SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
+asdfdsafdsaf
+
 project(freertps)
 
 set(freertps_standalone OFF CACHE BOOL "standalone build")
