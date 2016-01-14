@@ -76,7 +76,6 @@ if (NOT freertps_standalone)
     find_package(ament_cmake_gtest REQUIRED)
 
     ament_add_gtest(talker_listener_gtest "tests/talker_listener_test.cpp" TIMEOUT 30)
-    set_target_properties(talker_listener_gtest PROPERTIES LINKER_LANGUAGE CXX)
     if (TARGET talker_listener_gtest)
       ament_target_dependencies(talker_listener_gtest "freertps")
       target_include_directories(talker_listener_gtest PUBLIC include)
