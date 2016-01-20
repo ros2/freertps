@@ -422,27 +422,13 @@ static bool frudp_rx_data(RX_MSG_ARGS)
          data_submsg->reader_id.u == g_frudp_entity_id_unknown.u))
     */
     num_matches_found++;
-    {
-      // update the max-received sequence number counter
-      if (data_submsg->writer_sn.low > match->max_rx_sn.low) // todo: 64-bit
-        match->max_rx_sn = data_submsg->writer_sn;
-      if (match->data_cb)
-        match->data_cb(rcvr, submsg, scheme, data);
-      if (match->msg_cb)
-      {
-        /*
-        int len = data_submsg->header.len - ((uint8_t *)data - (uint8_t *)data_submsg);
-        printf("    msg len = %d\n", len);
-        for (int i = 0; i < len; i++)
-        {
-          printf("%2x ", (unsigned)data[i]);
-          if (i % 8 == 7)
-            printf("\n");
-        }
-        */
-        match->msg_cb(data);
-      }
-    }
+    // update the max-received sequence number counter
+    if (data_submsg->writer_sn.low > match->max_rx_sn.low) // todo: 64-bit
+      match->max_rx_sn = data_submsg->writer_sn;
+    if (match->data_cb)
+      match->data_cb(rcvr, submsg, scheme, data);
+    if (match->msg_cb)
+      match->msg_cb(data);
   }
   if (!num_matches_found)
   {
