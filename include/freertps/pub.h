@@ -12,12 +12,12 @@ typedef struct
   const char           *topic_name;
   const char           *type_name;
   frudp_eid_t           writer_eid;
-  frudp_sn_t            max_tx_sn_avail;
-  frudp_sn_t            min_tx_sn_avail;
+  seq_num_t             max_tx_sn_avail;
+  seq_num_t             min_tx_sn_avail;
   uint32_t              num_data_submsgs;
   frudp_submsg_data_t **data_submsgs;
   uint32_t              next_submsg_idx;
-  frudp_sn_t            next_sn;
+  seq_num_t             next_sn;
   bool                  reliable;
 } frudp_pub_t;
 

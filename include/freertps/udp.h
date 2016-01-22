@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "freertps/id.h"
+#include "freertps/types.h"
 //#include "freertps/psm.h"
 
 /////////////////////////////////////////////////////////////////////
@@ -70,33 +71,12 @@ typedef struct
 
 typedef struct
 {
-  int32_t high;
-  uint32_t low;
-} frudp_sn_t; // sequence number
-extern const frudp_sn_t g_frudp_sn_unknown;
-
-typedef struct
-{
-  frudp_sn_t bitmap_base;
-  uint32_t num_bits;
-  uint32_t bitmap[];
-} frudp_sn_set_t;
-
-typedef struct
-{
-  frudp_sn_t bitmap_base;
-  uint32_t num_bits;
-  uint32_t bitmap;
-} frudp_sn_set_32bits_t;
-
-typedef struct
-{
   frudp_submsg_header_t header;
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
   frudp_eid_t reader_id;
   frudp_eid_t writer_id;
-  frudp_sn_t writer_sn;
+  seq_num_t writer_sn;
   uint8_t data[];
 } __attribute__((packed)) frudp_submsg_data_t;
 
@@ -107,7 +87,7 @@ typedef struct frudp_submsg_data_frag
   uint16_t octets_to_inline_qos;
   frudp_eid_t reader_id;
   frudp_eid_t writer_id;
-  frudp_sn_t writer_sn;
+  seq_num_t writer_sn;
   uint32_t fragment_starting_number;
   uint16_t fragments_in_submessage;
   uint16_t fragment_size;
@@ -120,8 +100,8 @@ typedef struct
   frudp_submsg_header_t header;
   frudp_eid_t reader_id;
   frudp_eid_t writer_id;
-  frudp_sn_t first_sn;
-  frudp_sn_t last_sn;
+  seq_num_t first_sn;
+  seq_num_t last_sn;
   uint32_t count;
 } __attribute__((packed)) frudp_submsg_heartbeat_t;
 
@@ -130,15 +110,15 @@ typedef struct
   frudp_submsg_header_t header;
   frudp_eid_t reader_id;
   frudp_eid_t writer_id;
-  frudp_sn_t gap_start;
-  frudp_sn_set_t gap_end;
+  seq_num_t gap_start;
+  seq_num_set_t gap_end;
 } __attribute__((packed)) frudp_submsg_gap_t;
 
 typedef struct
 {
   frudp_eid_t reader_id;
   frudp_eid_t writer_id;
-  frudp_sn_set_t reader_sn_state;
+  seq_num_set_t reader_sn_state;
   // the "count" field that goes here is impossible to declare in legal C
 } __attribute__((packed)) frudp_submsg_acknack_t;
 

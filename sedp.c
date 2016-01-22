@@ -51,14 +51,14 @@ void frudp_sedp_init()
   {
     frudp_submsg_data_t *d = 
       (frudp_submsg_data_t *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    d->writer_sn = g_frudp_sn_unknown;
+    d->writer_sn = g_freertps_seq_num_unknown;
     g_sedp_sub_writer_data_submsgs[i] = d;
   }
   for (int i = 0; i < FRUDP_MAX_PUBS; i++)
   {
     frudp_submsg_data_t *d = 
       (frudp_submsg_data_t *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    d->writer_sn = g_frudp_sn_unknown;
+    d->writer_sn = g_freertps_seq_num_unknown;
     g_sedp_pub_writer_data_submsgs[i] = d;
   }
   g_sedp_sub_pub = frudp_create_pub(

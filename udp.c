@@ -18,7 +18,7 @@ const struct rtps_psm g_rtps_psm_udp =
 // global constants
 const frudp_eid_t g_frudp_eid_unknown = { .u = 0 };
 frudp_config_t g_frudp_config;
-const frudp_sn_t g_frudp_sn_unknown = { .high = -1, .low = 0 };
+const seq_num_t g_freertps_seq_num_unknown = { .high = -1, .low = 0 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -41,7 +41,7 @@ static bool frudp_rx_data_frag     (RX_MSG_ARGS);
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
                       const frudp_eid_t *reader_eid,
                       const frudp_guid_t *writer_guid,
-                      const frudp_sn_set_t *set);
+                      const seq_num_set_t *set);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -220,7 +220,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
     {
       //printf("acknack requested in heartbeat\n");
       // we have to send an ACKNACK now
-      frudp_sn_set_32bits_t set;
+      seq_num_set_32bits_t set;
       // todo: handle 64-bit sequence numbers
       set.bitmap_base.high = 0;
       if (match->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
@@ -242,7 +242,7 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
       frudp_tx_acknack(&rcvr->src_guid_prefix,
                        &match->reader_eid,
                        &match->writer_guid,
-                       (frudp_sn_set_t *)&set);
+                       (seq_num_set_t *)&set);
     }
     else
     {
@@ -546,7 +546,7 @@ frudp_msg_t *frudp_init_msg(frudp_msg_t *buf)
 void frudp_tx_acknack(const frudp_guid_prefix_t *guid_prefix,
                       const frudp_eid_t         *reader_id,
                       const frudp_guid_t        *writer_guid,
-                      const frudp_sn_set_t      *set)
+                      const seq_num_set_t       *set)
 {
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",

@@ -196,7 +196,7 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
   frudp_submsg_data_t *pub_submsg = pub->data_submsgs[pub->next_submsg_idx];
 
   *pub_submsg = *submsg;
-  if (submsg->writer_sn.low == g_frudp_sn_unknown.low) // todo: 64 bits
+  if (submsg->writer_sn.low == g_freertps_seq_num_unknown.low) // todo: 64 bits
   {
     pub_submsg->writer_sn = pub->next_sn;
     pub->next_sn.low++; // todo: > 32 bits
