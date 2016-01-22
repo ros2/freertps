@@ -7,8 +7,8 @@ extern "C" {
 
 #include <stdio.h>
 
-// NOTE: the prefix freertps_udp_ is too long to type, so it will often
-// be shortened to frudp_
+// NOTE: the prefix freertps_ is too long to type, so it will often
+// be shortened to fr_
 
 typedef void (*freertps_msg_cb_t)(const void *msg);
 
@@ -49,10 +49,10 @@ void freertps_create_sub(const char *topic_name,
 
 // todo: come up with a better way of holding onto publishers that is
 // agnostic to the physical layer
-frudp_pub_t *freertps_create_pub(const char *topic_name,
-                                 const char *type_name);
+fr_pub_t *freertps_create_pub(const char *topic_name,
+                              const char *type_name);
 
-bool freertps_publish(frudp_pub_t *pub,
+bool freertps_publish(fr_pub_t *pub,
                       const uint8_t *msg,
                       const uint32_t msg_len);
 //void freertps_perish_if(bool b, const char *msg);

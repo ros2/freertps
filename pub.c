@@ -9,29 +9,29 @@
 #include "freertps/sedp.h"
 #include "freertps/spdp.h"
 
-frudp_writer_t g_frudp_writers[FRUDP_MAX_WRITERS];
-uint32_t g_frudp_num_writers;
+fr_writer_t g_fr_writers[FR_MAX_WRITERS];
+uint32_t g_fr_num_writers;
 
-frudp_pub_t g_frudp_pubs[FRUDP_MAX_PUBS];
-uint32_t g_frudp_num_pubs = 0;
+fr_pub_t g_fr_pubs[FR_MAX_PUBS];
+uint32_t g_fr_num_pubs = 0;
 static uint8_t g_pub_tx_buf[2048];
 static uint8_t g_pub_user_tx_buf[2048];
 
 ///////////////////////////////////////////////////////////////////////////
 
-frudp_pub_t *frudp_create_pub(const char *topic_name,
-                              const char *type_name,
-                              const frudp_eid_t writer_id,
-                              frudp_submsg_data_t **data_submsgs,
-                              const uint32_t num_data_submsgs)
+fr_pub_t *fr_create_pub(const char *topic_name,
+                        const char *type_name,
+                        const fr_eid_t writer_id,
+                        fr_submsg_data_t **data_submsgs,
+                        const uint32_t num_data_submsgs)
 {
   //printf("create pub 0x%08x\n", htonl(writer_id.u));
-  if (g_frudp_num_pubs >= FRUDP_MAX_PUBS)
+  if (g_fr_num_pubs >= FR_MAX_PUBS)
   {
     FREERTPS_ERROR("woah there partner. don't have space for more pubs.\n");
     return NULL; // no room. sorry
   }
-  frudp_pub_t *p = &g_frudp_pubs[g_frudp_num_pubs];
+  fr_pub_t *p = &g_fr_pubs[g_fr_num_pubs];
   p->topic_name = topic_name;
   p->type_name = type_name;
   if (data_submsgs) // it's for a reliable connection
@@ -47,7 +47,7 @@ frudp_pub_t *frudp_create_pub(const char *topic_name,
     p->num_data_submsgs = 0;
     p->reliable = false;
   }
-  if (writer_id.u == g_frudp_eid_unknown.u)
+  if (writer_id.u == g_fr_eid_unknown.u)
   {
     FREERTPS_ERROR("AWAY WITH YOU! <point scepter>\n");
     return NULL;
@@ -57,27 +57,27 @@ frudp_pub_t *frudp_create_pub(const char *topic_name,
   p->next_submsg_idx = 0;
   p->next_sn.low = 1;
   p->next_sn.high = 0;
-  g_frudp_num_pubs++;
+  g_fr_num_pubs++;
   return p;
 }
 
-frudp_pub_t *frudp_create_user_pub(const char *topic_name, 
-                                   const char *type_name)
+fr_pub_t *fr_create_user_pub(const char *topic_name, 
+                             const char *type_name)
 {
   printf("create_user_pub(%s, %s)\r\n", topic_name, type_name);
-  frudp_pub_t *pub = frudp_create_pub(topic_name,
-                                      type_name,
-                                      frudp_create_user_id
-                                        (FRUDP_ENTITY_KIND_USER_WRITER_NO_KEY),
-                                      NULL,
-                                      0);
+  fr_pub_t *pub = fr_create_pub(topic_name,
+                                type_name,
+                                fr_create_user_id
+                                  (FR_ENTITY_KIND_USER_WRITER_NO_KEY),
+                                   NULL,
+                                   0);
   //sedp_publish_pub(pub); // can't do this yet; disco hasn't started
   return pub;
 }
 
-void frudp_send_sedp_msgs(frudp_part_t *part)
+void fr_send_sedp_msgs(fr_part_t *part)
 {
-  frudp_spdp_bcast();
+  fr_spdp_bcast();
   // we have just found out about a new participant. blast our SEDP messages
   // at it to help it join quickly
 
@@ -86,13 +86,13 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
   {
     printf("sending %d SEDP publication catchup messages\n",
            g_sedp_pub_pub->next_submsg_idx);
-    frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+    fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_pub_tx_buf);
     fr_time_t t = fr_time_now();
     uint16_t submsg_wpos = 0;
 
-    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-    ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-    ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+    fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
+    ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+    ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
     ts_submsg->header.len = 8;
     memcpy(ts_submsg->contents, &t, 8);
     submsg_wpos += 4 + 8;
@@ -101,16 +101,16 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
     {
       // todo: make sure we don't overflow a single ethernet frame
       // since that would be most non-triumphant
-      frudp_submsg_data_t *pub_submsg = g_sedp_pub_pub->data_submsgs[i];
+      fr_submsg_data_t *pub_submsg = g_sedp_pub_pub->data_submsgs[i];
       memcpy(&msg->submsgs[submsg_wpos], pub_submsg, 
           4 + pub_submsg->header.len);
       submsg_wpos += 4 + pub_submsg->header.len;
       printf("catchup SEDP msg %d addressed to reader EID 0x%08x\r\n",
           i, freertps_htonl((unsigned)pub_submsg->reader_id.u));
     }
-    frudp_submsg_heartbeat_t *hb_submsg = 
-      (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
-    hb_submsg->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
+    fr_submsg_heartbeat_t *hb_submsg = 
+      (fr_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
+    hb_submsg->header.id = FR_SUBMSG_ID_HEARTBEAT;
     hb_submsg->header.flags = 0x3; // todo: spell this out
     hb_submsg->header.len = 28;
     hb_submsg->reader_id = g_sedp_pub_pub->data_submsgs[0]->reader_id;
@@ -126,7 +126,7 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
     uint16_t dst_port = part->metatraffic_unicast_locator.port;
     printf("sending %d bytes of SEDP pub catchup messages to 0x%08x:%d\r\n",
            payload_len, dst_addr, dst_port);
-    frudp_tx(dst_addr, dst_port, (const uint8_t *)msg, payload_len);
+    fr_tx(dst_addr, dst_port, (const uint8_t *)msg, payload_len);
   }
   else
     printf("no SEDP pub data to send to new participant\r\n");
@@ -136,13 +136,13 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
   {
     printf("sending %d SEDP subscription catchup messages\n",
            g_sedp_sub_pub->next_submsg_idx);
-    frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+    fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_pub_tx_buf);
     fr_time_t t = fr_time_now();
     uint16_t submsg_wpos = 0;
 
-    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-    ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-    ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+    fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
+    ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+    ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
     ts_submsg->header.len = 8;
     memcpy(ts_submsg->contents, &t, 8);
     submsg_wpos += 4 + 8;
@@ -151,16 +151,16 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
     {
       // todo: make sure we don't overflow a single ethernet frame,
       // since that would be most non-triumphant
-      frudp_submsg_data_t *sub_submsg = g_sedp_sub_pub->data_submsgs[i];
+      fr_submsg_data_t *sub_submsg = g_sedp_sub_pub->data_submsgs[i];
       memcpy(&msg->submsgs[submsg_wpos], sub_submsg, 
           4 + sub_submsg->header.len);
       submsg_wpos += 4 + sub_submsg->header.len;
       printf("catchup SEDP msg %d addressed to reader EID 0x%08x\r\n",
           i, freertps_htonl((unsigned)sub_submsg->reader_id.u));
     }
-    frudp_submsg_heartbeat_t *hb_submsg = 
-      (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
-    hb_submsg->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
+    fr_submsg_heartbeat_t *hb_submsg = 
+      (fr_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
+    hb_submsg->header.id = FR_SUBMSG_ID_HEARTBEAT;
     hb_submsg->header.flags = 0x3; // todo: spell this out
     hb_submsg->header.len = 28;
     hb_submsg->reader_id = g_sedp_sub_pub->data_submsgs[0]->reader_id;
@@ -176,14 +176,14 @@ void frudp_send_sedp_msgs(frudp_part_t *part)
     uint16_t dst_port = part->metatraffic_unicast_locator.port;
     printf("sending %d bytes of SEDP sub catchup messages to 0x%08x:%d\r\n",
            payload_len, dst_addr, dst_port);
-    frudp_tx(dst_addr, dst_port, (const uint8_t *)msg, payload_len);
+    fr_tx(dst_addr, dst_port, (const uint8_t *)msg, payload_len);
   }
   else
     printf("no SEDP pub data to send to new participant\r\n");
 }
 
 // currently this only gets called for SEDP messages
-void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
+void fr_publish(fr_pub_t *pub, fr_submsg_data_t *submsg)
 {
   // TODO: for best-effort connections, don't buffer it like this
   // check to see if the publisher has a buffer or not, first....
@@ -193,20 +193,20 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
 
   // find first place we can buffer this sample
   pub->max_tx_sn_avail.low++; // TODO: care about sample counts over 32 bits
-  frudp_submsg_data_t *pub_submsg = pub->data_submsgs[pub->next_submsg_idx];
+  fr_submsg_data_t *pub_submsg = pub->data_submsgs[pub->next_submsg_idx];
 
   *pub_submsg = *submsg;
-  if (submsg->writer_sn.low == g_freertps_seq_num_unknown.low) // todo: 64 bits
+  if (submsg->writer_sn.low == g_fr_seq_num_unknown.low) // todo: 64 bits
   {
     pub_submsg->writer_sn = pub->next_sn;
     pub->next_sn.low++; // todo: > 32 bits
   }
   memcpy(pub_submsg->data, 
          submsg->data, 
-         submsg->header.len - sizeof(frudp_submsg_data_t) + 4);
+         submsg->header.len - sizeof(fr_submsg_data_t) + 4);
   //pub_sample->data_len = sample->data_len;
   // TODO: now, send DATA and HEARTBEAT submessages
-  printf("frudp publish %d bytes, seq num %d:%d\r\n",
+  printf("fr_publish %d bytes, seq num %d:%d\r\n",
          submsg->header.len,
          (int)pub_submsg->writer_sn.high,
          (int)pub_submsg->writer_sn.low);
@@ -222,25 +222,25 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
   frudp_tx(inet_addr("239.255.0.1"), frudp_mcast_builtin_port(),
            (const uint8_t *)msg, payload_len);
 */
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+  fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_pub_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
 
-  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
+  ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
   ts_submsg->header.len = 8;
   memcpy(ts_submsg->contents, &t, 8);
   submsg_wpos += 4 + 8;
   ///////////////////////////////////////////////////////////////////////
-  //frudp_submsg_data_t *data_submsg = (frudp_submsg_data_t *)&msg->submsgs[submsg_wpos];
+  //fr_submsg_data_t *data_submsg = (fr_submsg_data_t *)&msg->submsgs[submsg_wpos];
   memcpy(&msg->submsgs[submsg_wpos], submsg, 4 + submsg->header.len);
   //data_submsg, submsg, 4 + submsg->header.len);
   submsg_wpos += 4 + submsg->header.len;
 
-  frudp_submsg_heartbeat_t *hb_submsg = 
-    (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
-  hb_submsg->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
+  fr_submsg_heartbeat_t *hb_submsg = 
+    (fr_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
+  hb_submsg->header.id = FR_SUBMSG_ID_HEARTBEAT;
   hb_submsg->header.flags = 0x3; // todo: spell this out
   hb_submsg->header.len = 28;
   hb_submsg->reader_id = submsg->reader_id;
@@ -259,16 +259,16 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
   submsg_wpos += 4 + hb_submsg->header.len;
 
   int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
-  frudp_tx(freertps_htonl(FRUDP_DEFAULT_MCAST_GROUP), 
-           frudp_mcast_builtin_port(),
-           (const uint8_t *)msg, payload_len);
+  fr_tx(freertps_htonl(FR_DEFAULT_MCAST_GROUP), 
+        fr_mcast_builtin_port(),
+        (const uint8_t *)msg, payload_len);
   pub->next_submsg_idx++;
 
   /////////////////////////////////////////////////////////////
   /*
-  ts_submsg = (frudp_submsg_t *)param_list;
-  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  ts_submsg = (fr_submsg_t *)param_list;
+  ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
   ts_submsg->header.len = 8;
   memcpy(ts_submsg->contents, &t, 8);
   uint8_t *next_submsg_ptr = ((uint8_t *)param_list) + 4 + 8;
@@ -283,12 +283,12 @@ void frudp_publish(frudp_pub_t *pub, frudp_submsg_data_t *submsg)
   //int payload_len = ((uint8_t *)next_submsg_ptr) - ((uint8_t *)msg->submsgs);
 }
 
-frudp_pub_t *frudp_pub_from_writer_id(const frudp_eid_t id)
+fr_pub_t *fr_pub_from_writer_id(const fr_eid_t id)
 {
   //printf("pub from writer id 0x%08x\n", htonl(id.u));
-  for (int i = 0; i < g_frudp_num_pubs; i++)
+  for (int i = 0; i < g_fr_num_pubs; i++)
   {
-    frudp_pub_t *p = &g_frudp_pubs[i];
+    fr_pub_t *p = &g_fr_pubs[i];
     //printf("  comp %d: 0x%08x ?= 0x%08x\n",
     //       i, htonl(id.u), htonl(p->writer_id.u));
     if (id.u == p->writer_eid.u)
@@ -297,9 +297,9 @@ frudp_pub_t *frudp_pub_from_writer_id(const frudp_eid_t id)
   return NULL;
 }
 
-void frudp_pub_rx_acknack(frudp_pub_t *pub,
-                                frudp_submsg_acknack_t *acknack,
-                                frudp_guid_prefix_t *guid_prefix)
+void fr_pub_rx_acknack(fr_pub_t *pub,
+                       fr_submsg_acknack_t *acknack,
+                       fr_guid_prefix_t *guid_prefix)
 {
   // see if we have any of the requested messages
   for (int req_seq_num = acknack->reader_sn_state.bitmap_base.low;
@@ -310,7 +310,7 @@ void frudp_pub_rx_acknack(frudp_pub_t *pub,
     //printf("     request for seq num %d\n", req_seq_num);
     for (int msg_idx = 0; msg_idx < pub->num_data_submsgs; msg_idx++)
     {
-      frudp_submsg_data_t *data = pub->data_submsgs[msg_idx];
+      fr_submsg_data_t *data = pub->data_submsgs[msg_idx];
       //printf("       %d ?= %d\n", req_seq_num, data->writer_sn.low);
       if (data->writer_sn.low == req_seq_num)
       {
@@ -321,31 +321,31 @@ void frudp_pub_rx_acknack(frudp_pub_t *pub,
         //printf("\n");
 
         // look up the GUID prefix of this reader, so we can call them back
-        frudp_part_t *part = frudp_part_find(guid_prefix);
+        fr_part_t *part = fr_part_find(guid_prefix);
         if (!part)
         {
           printf("      woah there partner. you from around these parts?\n");
           return;
         }
 
-        frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_tx_buf);
+        fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_pub_tx_buf);
         fr_time_t t = fr_time_now();
         uint16_t submsg_wpos = 0;
 
-        frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-        ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-        ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+        fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
+        ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+        ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
         ts_submsg->header.len = 8;
         memcpy(ts_submsg->contents, &t, 8);
         submsg_wpos += 4 + 8;
         ///////////////////////////////////////////////////////////////////////
-        //frudp_submsg_data_t *data_submsg = (frudp_submsg_data_t *)&msg->submsgs[submsg_wpos];
+        //fr_submsg_data_t *data_submsg = (fr_submsg_data_t *)&msg->submsgs[submsg_wpos];
         memcpy(&msg->submsgs[submsg_wpos], data, 4 + data->header.len);
         //data_submsg, submsg, 4 + submsg->header.len);
         submsg_wpos += 4 + data->header.len;
 
-        frudp_submsg_heartbeat_t *hb_submsg = (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
-        hb_submsg->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
+        fr_submsg_heartbeat_t *hb_submsg = (fr_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
+        hb_submsg->header.id = FR_SUBMSG_ID_HEARTBEAT;
         hb_submsg->header.flags = 0x3; // todo: spell this out
         hb_submsg->header.len = 28;
         hb_submsg->reader_id = data->reader_id;
@@ -361,7 +361,7 @@ void frudp_pub_rx_acknack(frudp_pub_t *pub,
 
         int payload_len = &msg->submsgs[submsg_wpos] - ((uint8_t *)msg);
         //printf("         sending %d bytes\n", payload_len);
-        frudp_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
+        fr_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
                  part->metatraffic_unicast_locator.port,
                  (const uint8_t *)msg, payload_len);
       }
@@ -369,20 +369,20 @@ void frudp_pub_rx_acknack(frudp_pub_t *pub,
   }
 }
 
-void frudp_add_writer(const frudp_writer_t *writer)
+void fr_add_writer(const fr_writer_t *writer)
 {
-  if (g_frudp_num_writers >= FRUDP_MAX_WRITERS)
+  if (g_fr_num_writers >= FR_MAX_WRITERS)
     return;
-  g_frudp_writers[g_frudp_num_writers] = *writer;
-  g_frudp_num_writers++;
+  g_fr_writers[g_fr_num_writers] = *writer;
+  g_fr_num_writers++;
   printf("add_writer(%08x => ", 
          (unsigned)freertps_htonl(writer->writer_eid.u));
-  frudp_print_guid(&writer->reader_guid);
+  fr_print_guid(&writer->reader_guid);
   printf(")\n");
 }
 
-bool frudp_publish_user_msg_frag(
-    frudp_pub_t *pub,
+bool fr_publish_user_msg_frag(
+    fr_pub_t *pub,
     const uint32_t frag_num, 
     const uint8_t *frag, 
     const uint32_t frag_len,
@@ -391,26 +391,26 @@ bool frudp_publish_user_msg_frag(
 {
   //printf("publish frag %d : %d bytes\n", frag_num, frag_len);
   // todo: consolidate this with the non-fragmented TX function...
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_user_tx_buf);
+  fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_pub_user_tx_buf);
   uint16_t submsg_wpos = 0;
 
   if (frag_num == 1)
   {
     // craft a tx packet and stuff it
-    frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-    ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-    ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+    fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
+    ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+    ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
     ts_submsg->header.len = 8;
     fr_time_t t = fr_time_now();
     memcpy(ts_submsg->contents, &t, 8);
     submsg_wpos += 4 + 8;
   }
   // append the data frag submessage ////////////////////////////////////////
-  frudp_submsg_data_frag_t *d =
-    (frudp_submsg_data_frag_t *)&msg->submsgs[submsg_wpos];
-  d->header.id = FRUDP_SUBMSG_ID_DATA_FRAG;
-  d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
-  d->header.len = sizeof(frudp_submsg_data_frag_t) + frag_used_len;
+  fr_submsg_data_frag_t *d =
+    (fr_submsg_data_frag_t *)&msg->submsgs[submsg_wpos];
+  d->header.id = FR_SUBMSG_ID_DATA_FRAG;
+  d->header.flags = FR_FLAGS_LITTLE_ENDIAN;
+  d->header.len = sizeof(fr_submsg_data_frag_t) + frag_used_len;
   d->extraflags = 0;
   d->octets_to_inline_qos = 28;
   d->writer_sn = pub->next_sn;
@@ -423,9 +423,9 @@ bool frudp_publish_user_msg_frag(
   /*
   if (frag_num == 1)
   {
-    frudp_encapsulation_scheme_t *scheme =
-      (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
-    scheme->scheme = freertps_htons(FRUDP_SCHEME_CDR_LE);
+    fr_encapsulation_scheme_t *scheme =
+      (fr_encapsulation_scheme_t *)((uint8_t *)d->data);
+    scheme->scheme = freertps_htons(FR_SCHEME_CDR_LE);
     scheme->options = 0;
   }
   */
@@ -436,9 +436,9 @@ bool frudp_publish_user_msg_frag(
     (uint8_t *)&msg->submsgs[submsg_wpos] - (uint8_t *)msg;
   //printf("rtps udp payload = %d bytes\n", (int)udp_payload_len);
   // now, iterate through all matched-writers and send the message as needed
-  for (int i = 0; i < g_frudp_num_writers; i++)
+  for (int i = 0; i < g_fr_num_writers; i++)
   {
-    frudp_writer_t *w = &g_frudp_writers[i];
+    fr_writer_t *w = &g_fr_writers[i];
     if (w->writer_eid.u == pub->writer_eid.u)
     {
       // we want to send here. if we haven't already sent to the same
@@ -447,10 +447,10 @@ bool frudp_publish_user_msg_frag(
       // and don't re-multicast to the same domain
       d->reader_id = w->reader_guid.eid; // todo copy here...
       d->writer_id = w->writer_eid;
-      frudp_part_t *part = frudp_part_find(&w->reader_guid.prefix);
+      fr_part_t *part = fr_part_find(&w->reader_guid.prefix);
       if (!part)
         continue; // shouldn't happen; this implies inconsistency somewhere
-      frudp_tx(part->default_unicast_locator.addr.udp4.addr,
+      fr_tx(part->default_unicast_locator.addr.udp4.addr,
                part->default_unicast_locator.port,
                (const uint8_t *)msg,
                udp_payload_len);
@@ -459,7 +459,7 @@ bool frudp_publish_user_msg_frag(
   return true;
 }
 
-bool frudp_publish_user_msg(frudp_pub_t *pub,
+bool fr_publish_user_msg(fr_pub_t *pub,
     const uint8_t *payload, const uint32_t payload_len)
 {
   //printf("publish user msg %d bytes\n", (int)payload_len);
@@ -471,27 +471,27 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
     return false;
   }
   // craft a tx packet and stuff it
-  frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_pub_user_tx_buf);
+  fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_pub_user_tx_buf);
   fr_time_t t = fr_time_now();
   uint16_t submsg_wpos = 0;
-  frudp_submsg_t *ts_submsg = (frudp_submsg_t *)&msg->submsgs[submsg_wpos];
-  ts_submsg->header.id = FRUDP_SUBMSG_ID_INFO_TS;
-  ts_submsg->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN;
+  fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
+  ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
   ts_submsg->header.len = 8;
   memcpy(ts_submsg->contents, &t, 8);
   submsg_wpos += 4 + 8;
   // now, append the data submessage ////////////////////////////////////////
-  frudp_submsg_data_t *d = (frudp_submsg_data_t *)&msg->submsgs[submsg_wpos];
-  d->header.id = FRUDP_SUBMSG_ID_DATA;
-  d->header.flags = FRUDP_FLAGS_LITTLE_ENDIAN |
-                    FRUDP_FLAGS_DATA_PRESENT;
-  d->header.len = sizeof(frudp_submsg_data_t) /*+ 4*/ + payload_len;
+  fr_submsg_data_t *d = (fr_submsg_data_t *)&msg->submsgs[submsg_wpos];
+  d->header.id = FR_SUBMSG_ID_DATA;
+  d->header.flags = FR_FLAGS_LITTLE_ENDIAN |
+                    FR_FLAGS_DATA_PRESENT;
+  d->header.len = sizeof(fr_submsg_data_t) /*+ 4*/ + payload_len;
   d->extraflags = 0;
   d->octets_to_inline_qos = 16;
   d->writer_sn = pub->next_sn;
-  frudp_encapsulation_scheme_t *scheme =
-    (frudp_encapsulation_scheme_t *)((uint8_t *)d->data);
-  scheme->scheme = freertps_htons(FRUDP_SCHEME_CDR_LE);
+  fr_encapsulation_scheme_t *scheme =
+    (fr_encapsulation_scheme_t *)((uint8_t *)d->data);
+  scheme->scheme = freertps_htons(FR_SCHEME_CDR_LE);
   scheme->options = 0;
   uint8_t *outbound_payload = (uint8_t *)(&d->data[4]);
   // todo: bounds checking
@@ -516,9 +516,9 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
 
   ///////////////////////////////////////////////////////////////////////
   /*
-  frudp_submsg_heartbeat_t *hb = 
-    (frudp_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
-  hb->header.id = FRUDP_SUBMSG_ID_HEARTBEAT;
+  fr_submsg_heartbeat_t *hb = 
+    (fr_submsg_heartbeat_t *)&msg->submsgs[submsg_wpos];
+  hb->header.id = FR_SUBMSG_ID_HEARTBEAT;
   hb->header.flags = 0x3; // todo: spell this out
   hb->header.len = 28;
   hb->first_sn.low = 1; // todo
@@ -535,9 +535,9 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
   //printf("rtps udp payload = %d bytes\n", (int)udp_payload_len);
 
   // now, iterate through all matched-writers and send the message as needed
-  for (int i = 0; i < g_frudp_num_writers; i++)
+  for (int i = 0; i < g_fr_num_writers; i++)
   {
-    frudp_writer_t *w = &g_frudp_writers[i];
+    fr_writer_t *w = &g_fr_writers[i];
     if (w->writer_eid.u == pub->writer_eid.u)
     {
       // we want to send here. if we haven't already sent to the same
@@ -546,14 +546,14 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       // and don't re-multicast to the same domain
       d->reader_id = w->reader_guid.eid; // todo copy here...
       d->writer_id = w->writer_eid;
-      frudp_part_t *part = frudp_part_find(&w->reader_guid.prefix);
+      fr_part_t *part = fr_part_find(&w->reader_guid.prefix);
       if (!part)
         continue; // shouldn't happen; this implies inconsistency somewhere
       // also, update the reader/writer ID's for the heartbeat submsg
       // actually.. i don't think we have to send heartbeats to best-effort..
       //hb->reader_id = d->reader_id;
       //hb->writer_id = d->writer_id;
-      //frudp_locator_t *loc = part->default_unicast_locator;
+      //fr_locator_t *loc = part->default_unicast_locator;
       // todo: more than ipv4
       /*
       for (int j = 0; j < udp_payload_len; j++)
@@ -569,11 +569,11 @@ bool frudp_publish_user_msg(frudp_pub_t *pub,
       /*
       printf("tx %d bytes to ", 
              udp_payload_len);
-      frudp_print_guid(&w->reader_guid);
+      fr_print_guid(&w->reader_guid);
       printf("\r\n");
       */
       //printf("tx 
-      frudp_tx(part->default_unicast_locator.addr.udp4.addr,
+      fr_tx(part->default_unicast_locator.addr.udp4.addr,
                part->default_unicast_locator.port,
                (const uint8_t *)msg,
                udp_payload_len);

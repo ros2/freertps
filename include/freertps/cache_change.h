@@ -1,8 +1,8 @@
 #ifndef FREERTPS_CACHE_CHANGE_H
 #define FREERTPS_CACHE_CHANGE_H
 
-typedef struct cache_change
+typedef struct fr_cache_change
 {
-} cache_change_t;
+} fr_cache_change_t;
 
 #endif 

@@ -6,26 +6,26 @@
 
 
 // default multicast group is 239.255.0.1
-#define FRUDP_DEFAULT_MCAST_GROUP 0xefff0001
-//#define FRUDP_DOMAIN_ID  0
+#define FR_DEFAULT_MCAST_GROUP 0xefff0001
+//#define FR_DOMAIN_ID  0
 
-#define FRUDP_MAX_PUBS 5
-#define FRUDP_MAX_SUBS 5
-#define FRUDP_MAX_READERS 50
-#define FRUDP_MAX_WRITERS 50
-#define FRUDP_DISCO_MAX_PARTS 50
+#define FR_MAX_PUBS 5
+#define FR_MAX_SUBS 5
+#define FR_MAX_READERS 50
+#define FR_MAX_WRITERS 50
+#define FR_DISCO_MAX_PARTS 50
 
-#define FRUDP_MAX_TOPIC_NAME_LEN 128
-#define FRUDP_MAX_TYPE_NAME_LEN  128
+#define FR_MAX_TOPIC_NAME_LEN 128
+#define FR_MAX_TYPE_NAME_LEN  128
 
 typedef struct
 {
-  frudp_guid_prefix_t guid_prefix;
+  fr_guid_prefix_t guid_prefix;
   int participant_id;
   uint32_t domain_id;
   uint32_t unicast_addr;
-} frudp_config_t;
-extern frudp_config_t g_frudp_config;
+} fr_config_t;
+extern fr_config_t g_fr_config;
 
 #define VERBOSE_MSG_RX
 //#define VERBOSE_HEARTBEAT

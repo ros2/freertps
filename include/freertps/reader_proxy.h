@@ -1,12 +1,21 @@
 #ifndef FREERTPS_READER_PROXY_H
 #define FREERTPS_READER_PROXY_H
 
-typedef struct reader_proxy_list
+#include "freertps/id.h"
+#include "freertps/part.h"
+
+typedef struct fr_reader_proxy
 {
-  frudp_guid_t remote_reader_guid;
+  fr_guid_t remote_reader_guid;
   bool expects_inline_qos;
-  frudp_part_t *participant; // participant this reader proxy belongs to
-  struct reader_proxy *next; // next element in list
-} reader_proxy_list_t;
+  fr_part_t *participant; // participant this reader proxy belongs to
+} fr_reader_proxy_t;
+
+typedef struct fr_reader_proxy_list
+{
+  fr_reader_proxy_t rp;
+  fr_reader_proxy_t *next;
+} fr_reader_proxy_list_t;
 
 #endif
+

@@ -3,12 +3,12 @@
 #include <string.h>
 #include "freertps/bswap.h"
 
-static unsigned g_frudp_next_user_eid = 1;
+static unsigned g_fr_next_user_eid = 1;
 
-const frudp_guid_t g_frudp_guid_unknown = { .prefix = { .prefix = {0} },
-                                            .eid = { .u = 0 } };
+const fr_guid_t g_fr_guid_unknown = { .prefix = { .prefix = {0} },
+                                      .eid = { .u = 0 } };
 
-const char *frudp_vendor(const frudp_vid_t vid)
+const char *fr_vendor(const fr_vid_t vid)
 {
   switch (vid)
   {
@@ -33,27 +33,27 @@ const char *frudp_vendor(const frudp_vid_t vid)
   }
 }
 
-bool frudp_guid_prefix_identical(frudp_guid_prefix_t * const a,
-                                 frudp_guid_prefix_t * const b)
+bool fr_guid_prefix_identical(fr_guid_prefix_t * const a,
+                              fr_guid_prefix_t * const b)
 {
-  for (int i = 0; i < FRUDP_GUID_PREFIX_LEN; i++)
+  for (int i = 0; i < FR_GUID_PREFIX_LEN; i++)
     if (a->prefix[i] != b->prefix[i])
       return false;
   return true;
 }
 
-bool frudp_guid_identical(const frudp_guid_t * const a,
-                          const frudp_guid_t * const b)
+bool fr_guid_identical(const fr_guid_t * const a,
+                       const fr_guid_t * const b)
 {
   if (a->eid.u != b->eid.u)
     return false;
-  for (int i = 0; i < FRUDP_GUID_PREFIX_LEN; i++)
+  for (int i = 0; i < FR_GUID_PREFIX_LEN; i++)
     if (a->prefix.prefix[i] != b->prefix.prefix[i])
       return false;
   return true;
 }
 
-void frudp_print_guid_prefix(const frudp_guid_prefix_t *p)
+void fr_print_guid_prefix(const fr_guid_prefix_t *p)
 {
   printf("%02x%02x%02x%02x:%02x%02x%02x%02x:%02x%02x%02x%02x",
          (unsigned)p->prefix[0],
@@ -70,27 +70,27 @@ void frudp_print_guid_prefix(const frudp_guid_prefix_t *p)
          (unsigned)p->prefix[11]);
 }
 
-void frudp_stuff_guid(frudp_guid_t *guid,
-                      const frudp_guid_prefix_t *prefix,
-                      const frudp_eid_t *id)
+void fr_stuff_guid(fr_guid_t *guid,
+                   const fr_guid_prefix_t *prefix,
+                   const fr_eid_t *id)
 {
-  memcpy(&guid->prefix, prefix, sizeof(frudp_guid_prefix_t));
+  memcpy(&guid->prefix, prefix, sizeof(fr_guid_prefix_t));
   guid->eid = *id;
 }
 
-void frudp_print_guid(const frudp_guid_t *guid)
+void fr_print_guid(const fr_guid_t *guid)
 {
-  frudp_print_guid_prefix(&guid->prefix);
+  fr_print_guid_prefix(&guid->prefix);
   printf(":%08x", (unsigned)freertps_htonl(guid->eid.u));
 }
 
-frudp_eid_t frudp_create_user_id(const uint8_t entity_kind)
+fr_eid_t fr_create_user_id(const uint8_t entity_kind)
 {
-  printf("frudp_create_user_id()\r\n");
-  frudp_eid_t eid;
-  eid.s.kind = entity_kind; // entity kind must be set by caller of this functionmust be overwritten by FRUDP_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
+  printf("fr_create_user_id()\r\n");
+  fr_eid_t eid;
+  eid.s.kind = entity_kind; // entity kind must be set by caller of this functionmust be overwritten by FR_ENTITY_KIND_USER_READER_NO_KEY; // has key? dunno
   eid.s.key[0] = 0;
   eid.s.key[1] = 0; // todo: >8 bit ID's
-  eid.s.key[2] = g_frudp_next_user_eid++;
+  eid.s.key[2] = g_fr_next_user_eid++;
   return eid;
 }

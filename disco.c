@@ -2,37 +2,37 @@
 #include "freertps/spdp.h"
 #include "freertps/sedp.h"
 
-uint8_t g_frudp_disco_tx_buf[FRUDP_DISCO_TX_BUFLEN];
-uint16_t g_frudp_disco_tx_buf_wpos;
+uint8_t g_fr_disco_tx_buf[FR_DISCO_TX_BUFLEN];
+uint16_t g_fr_disco_tx_buf_wpos;
 
-frudp_part_t g_frudp_disco_parts[FRUDP_DISCO_MAX_PARTS];
-int g_frudp_disco_num_parts = 0;
+fr_part_t g_fr_disco_parts[FR_DISCO_MAX_PARTS];
+int g_fr_disco_num_parts = 0;
 
 ////////////////////////////////////////////////////////////////
 
-void frudp_disco_init()
+void fr_disco_init()
 {
   FREERTPS_INFO("discovery init\r\n");
-  frudp_spdp_init();
-  frudp_sedp_init();
+  fr_spdp_init();
+  fr_sedp_init();
 }
 
-void frudp_disco_start()
+void fr_disco_start()
 {
   FREERTPS_INFO("discovery start\r\n");
-  frudp_spdp_start();
-  frudp_sedp_start();
+  fr_spdp_start();
+  fr_sedp_start();
 }
 
-void frudp_disco_fini()
+void fr_disco_fini()
 {
   FREERTPS_INFO("discovery fini\r\n");
-  frudp_spdp_fini();
-  frudp_sedp_fini();
+  fr_spdp_fini();
+  fr_sedp_fini();
 }
 
-void frudp_disco_tick()
+void fr_disco_tick()
 {
-  frudp_spdp_tick();
-  frudp_sedp_tick();
+  fr_spdp_tick();
+  fr_sedp_tick();
 }

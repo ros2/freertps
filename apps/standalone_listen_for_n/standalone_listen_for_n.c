@@ -28,11 +28,11 @@ int main(int argc, char **argv)
   freertps_create_sub("chatter", 
                       "std_msgs::msg::dds_::String_",
                       chatter_cb);
-  frudp_disco_start(); // we're alive now; announce ourselves to the world
+  fr_disco_start(); // we're alive now; announce ourselves to the world
   while (freertps_system_ok())
   {
-    frudp_listen(100000);
-    frudp_disco_tick(); // stayin' alive FLOOR-TOM FLOOR-TOM CYMBAL-CRASH
+    fr_listen(100000);
+    fr_disco_tick(); // stayin' alive FLOOR-TOM FLOOR-TOM CYMBAL-CRASH
     fr_time_t t = fr_time_now();
     fr_duration_t dt = fr_time_diff(&t, &t_start);
     double dt_secs = fr_duration_double(&dt);
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
         dt_secs > max_seconds)
       break;
   }
-  frudp_fini();
+  fr_fini();
   bool success = n_msg_recv >= target_n_msg_recv;
   if (success)
     printf("HOORAY, I received all the messages.\n");

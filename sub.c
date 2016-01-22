@@ -4,24 +4,24 @@
 #include "freertps/sedp.h"
 #include "freertps/bswap.h"
 
-frudp_sub_t g_frudp_subs[FRUDP_MAX_SUBS];
-uint32_t g_frudp_num_subs = 0;
+fr_sub_t g_fr_subs[FR_MAX_SUBS];
+uint32_t g_fr_num_subs = 0;
 
-frudp_reader_t g_frudp_readers[FRUDP_MAX_READERS];
-uint32_t g_frudp_num_readers = 0;
+fr_reader_t g_fr_readers[FR_MAX_READERS];
+uint32_t g_fr_num_readers = 0;
 
 ///////////////////////////////////////////////////////////////////////////
 
-void frudp_add_reader(const frudp_reader_t *match)
+void fr_add_reader(const fr_reader_t *match)
 {
-  if (g_frudp_num_readers >= FRUDP_MAX_READERS)
+  if (g_fr_num_readers >= FR_MAX_READERS)
     return;
   // make sure that in the meantime, we haven't already added this
   bool found = false;
-  for (unsigned j = 0; !found && j < g_frudp_num_readers; j++)
+  for (unsigned j = 0; !found && j < g_fr_num_readers; j++)
   {
-    frudp_reader_t *r = &g_frudp_readers[j];
-    if (frudp_guid_identical(&r->writer_guid, &match->writer_guid))
+    fr_reader_t *r = &g_fr_readers[j];
+    if (fr_guid_identical(&r->writer_guid, &match->writer_guid))
       found = true;
   }
   if (found)
@@ -30,24 +30,23 @@ void frudp_add_reader(const frudp_reader_t *match)
     return;
   }
 
-  g_frudp_readers[g_frudp_num_readers] = *match;
-  g_frudp_num_readers++;
+  g_fr_readers[g_fr_num_readers] = *match;
+  g_fr_num_readers++;
   /*
   printf("add_reader(");
-  frudp_print_guid(&match->writer_guid);
+  fr_print_guid(&match->writer_guid);
   printf(" => %08x)\r\n", (unsigned)freertps_htonl(match->reader_eid.u));
   */
 }
 
-void frudp_add_user_sub(const char *topic_name,
+void fr_add_user_sub(const char *topic_name,
                         const char *type_name,
                         freertps_msg_cb_t msg_cb)
 {
-  frudp_eid_t sub_eid = frudp_create_user_id
-                          (FRUDP_ENTITY_KIND_USER_READER_NO_KEY);
-  printf("frudp_add_user_sub(%s, %s) on EID 0x%08x\r\n",
+  fr_eid_t sub_eid = fr_create_user_id(FR_ENTITY_KIND_USER_READER_NO_KEY);
+  printf("fr_add_user_sub(%s, %s) on EID 0x%08x\r\n",
       topic_name, type_name, (unsigned)freertps_htonl(sub_eid.u));
-  frudp_sub_t sub;
+  fr_sub_t sub;
   // for now, just copy the pointers. maybe in the future we can/should have
   // an option for storage of various kind (static, malloc, etc.) for copies.
   sub.topic_name = topic_name;
@@ -56,38 +55,38 @@ void frudp_add_user_sub(const char *topic_name,
   sub.msg_cb = msg_cb;
   sub.data_cb = NULL;
   sub.reliable = false;
-  frudp_add_sub(&sub);
+  fr_add_sub(&sub);
   //sedp_publish_sub(&sub); // can't do this yet; spdp hasn't started bcast
 }
 
-void frudp_add_sub(const frudp_sub_t *s)
+void fr_add_sub(const fr_sub_t *s)
 {
-  if (g_frudp_num_subs >= FRUDP_MAX_SUBS - 1)
+  if (g_fr_num_subs >= FR_MAX_SUBS - 1)
     return; // no room. sorry.
-  g_frudp_subs[g_frudp_num_subs] = *s;
+  g_fr_subs[g_fr_num_subs] = *s;
   printf("sub %d: reader_eid = 0x%08x\r\n",
-      g_frudp_num_subs, freertps_htonl((unsigned)s->reader_eid.u));
-  g_frudp_num_subs++;
-  //frudp_subscribe(s->entity_id, g_frudp_entity_id_unknown, NULL, s->msg_cb);
+      g_fr_num_subs, freertps_htonl((unsigned)s->reader_eid.u));
+  g_fr_num_subs++;
+  //fr_subscribe(s->entity_id, g_fr_entity_id_unknown, NULL, s->msg_cb);
 }
 
-void frudp_print_readers()
+void fr_print_readers()
 {
-  for (unsigned i = 0; i < g_frudp_num_readers; i++)
+  for (unsigned i = 0; i < g_fr_num_readers; i++)
   {
-    frudp_reader_t *match = &g_frudp_readers[i];
+    fr_reader_t *match = &g_fr_readers[i];
     printf("    sub %d: writer = ", (int)i); //%08x, reader = %08x\n",
-    frudp_print_guid(&match->writer_guid);
+    fr_print_guid(&match->writer_guid);
     printf(" => %08x\r\n", (unsigned)freertps_htonl(match->reader_eid.u));
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////
 /*
-static void frudp_add_userland_subscription(
-                                frudp_userland_subscription_request_t *s);
-frudp_userland_subscription_request_t g_frudp_userland_subs[FRUDP_MAX_USERLAND_SUBS];
-uint32_t g_frudp_num_userland_subs = 0;
+static void fr_add_userland_subscription(
+                                fr_userland_subscription_request_t *s);
+fr_userland_subscription_request_t g_fr_userland_subs[FR_MAX_USERLAND_SUBS];
+uint32_t g_fr_num_userland_subs = 0;
 */
 ///////////////////////////////////////////////////////////////////////////
 
@@ -98,20 +97,20 @@ OBJECT AT SOME POINT WHEN WE ACTUALLY HEAR ABOUT OTHER ENDPOINTS.
 */
 
 /*
-bool frudp_subscribe(const frudp_entity_id_t reader_id,
-                     const frudp_entity_id_t writer_id,
-                     const frudp_rx_data_cb_t data_cb,
-                     const freertps_msg_cb_t msg_cb)
+bool fr_subscribe(const fr_entity_id_t reader_id,
+                  const fr_entity_id_t writer_id,
+                  const fr_rx_data_cb_t data_cb,
+                  const freertps_msg_cb_t msg_cb)
 {
-  if (g_frudp_subs_used >= FRUDP_MAX_SUBSCRIPTIONS)
+  if (g_fr_subs_used >= FR_MAX_SUBSCRIPTIONS)
     return false;
-  frudp_subscription_t *sub = &g_frudp_subs[g_frudp_subs_used];
+  fr_subscription_t *sub = &g_fr_subs[g_fr_subs_used];
   sub->reader_id = reader_id;
   sub->writer_id = writer_id;
   sub->data_cb = data_cb;
   sub->msg_cb = msg_cb;
   sub->max_rx_sn.low = sub->max_rx_sn.high = 0;
-  g_frudp_subs_used++;
+  g_fr_subs_used++;
   return true;
 }
 */

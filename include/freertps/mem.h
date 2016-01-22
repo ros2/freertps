@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-void *freertps_malloc(size_t size);
-void freertps_free(void *ptr);
+void *fr_malloc(size_t size);
+void  fr_free(void *ptr);
 
 #endif

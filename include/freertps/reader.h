@@ -1,12 +1,12 @@
-#ifndef READER_H
-#define READER_H
+#ifndef FREERTPS_READER_H
+#define FREERTPS_READER_H
 
 #include "freertps/history_cache.h"
 
-typedef struct reader
+typedef struct fr_reader
 {
   // function pointers to anything?
-  history_cache_t hc;
-} reader_t;
+  fr_history_cache_t hc;
+} fr_reader_t;
 
 #endif

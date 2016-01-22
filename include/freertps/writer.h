@@ -1,24 +1,24 @@
-#ifndef WRITER_H
-#define WRITER_H
+#ifndef FREERTPS_WRITER_H
+#define FREERTPS_WRITER_H
 
 #include "freertps/history_cache.h"
 #include "freertps/types.h"
 #include "freertps/reader_proxy.h"
 #include <stdbool.h>
 
-typedef struct writer
+typedef struct fr_writer
 {
   // function pointers to:
   // new_change()
-  history_cache_t hc;
+  fr_history_cache_t hc;
   bool push_mode;
   bool reliable;
-  seq_num_t last_change_seq_num;
-  reader_proxy_list_t *matched_readers; // linked-list ftw
-} writer_t;
+  fr_seq_num_t last_change_seq_num;
+  fr_reader_proxy_list_t *matched_readers; // linked-list ftw
+} fr_writer_t;
 
-writer_t *writer_create();
-void writer_destroy(writer_t *w);
-void writer_add_reader_proxy(reader_proxy_t *rp);
+fr_writer_t *fr_writer_create();
+void fr_writer_destroy(fr_writer_t *w);
+void fr_writer_add_reader_proxy(fr_reader_proxy_t *rp);
 
 #endif

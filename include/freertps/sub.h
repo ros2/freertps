@@ -1,5 +1,5 @@
-#ifndef SUBSCRIPTION_H
-#define SUBSCRIPTION_H
+#ifndef FREERTPS_SUBSCRIPTION_H
+#define FREERTPS_SUBSCRIPTION_H
 
 #include "freertps/id.h"
 #include "freertps/udp.h"
@@ -15,50 +15,50 @@
 // with a #define switch somewhere to have it use more memory for string
 // buffers, etc.
 
-void frudp_add_user_sub(const char *topic_name,
-                        const char *type_name,
-                        freertps_msg_cb_t msg_cb);
+void fr_add_user_sub(const char *topic_name,
+                     const char *type_name,
+                     freertps_msg_cb_t msg_cb);
 
 // this is the private subscribe function used internally... should be hidden
 // eventually.
 /*
-bool frudp_subscribe(const frudp_entity_id_t reader_id,
-                     const frudp_entity_id_t writer_id,
-                     const frudp_rx_data_cb_t data_cb,
-                     const freertps_msg_cb_t msg_cb);
+bool fr_subscribe(const fr_entity_id_t reader_id,
+                  const fr_entity_id_t writer_id,
+                  const fr_rx_data_cb_t data_cb,
+                  const freertps_msg_cb_t msg_cb);
 */
 
 typedef struct
 {
   const char *topic_name;
   const char *type_name;
-  frudp_eid_t reader_eid;
-  frudp_rx_data_cb_t data_cb;
+  fr_eid_t reader_eid;
+  fr_rx_data_cb_t data_cb;
   freertps_msg_cb_t msg_cb;
   bool reliable;
-} frudp_sub_t;
+} fr_sub_t;
 
-void frudp_add_sub(const frudp_sub_t *s);
+void fr_add_sub(const fr_sub_t *s);
 
-extern frudp_sub_t g_frudp_subs[FRUDP_MAX_SUBS];
-extern uint32_t g_frudp_num_subs;
+extern fr_sub_t g_fr_subs[FR_MAX_SUBS];
+extern uint32_t g_fr_num_subs;
 
 typedef struct
 {
   bool reliable;
-  frudp_guid_t writer_guid;
-  frudp_eid_t reader_eid;
-  seq_num_t max_rx_sn;
-  frudp_rx_data_cb_t data_cb;
+  fr_guid_t writer_guid;
+  fr_eid_t reader_eid;
+  fr_seq_num_t max_rx_sn;
+  fr_rx_data_cb_t data_cb;
   freertps_msg_cb_t msg_cb;
-} frudp_reader_t;
+} fr_reader_t;
 
 // not great to have these freely available. someday hide these.
-extern frudp_reader_t g_frudp_readers[FRUDP_MAX_READERS];
-extern uint32_t g_frudp_num_readers;
+extern fr_reader_t g_fr_readers[FR_MAX_READERS];
+extern uint32_t g_fr_num_readers;
 
-void frudp_add_reader(const frudp_reader_t *reader);
+void fr_add_reader(const fr_reader_t *reader);
 
-void frudp_print_readers();
+void fr_print_readers();
 
 #endif

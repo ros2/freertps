@@ -1,16 +1,16 @@
 #include "freertps/writer.h"
 #include "freertps/mem.h"
 
-writer_t *writer_create()
+fr_writer_t *fr_writer_create()
 {
-  writer_t *w = freertps_malloc(sizeof(writer_t));
+  fr_writer_t *w = fr_malloc(sizeof(fr_writer_t));
   w->push_mode = false;
   w->reliable = false;
-  w->last_change_seq_num = g_freertps_seq_num_unknown;
+  w->last_change_seq_num = g_fr_seq_num_unknown;
   return w;
 }
 
-void writer_destroy(writer_t *w)
+void fr_writer_destroy(fr_writer_t *w)
 {
-  freertps_free(w);
+  fr_free(w);
 }

@@ -4,19 +4,20 @@
 #include "types.h"
 #include "cache_change.h"
 
-typedef struct history_cache
+typedef struct fr_history_cache
 {
-  cache_change_t *cc_rptr, *cc_wptr; // linked-list ftw
-} history_cache_t;
+  fr_cache_change_t *cc_rptr, *cc_wptr; // linked-list ftw
+} fr_history_cache_t;
 
 // prefix: hc = HistoryCache (as defined in the RTPS spec)
-history_cache_t *hc_create();
+fr_history_cache_t *fr_hc_create();
 
 // these functions are defined in the spec
-void hc_add_change(history_cache_t *hc, cache_change_t *cc);
-void hc_remove_change(history_cache_t *hc, cache_change_t *cc);
-cache_change_t *hc_get(history_cache_t *hc);
-seq_num_t hc_max(history_cache_t *hc);
-seq_num_t hc_min(history_cache_t *hc);
+void fr_hc_add_change(fr_history_cache_t *hc, fr_cache_change_t *cc);
+void fr_hc_remove_change(fr_history_cache_t *hc, fr_cache_change_t *cc);
+
+fr_cache_change_t *fr_hc_get(fr_history_cache_t *hc);
+fr_seq_num_t fr_hc_max(fr_history_cache_t *hc);
+fr_seq_num_t fr_hc_min(fr_history_cache_t *hc);
 
 #endif
