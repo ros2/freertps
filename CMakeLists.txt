@@ -64,7 +64,11 @@ add_library(freertps disco.c
                      pub.c 
                      time.c 
                      udp.c
-                     psm/ser.c)
+                     writer.c
+                     reader.c
+                     mem.c
+                     data_reader.c
+                     data_writer.c)
 target_link_libraries(freertps freertps_system_${SYSTEM})
 
 include_directories(build/msgs)
