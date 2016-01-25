@@ -545,7 +545,7 @@ void sedp_publish_pub(fr_pub_t *pub)
 void sedp_add_builtin_endpoints(fr_part_t *part)
 {
   printf("adding endpoints for ");
-  fr_print_guid_prefix(&part->guid_prefix);
+  fr_guid_print_prefix(&part->guid_prefix);
   printf("\r\n");
 
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE

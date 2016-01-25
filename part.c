@@ -46,7 +46,7 @@ bool fr_part_create()
   //fr_disco_init();
   g_fr_participant_init_complete = true;
   printf("prefix: ");
-  fr_print_guid_prefix(&g_fr_config.guid_prefix);
+  fr_guid_print_prefix(&g_fr_config.guid_prefix);
   printf("\n");
   return true;
 }

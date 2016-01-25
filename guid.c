@@ -53,7 +53,7 @@ bool fr_guid_identical(const fr_guid_t * const a,
   return true;
 }
 
-void fr_print_guid_prefix(const fr_guid_prefix_t *p)
+void fr_guid_print_prefix(const fr_guid_prefix_t *p)
 {
   printf("%02x%02x%02x%02x:%02x%02x%02x%02x:%02x%02x%02x%02x",
          (unsigned)p->prefix[0],
@@ -78,9 +78,9 @@ void fr_stuff_guid(fr_guid_t *guid,
   guid->eid = *id;
 }
 
-void fr_print_guid(const fr_guid_t *guid)
+void fr_guid_print(const fr_guid_t *guid)
 {
-  fr_print_guid_prefix(&guid->prefix);
+  fr_guid_print_prefix(&guid->prefix);
   printf(":%08x", (unsigned)freertps_htonl(guid->eid.u));
 }
 
