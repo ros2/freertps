@@ -1,18 +1,23 @@
 #ifndef FREERTPS_WRITER_H
 #define FREERTPS_WRITER_H
 
+#include <stdbool.h>
+#include "freertps/endpoint.h"
 #include "freertps/history_cache.h"
 #include "freertps/seq_num.h"
 #include "freertps/reader_proxy.h"
-#include <stdbool.h>
+#include "freertps/time.h"
 
 typedef struct fr_writer
 {
-  //struct fr_endpoint endpoint;
-  bool reliable;
+  struct fr_endpoint endpoint;
   bool push_mode;
-  fr_seq_num_t last_change_seq_num;
-  struct fr_container_t *matched_readers;
+  fr_duration_t heartbeat_period;
+  fr_duration_t nack_response_delay;
+  fr_duration_t nack_suppression_duration;
+  fr_duration_t resend_data_period;
+  fr_seq_num_t last_change_sequence_number;
+  struct fr_container_t *matched_readers; // container of matched_readers
   struct fr_history_cache writer_cache;
 } fr_writer_t;
 

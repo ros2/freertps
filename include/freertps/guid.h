@@ -27,7 +27,7 @@ typedef struct
   uint8_t prefix[FR_GUID_PREFIX_LEN];
 } fr_guid_prefix_t;
 
-typedef struct
+typedef struct fr_guid
 {
   fr_guid_prefix_t prefix;
   fr_eid_t eid;

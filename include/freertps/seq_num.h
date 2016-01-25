@@ -1,9 +1,9 @@
-#ifndef FREERTPS_SEQ_NUM_H
-#define FREERTPS_SEQ_NUM_H
+#ifndef FREERTPS_SEQUENCE_NUMBER_H
+#define FREERTPS_SEQUENCE_NUMBER_H
 
 #include <stdint.h>
 
-typedef struct
+typedef struct fr_sequence_number
 {
   int32_t high;
   uint32_t low;
