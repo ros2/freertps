@@ -4,9 +4,8 @@
 #include "freertps/time.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "freertps/id.h"
-#include "freertps/types.h"
-//#include "freertps/psm.h"
+#include "freertps/guid.h"
+#include "freertps/seq_num.h"
 
 /////////////////////////////////////////////////////////////////////
 // TYPES

@@ -1,5 +1,5 @@
-#ifndef FR_ID_H
-#define FR_ID_H
+#ifndef FR_GUID_H
+#define FR_GUID_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -51,8 +51,8 @@ void fr_stuff_guid(fr_guid_t *guid,
 typedef uint16_t fr_vid_t;
 const char *fr_vendor(const fr_vid_t vid);
 
-void fr_print_guid_prefix(const fr_guid_prefix_t *guid_prefix);
-void fr_print_guid(const fr_guid_t *guid);
+void fr_guid_print_prefix(const fr_guid_prefix_t *guid_prefix);
+void fr_guid_print(const fr_guid_t *guid);
 
 fr_eid_t fr_create_user_id(const uint8_t entity_kind);
 

@@ -1,7 +1,7 @@
 #ifndef FREERTPS_HC_H
 #define FREERTPS_HC_H
 
-#include "freertps/types.h"
+#include "freertps/seq_num.h"
 #include "freertps/cache_change.h"
 #include "freertps/container.h"
 

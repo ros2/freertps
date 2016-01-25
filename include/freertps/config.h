@@ -2,7 +2,7 @@
 #define FREERTPS_CONFIG_H
 
 #include <stdint.h>
-#include "freertps/id.h"
+#include "freertps/guid.h"
 
 
 // default multicast group is 239.255.0.1

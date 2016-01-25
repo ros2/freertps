@@ -57,7 +57,7 @@ endif()
 # dinosaur modules: pub.c sub.c
 add_library(freertps disco.c
                      freertps.c 
-                     id.c 
+                     guid.c
                      part.c 
                      spdp.c 
                      sedp.c 

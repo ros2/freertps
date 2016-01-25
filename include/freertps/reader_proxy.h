@@ -1,7 +1,7 @@
 #ifndef FREERTPS_READER_PROXY_H
 #define FREERTPS_READER_PROXY_H
 
-#include "freertps/id.h"
+#include "freertps/guid.h"
 #include "freertps/part.h"
 
 typedef struct fr_reader_proxy

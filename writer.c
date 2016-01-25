@@ -4,6 +4,7 @@
 fr_writer_t *fr_writer_create(const char *topic_name, const char *type_name)
 {
   // todo: duplicate topic_name and type_name
+  // todo: set up container structure of fr_reader_proxy in matched_readers
   fr_writer_t *w = fr_malloc(sizeof(fr_writer_t));
   w->push_mode = false;
   w->reliable = false;
