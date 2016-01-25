@@ -25,9 +25,11 @@ int main(int argc, char **argv)
   const double max_seconds = atof(argv[2]);
   fr_time_t t_start = fr_time_now();
   freertps_system_init();
+/*
   freertps_create_sub("chatter", 
                       "std_msgs::msg::dds_::String_",
                       chatter_cb);
+  */
   fr_disco_start(); // we're alive now; announce ourselves to the world
   while (freertps_system_ok())
   {

@@ -17,7 +17,7 @@ typedef struct fr_writer
   fr_reader_proxy_list_t *matched_readers; // linked-list ftw
 } fr_writer_t;
 
-fr_writer_t *fr_writer_create();
+fr_writer_t *fr_writer_create(const char *topic_name, const char *type_name);
 void fr_writer_destroy(fr_writer_t *w);
 void fr_writer_add_reader_proxy(fr_reader_proxy_t *rp);
 

@@ -1,4 +1,5 @@
 #include "freertps/disco.h"
+#include "freertps/freertps.h"
 #include "freertps/spdp.h"
 #include "freertps/sedp.h"
 

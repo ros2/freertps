@@ -6,7 +6,7 @@
 #include <time.h>
 #include <inttypes.h>
 #include "freertps/bswap.h"
-#include "freertps/sub.h"
+//#include "freertps/sub.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
@@ -26,6 +26,7 @@ static void fr_spdp_rx_data(fr_receiver_state_t *rcvr,
                             const uint16_t scheme,
                             const uint8_t *data)
 {
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
 #ifdef SPDP_VERBOSE
   FREERTPS_INFO("    spdp_rx\n");
 #endif
@@ -212,6 +213,7 @@ static void fr_spdp_rx_data(fr_receiver_state_t *rcvr,
     else
       printf("not enough room to save the new participant.\n");
   }
+#endif
 }
 
 static fr_time_t fr_spdp_last_bcast;
@@ -221,6 +223,7 @@ void fr_spdp_init()
   FREERTPS_INFO("sdp init\r\n");
   fr_spdp_last_bcast.seconds = 0;
   fr_spdp_last_bcast.fraction = 0;
+#ifdef BROKEN
   fr_reader_t spdp_reader;
   spdp_reader.writer_guid = g_fr_guid_unknown;
   spdp_reader.reader_eid = g_spdp_reader_id;
@@ -230,6 +233,7 @@ void fr_spdp_init()
   spdp_reader.msg_cb = NULL;
   spdp_reader.reliable = false;
   fr_add_reader(&spdp_reader);
+#endif
   /*
   frudp_subscribe(g_frudp_entity_id_unknown,
                   g_spdp_writer_id,
@@ -273,6 +277,7 @@ uint16_t fr_append_submsg(fr_msg_t *msg, const uint16_t msg_wpos,
 
 void fr_spdp_bcast()
 {
+#ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   //FREERTPS_INFO("spdp bcast\n");
   fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_fr_disco_tx_buf);
   fr_time_t t = fr_time_now();
@@ -428,6 +433,7 @@ void fr_spdp_bcast()
         fr_mcast_builtin_port(),
         (const uint8_t *)msg, payload_len))
     FREERTPS_ERROR("couldn't transmit SPDP broadcast message\r\n");
+#endif
 }
 
 void fr_spdp_tick()

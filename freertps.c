@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include "freertps/freertps.h"
 #include "freertps/udp.h"
-#include "freertps/sub.h"
+//#include "freertps/sub.h"
 
 bool g_freertps_init_complete;
 
@@ -14,6 +14,8 @@ void freertps_perish_if(bool b, const char *msg)
     exit(1);
   }
 }
+
+#if 0
 
 // todo: return something
 void freertps_create_sub(const char *topic_name,
@@ -43,6 +45,7 @@ bool freertps_publish(fr_pub_t *pub,
   // todo: other physical layers...
   return fr_publish_user_msg(pub, msg, msg_len);
 }
+#endif
 
 void freertps_start()
 {

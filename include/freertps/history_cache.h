@@ -1,12 +1,14 @@
 #ifndef FREERTPS_HC_H
 #define FREERTPS_HC_H
 
-#include "types.h"
-#include "cache_change.h"
+#include "freertps/types.h"
+#include "freertps/cache_change.h"
+#include "freertps/container.h"
 
 typedef struct fr_history_cache
 {
-  fr_cache_change_t *cc_rptr, *cc_wptr; // linked-list ftw
+  fr_container_t changes;
+  //fr_cache_change_t *cc_rptr, *cc_wptr; // linked-list ftw
 } fr_history_cache_t;
 
 // prefix: hc = HistoryCache (as defined in the RTPS spec)

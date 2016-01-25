@@ -15,8 +15,10 @@ int main(int argc, char **argv)
   const double target_dt = atof(argv[2]);
   printf("sending %d messages at %.3f-second intervals\n", n_msg, target_dt);
   freertps_system_init();
+  /*
   fr_pub_t *pub = freertps_create_pub(
       "chatter", "std_msgs::msg::dds_::String_");
+  */
   fr_disco_start();
   char msg[64] = {0};
   for (int pub_count = 0;
@@ -29,7 +31,7 @@ int main(int argc, char **argv)
     uint32_t rtps_string_len = strlen(&msg[4]) + 1;
     uint32_t *str_len_ptr = (uint32_t *)msg;
     *str_len_ptr = rtps_string_len;
-    freertps_publish(pub, (uint8_t *)msg, rtps_string_len + 4);
+    //freertps_publish(pub, (uint8_t *)msg, rtps_string_len + 4);
     printf("sending: [%s]\r\n", &msg[4]);
   }
   fr_fini();

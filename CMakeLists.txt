@@ -54,14 +54,13 @@ if(NOT "${SYSTEM_EXTRA_LIBS}" STREQUAL "")
 endif()
 
 # build the portable library
+# dinosaur modules: pub.c sub.c
 add_library(freertps disco.c
                      freertps.c 
                      id.c 
                      part.c 
                      spdp.c 
                      sedp.c 
-                     sub.c 
-                     pub.c 
                      time.c 
                      udp.c
                      writer.c

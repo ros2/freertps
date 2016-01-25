@@ -1,8 +1,7 @@
 #include "freertps/udp.h"
+#include "freertps/freertps.h"
 #include "freertps/spdp.h"
 #include "freertps/disco.h"
-#include "freertps/sub.h"
-#include "freertps/pub.h"
 #include "freertps/bswap.h"
 #include <limits.h>
 #include <string.h>
@@ -132,8 +131,8 @@ static bool fr_rx_submsg(fr_receiver_state_t *rcvr,
 
 static bool fr_rx_acknack(RX_MSG_ARGS)
 {
-  fr_submsg_acknack_t *m = (fr_submsg_acknack_t *)submsg->contents;
 #ifdef VERBOSE_ACKNACK
+  fr_submsg_acknack_t *m = (fr_submsg_acknack_t *)submsg->contents;
   printf("  ACKNACK   0x%08x => ", (unsigned)freertps_htonl(m->writer_id.u));
   fr_guid_t reader_guid;
   fr_stuff_guid(&reader_guid, &rcvr->src_guid_prefix, &m->reader_id);
@@ -143,6 +142,7 @@ static bool fr_rx_acknack(RX_MSG_ARGS)
          (int)(m->reader_sn_state.bitmap_base.low +
                m->reader_sn_state.num_bits));
 #endif
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   fr_pub_t *pub = fr_pub_from_writer_id(m->writer_id);
   if (!pub)
   {
@@ -152,18 +152,19 @@ static bool fr_rx_acknack(RX_MSG_ARGS)
   }
   else
     fr_pub_rx_acknack(pub, m, &rcvr->src_guid_prefix);
+#endif
   return true;
 }
 
 static bool fr_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
+#ifdef VERBOSE_HEARTBEAT
   const bool f = submsg->header.flags & 0x02;
   //const bool l = submsg->header.flags & 0x04; // liveliness flag?
   fr_submsg_heartbeat_t *hb = (fr_submsg_heartbeat_t *)submsg;
   fr_guid_t writer_guid;
   fr_stuff_guid(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
-#ifdef VERBOSE_HEARTBEAT
   printf("  HEARTBEAT   ");
   fr_print_guid(&writer_guid);
   printf(" => 0x%08x  %d -> %d\n",
@@ -173,6 +174,7 @@ static bool fr_rx_heartbeat(RX_MSG_ARGS)
 #endif
   //fr_print_readers();
 
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   //printf("%d matched readers\n", (int)g_fr_num_readers);
   fr_reader_t *match = NULL;
   // spin through subscriptions and see if we've already matched a reader
@@ -252,6 +254,7 @@ static bool fr_rx_heartbeat(RX_MSG_ARGS)
     fr_print_guid(&writer_guid);
     printf(" => %08x\n", (unsigned)freertps_htonl(hb->reader_id.u));
   }
+#endif
   return true;
 }
 
@@ -390,6 +393,7 @@ static bool fr_rx_data(RX_MSG_ARGS)
   //if (data_submsg->writer_id.u == 0xc2030000)
   //  reader_id.u = 0xc7030000;
   // spin through subscriptions and see if anyone is listening
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   int num_matches_found = 0;
   for (unsigned i = 0; i < g_fr_num_readers; i++)
   {
@@ -447,6 +451,7 @@ static bool fr_rx_data(RX_MSG_ARGS)
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
+#endif
   return true;
 }
 

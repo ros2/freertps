@@ -30,8 +30,10 @@ static void fr_sedp_bcast();
 ////////////////////////////////////////////////////////////////////////////
 // static globals
 static fr_time_t fr_sedp_last_bcast;
+#ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
 fr_pub_t *g_sedp_sub_pub = NULL; // SEDP subscription publication
 fr_pub_t *g_sedp_pub_pub = NULL; // SEDP publication publication
+#endif
 // todo: an option to generate SEDP messages on-the-fly as requested,
 // rather than buffering them in precious SRAM. or maybe auto-generate the
 // pub/sub messages and hold them in flash. That would be way better.
@@ -61,6 +63,7 @@ void fr_sedp_init()
     d->writer_sn = g_fr_seq_num_unknown;
     g_sedp_pub_writer_data_submsgs[i] = d;
   }
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   g_sedp_sub_pub = fr_create_pub(
     NULL, // no topic name
     NULL, // no type name
@@ -92,10 +95,12 @@ void fr_sedp_init()
   sedp_pub_sub.msg_cb = NULL;
   sedp_pub_sub.reliable = true;
   fr_add_sub(&sedp_pub_sub);
+#endif
 }
 
 void fr_sedp_start()
 {
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   // go through and send SEDP messages for all of our subscriptions
   for (int i = 0; i < g_fr_num_subs; i++)
   {
@@ -116,6 +121,7 @@ void fr_sedp_start()
       sedp_publish_pub(&g_fr_pubs[i]);
     }
   }
+#endif
 }
 
 void fr_sedp_fini()
@@ -139,7 +145,7 @@ static void fr_sedp_rx_pub_data(fr_receiver_state_t *rcvr,
                                 const uint16_t scheme,
                                 const uint8_t *data)
 {
-  fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
+  //fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
 }
 
 static void fr_sedp_rx_sub_data(fr_receiver_state_t *rcvr,
@@ -147,7 +153,7 @@ static void fr_sedp_rx_sub_data(fr_receiver_state_t *rcvr,
                                 const uint16_t scheme,
                                 const uint8_t *data)
 {
-  fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
+  //fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
 }
 
 typedef struct{
@@ -160,6 +166,7 @@ static sedp_topic_info_t g_topic_info;
 
 static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
 {
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   printf("sedp pub: [%s / %s] num_subs = %d\r\n",
       info->topic_name ? info->topic_name : "",
       info->type_name ? info->type_name : "",
@@ -204,6 +211,7 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
         printf("boring, we already knew about it.\n");
     }
   }
+#endif
 }
 
 //#define SEDP_VERBOSE
@@ -211,6 +219,7 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
 {
   printf("sedp sub: [%s]\r\n", info->topic_name ? info->topic_name : "");
   // look to see if we publish this topic
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   for (unsigned i = 0; i < g_fr_num_pubs; i++)
   {
     fr_pub_t *pub = &g_fr_pubs[i];
@@ -251,6 +260,7 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
       fr_add_writer(&w);
     }
   }
+#endif
 }
 
 static void fr_sedp_rx_pubsub_data(fr_receiver_state_t *rcvr,
@@ -262,6 +272,7 @@ static void fr_sedp_rx_pubsub_data(fr_receiver_state_t *rcvr,
 #ifdef SEDP_VERBOSE
   printf("  sedp_writer data rx\r\n");
 #endif
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   if (scheme != FR_SCHEME_PL_CDR_LE)
   {
     FREERTPS_ERROR("expected sedp data to be PL_CDR_LE. bailing...\r\n");
@@ -377,6 +388,7 @@ static void fr_sedp_rx_pubsub_data(fr_receiver_state_t *rcvr,
     fr_sedp_rx_pub_info(&g_topic_info);
   else // this is information about someone else's subscription
     fr_sedp_rx_sub_info(&g_topic_info);
+#endif
 }
 
 static void fr_sedp_bcast()
@@ -385,6 +397,7 @@ static void fr_sedp_bcast()
   //fr_time_t t = fr_time_now();
 }
 
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
 static void sedp_publish(const char *topic_name,
                          const char *type_name,
                          fr_pub_t *pub,
@@ -527,6 +540,7 @@ void sedp_publish_pub(fr_pub_t *pub)
                pub->writer_eid,
                true); // true means "this is for a publication"
 }
+#endif
 
 void sedp_add_builtin_endpoints(fr_part_t *part)
 {
@@ -534,6 +548,7 @@ void sedp_add_builtin_endpoints(fr_part_t *part)
   fr_print_guid_prefix(&part->guid_prefix);
   printf("\r\n");
 
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   fr_reader_t pub_reader; // this reads the remote peer's publications
   pub_reader.writer_guid = g_fr_guid_unknown;
   fr_stuff_guid(&pub_reader.writer_guid,
@@ -562,6 +577,7 @@ void sedp_add_builtin_endpoints(fr_part_t *part)
 
   // blast our SEDP data at this participant
   fr_send_sedp_msgs(part);
+#endif
 }
 
 
