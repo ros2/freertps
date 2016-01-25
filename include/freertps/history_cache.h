@@ -7,7 +7,7 @@
 
 typedef struct fr_history_cache
 {
-  fr_container_t changes;
+  struct fr_container_t *changes;
   //fr_cache_change_t *cc_rptr, *cc_wptr; // linked-list ftw
 } fr_history_cache_t;
 

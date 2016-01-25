@@ -1,7 +1,8 @@
 #ifndef FREERTPS_CONTAINER_H
 #define FREERTPS_CONTAINER_H
 
-#define <stdbool.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 #define CONTAINER_LIST 1
 
