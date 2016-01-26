@@ -60,12 +60,13 @@ add_library(freertps container.c
                      freertps.c 
                      guid.c
                      participant.c 
+                     reader.c
                      spdp.c 
                      sedp.c 
                      time.c 
                      udp.c
+                     vendor_id.c
                      writer.c
-                     reader.c
                      mem.c
                      data_reader.c
                      data_writer.c)

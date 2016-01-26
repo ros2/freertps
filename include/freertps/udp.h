@@ -6,23 +6,19 @@
 #include <stdbool.h>
 #include "freertps/guid.h"
 #include "freertps/seq_num.h"
+#include "freertps/protocol_version.h"
+#include "freertps/vendor_id.h"
 
 /////////////////////////////////////////////////////////////////////
 // TYPES
 /////////////////////////////////////////////////////////////////////
 
-typedef struct
-{
-  uint8_t major;
-  uint8_t minor;
-} fr_pver_t; // protocol version
-
 typedef struct fr_header
 {
   uint32_t magic_word; // RTPS in ASCII
-  fr_pver_t pver; // protocol version
-  fr_vid_t  vid;  // vendor ID
-  fr_guid_prefix_t guid_prefix;
+  struct fr_protocol_version protocol_version; // protocol version
+  fr_vendor_id_t vendor_id;  // vendor ID
+  struct fr_guid_prefix guid_prefix;
 } fr_header_t;
 
 typedef struct
@@ -60,8 +56,8 @@ typedef struct
 
 typedef struct
 {
-  fr_pver_t        src_pver;
-  fr_vid_t         src_vid;
+  struct fr_protocol_version src_protocol_version;
+  fr_vendor_id_t         src_vendor_id;
   fr_guid_prefix_t src_guid_prefix;
   fr_guid_prefix_t dst_guid_prefix;
   bool             have_timestamp;

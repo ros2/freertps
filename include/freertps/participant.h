@@ -3,12 +3,13 @@
 
 #include "freertps/udp.h"
 #include "freertps/locator.h"
+#include "freertps/protocol_version.h"
 #include <stdbool.h>
 
 typedef struct fr_participant
 {
-  fr_pver_t pver;
-  fr_vid_t vid;
+  struct fr_protocol_version protocol_version;
+  fr_vendor_id_t vendor_id;
   fr_guid_prefix_t guid_prefix;
   bool expects_inline_qos;
   fr_locator_t default_unicast_locator;

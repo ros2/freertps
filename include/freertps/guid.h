@@ -22,7 +22,7 @@ typedef union
 extern const fr_eid_t g_fr_eid_unknown;
 
 #define FR_GUID_PREFIX_LEN 12
-typedef struct
+typedef struct fr_guid_prefix
 {
   uint8_t prefix[FR_GUID_PREFIX_LEN];
 } fr_guid_prefix_t;
@@ -43,13 +43,6 @@ bool fr_guid_identical(const fr_guid_t * const a,
 void fr_stuff_guid(fr_guid_t *guid,
                    const fr_guid_prefix_t *prefix,
                    const fr_eid_t *id);
-
-/////////////////////////////////////////////////////////////////////////
-// VENDOR ID STUFF
-// for now let's pretend that our vendor ID is 11311 in hex
-#define FREERTPS_VENDOR_ID 0x2C2F
-typedef uint16_t fr_vid_t;
-const char *fr_vendor(const fr_vid_t vid);
 
 void fr_guid_print_prefix(const fr_guid_prefix_t *guid_prefix);
 void fr_guid_print(const fr_guid_t *guid);

@@ -63,7 +63,7 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
                 msg->header.pver.major,
                 msg->header.pver.minor);
 #endif
-  if (msg->header.pver.major != 2)
+  if (msg->header.protocol_version.major != 2)
     return false; // we aren't cool enough to be oldschool
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX
   FREERTPS_INFO("rx vendor 0x%04x = %s\n",
@@ -72,8 +72,8 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
 #endif
   // initialize the receiver state
   fr_receiver_state_t rcvr;
-  rcvr.src_pver = msg->header.pver;
-  rcvr.src_vid = msg->header.vid;
+  rcvr.src_protocol_version = msg->header.protocol_version;
+  rcvr.src_vendor_id = msg->header.vendor_id;
 
   bool our_guid = true;
   for (int i = 0; i < 12 && our_guid; i++)
@@ -532,9 +532,9 @@ fr_msg_t *fr_init_msg(fr_msg_t *buf)
 {
   fr_msg_t *msg = (fr_msg_t *)buf;
   msg->header.magic_word = 0x53505452;
-  msg->header.pver.major = 2;
-  msg->header.pver.minor = 1;
-  msg->header.vid = FREERTPS_VENDOR_ID;
+  msg->header.protocol_version.major = 2;
+  msg->header.protocol_version.minor = 1;
+  msg->header.vendor_id = FREERTPS_VENDOR_ID;
   memcpy(msg->header.guid_prefix.prefix,
          g_fr_config.guid_prefix.prefix,
          FR_GUID_PREFIX_LEN);
