@@ -6,12 +6,13 @@
 #include "freertps/locator.h"
 #include "freertps/protocol_version.h"
 #include "freertps/udp.h"
+#include "freertps/vendor_id.h"
 
 typedef struct fr_participant
 {
   struct fr_guid_prefix guid_prefix;
   struct fr_protocol_version protocol_version;
-  struct fr_vendor_id vendor_id;
+  fr_vendor_id_t vendor_id;
   struct fr_container *default_unicast_locators;
   struct fr_container *default_multicast_locators;
 } fr_participant_t;
