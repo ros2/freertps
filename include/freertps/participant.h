@@ -15,6 +15,7 @@ typedef struct fr_participant
   fr_vendor_id_t vendor_id;
   struct fr_container *default_unicast_locators;
   struct fr_container *default_multicast_locators;
+  struct fr_container *matched_participants;
 } fr_participant_t;
 
 fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix);

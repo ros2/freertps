@@ -55,7 +55,8 @@ endif()
 
 # build the portable library
 # dinosaur modules: pub.c sub.c
-add_library(freertps container.c
+add_library(freertps cdr_string.c
+                     container.c
                      disco.c
                      freertps.c 
                      guid.c

@@ -9,14 +9,14 @@ typedef struct fr_sequence_number
   uint32_t low;
 } fr_sequence_number_t;
 
-typedef struct
+typedef struct fr_sequence_number_set
 {
   struct fr_sequence_number bitmap_base;
   uint32_t num_bits;
   uint32_t bitmap[];
 } fr_sequence_number_set_t;
 
-typedef struct
+typedef struct fr_sequence_number_set_32bits
 {
   struct fr_sequence_number bitmap_base;
   uint32_t num_bits;

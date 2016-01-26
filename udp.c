@@ -14,8 +14,9 @@ fr_config_t g_fr_config;
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
-static bool fr_rx_submsg(fr_receiver_t *rcvr, const fr_submsg_t *submsg);
-#define RX_MSG_ARGS fr_receiver_t *rcvr, const fr_submsg_t *submsg
+static bool fr_rx_submsg(struct fr_receiver *rcvr,
+                         const struct fr_submessage *submsg);
+#define RX_MSG_ARGS struct fr_receiver *rcvr, const struct fr_submessage *submsg
 static bool fr_rx_acknack       (RX_MSG_ARGS);
 static bool fr_rx_heartbeat     (RX_MSG_ARGS);
 static bool fr_rx_gap           (RX_MSG_ARGS);
@@ -53,7 +54,7 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
   ina.s_addr = dst_addr;
   printf("rx on %s:%d\n", inet_ntoa(ina), dst_port);
   */
-  const fr_msg_t *msg = (fr_msg_t *)rx_data;
+  const struct fr_message *msg = (struct fr_message *)rx_data;
   if (msg->header.magic_word != 0x53505452) // todo: care about endianness
     return false; // it wasn't RTPS. no soup for you.
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX
@@ -86,19 +87,19 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
          FR_GUID_PREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages
-  for (const uint8_t *submsg_start = msg->submsgs;
+  for (const uint8_t *submsg_start = msg->submessages;
        submsg_start < rx_data + rx_len;)
   {
-    const fr_submsg_t *submsg = (fr_submsg_t *)submsg_start;
+    const struct fr_submessage *submsg = (struct fr_submessage *)submsg_start;
     fr_rx_submsg(&rcvr, submsg);
     // todo: ensure alignment? if this isn't dword-aligned, we're hosed
-    submsg_start += sizeof(fr_submsg_header_t) + submsg->header.len;
+    submsg_start += sizeof(struct fr_submessage_header) + submsg->header.len;
   }
   return true;
 }
 
 static bool fr_rx_submsg(fr_receiver_t *rcvr,
-                         const fr_submsg_t *submsg)
+                         const struct fr_submessage *submsg)
 {
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX
   FREERTPS_INFO("rx submsg ID %d len %d\n",
@@ -338,7 +339,7 @@ static bool fr_rx_heartbeat_frag(RX_MSG_ARGS)
 
 static bool fr_rx_data(RX_MSG_ARGS)
 {
-  fr_submsg_data_t *data_submsg = (fr_submsg_data_t *)submsg;
+  struct fr_data_submessage *data_submsg = (struct fr_data_submessage *)submsg;
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX
   FREERTPS_INFO("rx data flags = %d\n", 0x0f7 & submsg->header.flags);
 #endif
@@ -364,7 +365,7 @@ static bool fr_rx_data(RX_MSG_ARGS)
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX
       FREERTPS_INFO("data inline QoS param 0x%x len %d\n", (unsigned)item->pid, item->len);
 #endif
-      const fr_parameterid_t pid = item->pid;
+      const fr_parameter_id_t pid = item->pid;
       //const uint8_t *pval = item->value;
       // todo: process parameter value
       item = (fr_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
@@ -514,21 +515,9 @@ const char *fr_ip4_ntoa(const uint32_t addr)
   return ntoa_buf;
 }
 
-bool fr_parse_string(char *buf, uint32_t buf_len, fr_rtps_string_t *s)
+struct fr_message *fr_init_msg(struct fr_message *buf)
 {
-  int wpos = 0;
-  for (; wpos < s->len && wpos < buf_len-1; wpos++)
-    buf[wpos] = s->data[wpos];
-  buf[wpos] = 0;
-  if (wpos < buf_len - 1)
-    return true;
-  else
-    return false; // couldn't fit entire string in buffer
-}
-
-fr_msg_t *fr_init_msg(fr_msg_t *buf)
-{
-  fr_msg_t *msg = (fr_msg_t *)buf;
+  struct fr_message *msg = (struct fr_message *)buf;
   msg->header.magic_word = 0x53505452;
   msg->header.protocol_version.major = 2;
   msg->header.protocol_version.minor = 1;
@@ -558,21 +547,23 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
     FREERTPS_ERROR("tried to acknack an unknown participant\n");
     return; // woah.
   }
-  fr_msg_t *msg = (fr_msg_t *)g_fr_disco_tx_buf;
+  struct fr_message *msg = (struct fr_message *)g_fr_disco_tx_buf;
   fr_init_msg(msg);
   //printf("    about to tx acknack\n");
-  fr_submsg_t *dst_submsg = (fr_submsg_t *)&msg->submsgs[0];
+  struct fr_submessage *dst_submsg = 
+      (struct fr_submessage *)&msg->submessages[0];
   dst_submsg->header.id = FR_SUBMSG_ID_INFO_DEST;
   dst_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |
                              FR_FLAGS_ACKNACK_FINAL;
   dst_submsg->header.len = 12;
   memcpy(dst_submsg->contents, guid_prefix, FR_GUID_PREFIX_LEN);
-  fr_submsg_t *acknack_submsg = (fr_submsg_t *)(&msg->submsgs[16]);
+  struct fr_submessage *acknack_submsg =
+      (struct fr_submessage *)(&msg->submessages[16]);
   acknack_submsg->header.id = FR_SUBMSG_ID_ACKNACK;
   acknack_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
   acknack_submsg->header.len = 24 + (set->num_bits + 31)/32 * 4;
-  fr_submsg_acknack_t *acknack =
-                            (fr_submsg_acknack_t *)acknack_submsg->contents;
+  struct fr_acknack_submessage *acknack =
+      (struct fr_acknack_submessage *)acknack_submsg->contents;
   acknack->reader_id = *reader_id;
   acknack->writer_id = writer_guid->entity_id;
   int sn_set_len = (set->num_bits + 31) / 32 * 4 + 12;

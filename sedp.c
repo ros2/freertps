@@ -1,3 +1,4 @@
+#include "freertps/cdr_string.h"
 #include "freertps/sedp.h"
 #include "freertps/freertps.h"
 #include "freertps/qos.h"
@@ -14,15 +15,15 @@ static const fr_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
 ////////////////////////////////////////////////////////////////////////////
 // local functions
 static void fr_sedp_rx_pub_data(fr_receiver_t *rcvr,
-                                const fr_submsg_t *submsg,
+                                const struct fr_submessage *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data);
 static void fr_sedp_rx_sub_data(fr_receiver_t *rcvr,
-                                const fr_submsg_t *submsg,
+                                const struct fr_submessage *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data);
 static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
-                                   const fr_submsg_t *submsg,
+                                   const struct fr_submessage *submsg,
                                    const uint16_t scheme,
                                    const uint8_t *data,
                                    const bool is_pub);
@@ -41,8 +42,8 @@ fr_pub_t *g_sedp_pub_pub = NULL; // SEDP publication publication
 //static uint8_t fr_pub_sample_t[SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_sub_writer_data_buf[SEDP_MSG_BUF_LEN * FR_MAX_SUBS];
 static uint8_t g_sedp_pub_writer_data_buf[SEDP_MSG_BUF_LEN * FR_MAX_PUBS];
-static fr_submsg_data_t *g_sedp_sub_writer_data_submsgs[FR_MAX_SUBS];
-static fr_submsg_data_t *g_sedp_pub_writer_data_submsgs[FR_MAX_PUBS];
+static struct fr_data_submessage *g_sedp_sub_writer_data_submsgs[FR_MAX_SUBS];
+static struct fr_data_submessage *g_sedp_pub_writer_data_submsgs[FR_MAX_PUBS];
 //sizeof [MAX_SUBS][SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_msg_buf[SEDP_MSG_BUF_LEN];
 
@@ -51,15 +52,15 @@ void fr_sedp_init()
   FREERTPS_INFO("sedp init\r\n");
   for (int i = 0; i < FR_MAX_SUBS; i++)
   {
-    fr_submsg_data_t *d = 
-      (fr_submsg_data_t *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
+    struct fr_data_submessage *d = 
+      (struct fr_data_submessage *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
     d->writer_sn = g_fr_sequence_number_unknown;
     g_sedp_sub_writer_data_submsgs[i] = d;
   }
   for (int i = 0; i < FR_MAX_PUBS; i++)
   {
-    fr_submsg_data_t *d = 
-      (fr_submsg_data_t *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
+    struct fr_data_submessage *d = 
+      (struct fr_data_submessage *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
     d->writer_sn = g_fr_sequence_number_unknown;
     g_sedp_pub_writer_data_submsgs[i] = d;
   }
@@ -141,7 +142,7 @@ void fr_sedp_tick()
 
 //#define SEDP_PRINT_TOPICS
 static void fr_sedp_rx_pub_data(struct fr_receiver *rcvr,
-                                const fr_submsg_t *submsg,
+                                const struct fr_submessage *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data)
 {
@@ -149,7 +150,7 @@ static void fr_sedp_rx_pub_data(struct fr_receiver *rcvr,
 }
 
 static void fr_sedp_rx_sub_data(struct fr_receiver *rcvr,
-                                const fr_submsg_t *submsg,
+                                const struct fr_submessage *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data)
 {
@@ -264,7 +265,7 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
 }
 
 static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
-                                   const fr_submsg_t *submsg,
+                                   const struct fr_submessage *submsg,
                                    const uint16_t scheme,
                                    const uint8_t *data,
                                    const bool is_pub)
@@ -306,9 +307,9 @@ static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
     }
     else if (pid == FR_PID_TOPIC_NAME)
     {
-      if (fr_parse_string(g_topic_info.topic_name,
-                          sizeof(g_topic_info.topic_name),
-                          (fr_rtps_string_t *)pval))
+      if (fr_cdr_string_parse(g_topic_info.topic_name,
+                              sizeof(g_topic_info.topic_name),
+                              (struct fr_cdr_string *)pval))
       {
 #ifdef SEDP_PRINT_TOPICS
         printf("    topic name: [%s]\r\n", g_topic_info.topic_name);
@@ -319,9 +320,9 @@ static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
     }
     else if (pid == FR_PID_TYPE_NAME)
     {
-      if (fr_parse_string(g_topic_info.type_name,
-                          sizeof(g_topic_info.type_name),
-                          (fr_rtps_string_t *)pval))
+      if (fr_cdr_string_parse(g_topic_info.type_name,
+                              sizeof(g_topic_info.type_name),
+                              (struct fr_cdr_string *)pval))
       {
 #ifdef SEDP_VERBOSE
         printf("    type name: [%s]\r\n", g_topic_info.type_name);

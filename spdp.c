@@ -22,7 +22,7 @@ const fr_entity_id_t g_spdp_reader_id = { .u = 0xc7000100 };
 //#define SPDP_VERBOSE
 
 static void fr_spdp_rx_data(fr_receiver_t *rcvr,
-                            const fr_submsg_t *submsg,
+                            const struct fr_submessage *submsg,
                             const uint16_t scheme,
                             const uint8_t *data)
 {
