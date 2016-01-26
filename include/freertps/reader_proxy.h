@@ -1,21 +1,18 @@
 #ifndef FREERTPS_READER_PROXY_H
 #define FREERTPS_READER_PROXY_H
 
+#include "freertps/container.h"
 #include "freertps/guid.h"
-#include "freertps/participant.h"
+#include "freertps/locator.h"
 
 typedef struct fr_reader_proxy
 {
-  fr_guid_t remote_reader_guid;
+  struct fr_guid remote_reader_guid;
   bool expects_inline_qos;
-  struct fr_participant *participant; // participant this reader proxy belongs to
+  struct fr_locator *locator;              // for stateless writing
+  struct fr_container *unicast_locators;   // for stateful writing
+  struct fr_container *multicast_locators; // for stateful writing
 } fr_reader_proxy_t;
-
-typedef struct fr_reader_proxy_list
-{
-  fr_reader_proxy_t rp;
-  fr_reader_proxy_t *next;
-} fr_reader_proxy_list_t;
 
 #endif
 
