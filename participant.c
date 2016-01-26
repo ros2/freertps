@@ -2,18 +2,18 @@
 #include <stdlib.h>
 #include "freertps/udp.h"
 #include "freertps/disco.h"
-#include "freertps/part.h"
+#include "freertps/participant.h"
 #include "freertps/config.h"
 #include "freertps/freertps.h"
 
 //static frudp_part_t g_frudp_participant;
 static bool g_fr_participant_init_complete = false;
 
-fr_part_t *fr_part_find(const fr_guid_prefix_t *guid_prefix)
+fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix)
 {
-  for (int i = 0; i < g_fr_disco_num_parts; i++)
+  for (int i = 0; i < g_fr_disco_num_participants; i++)
   {
-    fr_part_t *p = &g_fr_disco_parts[i]; // shorter
+    fr_participant_t *p = &g_fr_disco_participants[i]; // shorter
     bool match = true;
     for (int j = 0; match && j < FR_GUID_PREFIX_LEN; j++)
     {
@@ -26,7 +26,7 @@ fr_part_t *fr_part_find(const fr_guid_prefix_t *guid_prefix)
   return NULL; // couldn't find it. sorry.
 }
 
-bool fr_part_create()
+bool fr_participant_create()
 {
   if (g_fr_participant_init_complete)
   {

@@ -4,7 +4,7 @@
 // this has a bunch of discovery-related debris
 
 #include <stdint.h>
-#include "freertps/part.h"
+#include "freertps/participant.h"
 #include "freertps/config.h"
 
 #define FR_PID_PAD                           0x0000
@@ -55,7 +55,7 @@ void fr_disco_tick();  /// must be called periodically to broadcast SPDP
 extern uint8_t g_fr_disco_tx_buf[FR_DISCO_TX_BUFLEN];
 extern uint16_t g_fr_disco_tx_buf_wpos;
 
-extern fr_part_t g_fr_disco_parts[FR_DISCO_MAX_PARTS];
-extern int g_fr_disco_num_parts;
+extern fr_participant_t g_fr_disco_participants[FR_DISCO_MAX_PARTICIPANTS];
+extern int g_fr_disco_num_participants;
 
 #endif

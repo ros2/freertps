@@ -1,14 +1,14 @@
 #ifndef FREERTPS_SEDP_H
 #define FREERTPS_SEDP_H
 
-#include "freertps/part.h"
+#include "freertps/participant.h"
 
 void fr_sedp_init();
 void fr_sedp_start();
 void fr_sedp_tick();
 void fr_sedp_fini();
 
-void sedp_add_builtin_endpoints(fr_part_t *part);
+void sedp_add_builtin_endpoints(fr_participant_t *part);
 
 /*
 extern fr_pub_t *g_sedp_sub_pub;

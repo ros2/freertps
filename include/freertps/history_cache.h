@@ -8,7 +8,6 @@
 typedef struct fr_history_cache
 {
   struct fr_container *changes;
-  //fr_cache_change_t *cc_rptr, *cc_wptr; // linked-list ftw
 } fr_history_cache_t;
 
 // prefix: hc = HistoryCache (as defined in the RTPS spec)

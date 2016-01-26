@@ -6,8 +6,8 @@
 uint8_t g_fr_disco_tx_buf[FR_DISCO_TX_BUFLEN];
 uint16_t g_fr_disco_tx_buf_wpos;
 
-fr_part_t g_fr_disco_parts[FR_DISCO_MAX_PARTS];
-int g_fr_disco_num_parts = 0;
+fr_participant_t g_fr_disco_participants[FR_DISCO_MAX_PARTICIPANTS];
+int g_fr_disco_num_participants = 0;
 
 ////////////////////////////////////////////////////////////////
 
