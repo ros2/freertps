@@ -38,7 +38,7 @@ double fr_time_double(const fr_time_t *t)
     return t->seconds - t->fraction / (double)UINT_MAX;
 }
 
-double fr_duration_double(const fr_duration_t *t)
+double fr_duration_double(const struct fr_duration *t)
 {
   if (t->seconds >= 0)
     return t->seconds + t->fraction / (double)UINT_MAX;
@@ -49,5 +49,5 @@ double fr_duration_double(const fr_duration_t *t)
 double fr_time_now_double()
 {
   fr_time_t t = fr_time_now();
-  return fr_duration_double(&t);
+  return fr_time_double(&t);
 }

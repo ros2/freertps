@@ -3,13 +3,17 @@
 
 #include <stdint.h>
 
-typedef struct
+typedef struct fr_time
 {
   int32_t  seconds;
   uint32_t fraction;
 } fr_time_t;
 
-typedef fr_time_t fr_duration_t;
+typedef struct fr_duration
+{
+  int32_t  seconds;
+  uint32_t fraction;
+} fr_duration_t;
 
 fr_time_t     fr_time_now();
 fr_duration_t fr_time_diff(const fr_time_t *end, const fr_time_t *start);

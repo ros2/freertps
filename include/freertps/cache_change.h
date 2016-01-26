@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include "freertps/guid.h"
-#include "freertps/seq_num.h"
+#include "freertps/sequence_number.h"
 
 typedef struct fr_cache_change
 {

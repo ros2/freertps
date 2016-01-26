@@ -196,7 +196,7 @@ void fr_publish(fr_pub_t *pub, fr_submsg_data_t *submsg)
   fr_submsg_data_t *pub_submsg = pub->data_submsgs[pub->next_submsg_idx];
 
   *pub_submsg = *submsg;
-  if (submsg->writer_sn.low == g_fr_seq_num_unknown.low) // todo: 64 bits
+  if (submsg->writer_sn.low == g_fr_sequence_number_unknown.low) // 64 bit ?
   {
     pub_submsg->writer_sn = pub->next_sn;
     pub->next_sn.low++; // todo: > 32 bits

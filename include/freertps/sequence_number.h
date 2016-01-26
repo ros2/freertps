@@ -7,22 +7,22 @@ typedef struct fr_sequence_number
 {
   int32_t high;
   uint32_t low;
-} fr_seq_num_t;
+} fr_sequence_number_t;
 
 typedef struct
 {
-  fr_seq_num_t bitmap_base;
+  struct fr_sequence_number bitmap_base;
   uint32_t num_bits;
   uint32_t bitmap[];
-} fr_seq_num_set_t;
+} fr_sequence_number_set_t;
 
 typedef struct
 {
-  fr_seq_num_t bitmap_base;
+  struct fr_sequence_number bitmap_base;
   uint32_t num_bits;
   uint32_t bitmap;
-} fr_seq_num_set_32bits_t;
+} fr_sequence_number_set_32bits_t;
 
-extern const fr_seq_num_t g_fr_seq_num_unknown;
+extern const fr_sequence_number_t g_fr_sequence_number_unknown;
 
 #endif

@@ -9,16 +9,16 @@
 
 typedef struct
 {
-  const char        *topic_name;
-  const char        *type_name;
-  fr_eid_t           writer_eid;
-  fr_seq_num_t       max_tx_sn_avail;
-  fr_seq_num_t       min_tx_sn_avail;
-  uint32_t           num_data_submsgs;
-  fr_submsg_data_t **data_submsgs;
-  uint32_t           next_submsg_idx;
-  fr_seq_num_t       next_sn;
-  bool               reliable;
+  const char          *topic_name;
+  const char          *type_name;
+  fr_eid_t             writer_eid;
+  fr_sequence_number_t max_tx_sn_avail;
+  fr_sequence_number_t min_tx_sn_avail;
+  uint32_t             num_data_submsgs;
+  fr_submsg_data_t   **data_submsgs;
+  uint32_t             next_submsg_idx;
+  fr_sequence_number_t next_sn;
+  bool                 reliable;
 } fr_pub_t;
 
 extern fr_pub_t g_fr_pubs[FR_MAX_PUBS];

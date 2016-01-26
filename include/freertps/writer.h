@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "freertps/endpoint.h"
 #include "freertps/history_cache.h"
-#include "freertps/seq_num.h"
+#include "freertps/sequence_number.h"
 #include "freertps/reader_proxy.h"
 #include "freertps/time.h"
 
@@ -12,11 +12,11 @@ typedef struct fr_writer
 {
   struct fr_endpoint endpoint;
   bool push_mode;
-  fr_duration_t heartbeat_period;
-  fr_duration_t nack_response_delay;
-  fr_duration_t nack_suppression_duration;
-  fr_duration_t resend_data_period;
-  fr_seq_num_t last_change_sequence_number;
+  struct fr_duration heartbeat_period;
+  struct fr_duration nack_response_delay;
+  struct fr_duration nack_suppression_duration;
+  struct fr_duration resend_data_period;
+  fr_sequence_number_t last_change_sequence_number;
   struct fr_container_t *matched_readers; // container of matched_readers
   struct fr_history_cache writer_cache;
 } fr_writer_t;

@@ -53,14 +53,14 @@ void fr_sedp_init()
   {
     fr_submsg_data_t *d = 
       (fr_submsg_data_t *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    d->writer_sn = g_fr_seq_num_unknown;
+    d->writer_sn = g_fr_sequence_number_unknown;
     g_sedp_sub_writer_data_submsgs[i] = d;
   }
   for (int i = 0; i < FR_MAX_PUBS; i++)
   {
     fr_submsg_data_t *d = 
       (fr_submsg_data_t *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    d->writer_sn = g_fr_seq_num_unknown;
+    d->writer_sn = g_fr_sequence_number_unknown;
     g_sedp_pub_writer_data_submsgs[i] = d;
   }
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
@@ -140,7 +140,7 @@ void fr_sedp_tick()
 }
 
 //#define SEDP_PRINT_TOPICS
-static void fr_sedp_rx_pub_data(fr_receiver_t *rcvr,
+static void fr_sedp_rx_pub_data(struct fr_receiver *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data)
@@ -148,7 +148,7 @@ static void fr_sedp_rx_pub_data(fr_receiver_t *rcvr,
   //fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
 }
 
-static void fr_sedp_rx_sub_data(fr_receiver_t *rcvr,
+static void fr_sedp_rx_sub_data(struct fr_receiver *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data)

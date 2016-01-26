@@ -61,8 +61,9 @@ add_library(freertps container.c
                      guid.c
                      participant.c 
                      reader.c
-                     spdp.c 
                      sedp.c 
+                     sequence_number.c
+                     spdp.c
                      time.c 
                      udp.c
                      vendor_id.c

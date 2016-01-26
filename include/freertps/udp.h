@@ -7,7 +7,7 @@
 #include "freertps/guid.h"
 #include "freertps/protocol_version.h"
 #include "freertps/receiver.h"
-#include "freertps/seq_num.h"
+#include "freertps/sequence_number.h"
 #include "freertps/vendor_id.h"
 
 /////////////////////////////////////////////////////////////////////
@@ -62,7 +62,7 @@ typedef struct
   uint16_t octets_to_inline_qos;
   fr_entity_id_t reader_id;
   fr_entity_id_t writer_id;
-  fr_seq_num_t writer_sn;
+  fr_sequence_number_t writer_sn;
   uint8_t data[];
 } __attribute__((packed)) fr_submsg_data_t;
 
@@ -73,7 +73,7 @@ typedef struct fr_submsg_data_frag
   uint16_t octets_to_inline_qos;
   fr_entity_id_t reader_id;
   fr_entity_id_t writer_id;
-  fr_seq_num_t writer_sn;
+  fr_sequence_number_t writer_sn;
   uint32_t fragment_starting_number;
   uint16_t fragments_in_submessage;
   uint16_t fragment_size;
@@ -86,8 +86,8 @@ typedef struct
   fr_submsg_header_t header;
   fr_entity_id_t reader_id;
   fr_entity_id_t writer_id;
-  fr_seq_num_t first_sn;
-  fr_seq_num_t last_sn;
+  fr_sequence_number_t first_sn;
+  fr_sequence_number_t last_sn;
   uint32_t count;
 } __attribute__((packed)) fr_submsg_heartbeat_t;
 
@@ -96,15 +96,15 @@ typedef struct
   fr_submsg_header_t header;
   fr_entity_id_t reader_id;
   fr_entity_id_t writer_id;
-  fr_seq_num_t gap_start;
-  fr_seq_num_set_t gap_end;
+  fr_sequence_number_t gap_start;
+  fr_sequence_number_set_t gap_end;
 } __attribute__((packed)) fr_submsg_gap_t;
 
 typedef struct
 {
   fr_entity_id_t reader_id;
   fr_entity_id_t writer_id;
-  fr_seq_num_set_t reader_sn_state;
+  fr_sequence_number_set_t reader_sn_state;
   // the "count" field that goes here is impossible to declare in legal C
 } __attribute__((packed)) fr_submsg_acknack_t;
 

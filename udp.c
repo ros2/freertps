@@ -11,7 +11,6 @@
 ////////////////////////////////////////////////////////////////////////////
 // global constants
 fr_config_t g_fr_config;
-const fr_seq_num_t g_fr_seq_num_unknown = { .high = -1, .low = 0 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -33,7 +32,7 @@ static bool fr_rx_data_frag     (RX_MSG_ARGS);
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
                    const fr_entity_id_t *reader_entity_id,
                    const fr_guid_t *writer_guid,
-                   const fr_seq_num_set_t *set);
+                   const fr_sequence_number_set_t *set);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -544,7 +543,7 @@ fr_msg_t *fr_init_msg(fr_msg_t *buf)
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
                    const fr_entity_id_t         *reader_id,
                    const fr_guid_t        *writer_guid,
-                   const fr_seq_num_set_t *set)
+                   const fr_sequence_number_set_t *set)
 {
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",

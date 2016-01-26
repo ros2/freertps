@@ -48,7 +48,7 @@ typedef struct
   bool reliable;
   fr_guid_t writer_guid;
   fr_eid_t reader_eid;
-  fr_seq_num_t max_rx_sn;
+  fr_sequence_number_t max_rx_sn;
   fr_rx_data_cb_t data_cb;
   freertps_msg_cb_t msg_cb;
 } fr_reader_t;
