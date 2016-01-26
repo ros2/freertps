@@ -9,7 +9,6 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants
-const fr_eid_t g_fr_eid_unknown = { .u = 0 };
 fr_config_t g_fr_config;
 const fr_seq_num_t g_fr_seq_num_unknown = { .high = -1, .low = 0 };
 
@@ -32,7 +31,7 @@ static bool fr_rx_data          (RX_MSG_ARGS);
 static bool fr_rx_data_frag     (RX_MSG_ARGS);
 
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
-                   const fr_eid_t *reader_eid,
+                   const fr_entity_id_t *reader_entity_id,
                    const fr_guid_t *writer_guid,
                    const fr_seq_num_set_t *set);
 
@@ -182,7 +181,7 @@ static bool fr_rx_heartbeat(RX_MSG_ARGS)
   {
     fr_reader_t *r = &g_fr_readers[i];
     if (fr_guid_identical(&writer_guid, &r->writer_guid) &&
-        (hb->reader_id.u == r->reader_eid.u ||
+        (hb->reader_id.u == r->reader_entity_id.u ||
          hb->reader_id.u == 0))
       match = r;
   }
@@ -192,12 +191,12 @@ static bool fr_rx_heartbeat(RX_MSG_ARGS)
     for (unsigned i = 0; !match && i < g_fr_num_subs; i++)
     {
       fr_sub_t *sub = &g_fr_subs[i];
-      if (sub->reader_eid.u == hb->reader_id.u)
+      if (sub->reader_entity_id.u == hb->reader_id.u)
       {
         fr_reader_t r;
         memcpy(&r.writer_guid, &writer_guid, sizeof(fr_guid_t));
         r.reliable = sub->reliable;
-        r.reader_eid = hb->reader_id;
+        r.reader_entity_id = hb->reader_id;
         r.max_rx_sn.high = 0;
         r.max_rx_sn.low = 0;
         r.data_cb = sub->data_cb;
@@ -236,7 +235,7 @@ static bool fr_rx_heartbeat(RX_MSG_ARGS)
         set.bitmap = 0xffffffff;
       }
       fr_tx_acknack(&rcvr->src_guid_prefix,
-                    &match->reader_eid,
+                    &match->reader_entity_id,
                     &match->writer_guid,
                     (fr_seq_num_set_t *)&set);
     }
@@ -409,8 +408,8 @@ static bool fr_rx_data(RX_MSG_ARGS)
     // with any GUID prefix and with either an unknown reader entity ID
     // or the unknown-reader entity ID
     bool spdp_match = data_submsg->writer_id.u  == g_spdp_writer_id.u &&
-                      (match->reader_eid.u == g_spdp_reader_id.u ||
-                       match->reader_eid.u == g_fr_eid_unknown.u);
+                      (match->reader_entity_id.u == g_spdp_reader_id.u ||
+                       match->reader_entity_id.u == g_fr_entity_id_unknown.u);
     if (!spdp_match &&
         !fr_guid_identical(&writer_guid, &match->writer_guid))
         continue; // move along. no match here.
@@ -447,7 +446,7 @@ static bool fr_rx_data(RX_MSG_ARGS)
       printf("      writer = ");
       fr_print_guid(&match->writer_guid);
       printf(" => %08x\n", 
-        (unsigned)freertps_htonl(match->reader_eid.u));
+        (unsigned)freertps_htonl(match->reader_entity_id.u));
     }
   }
   //FREERTPS_ERROR("  ahh unknown data scheme: 0x%04x\n", (unsigned)scheme);
@@ -543,7 +542,7 @@ fr_msg_t *fr_init_msg(fr_msg_t *buf)
 }
 
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
-                   const fr_eid_t         *reader_id,
+                   const fr_entity_id_t         *reader_id,
                    const fr_guid_t        *writer_guid,
                    const fr_seq_num_set_t *set)
 {
@@ -576,14 +575,16 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
   fr_submsg_acknack_t *acknack =
                             (fr_submsg_acknack_t *)acknack_submsg->contents;
   acknack->reader_id = *reader_id;
-  acknack->writer_id = writer_guid->eid;
+  acknack->writer_id = writer_guid->entity_id;
   int sn_set_len = (set->num_bits + 31) / 32 * 4 + 12;
   memcpy(&acknack->reader_sn_state, set, sn_set_len);
   uint32_t *p_count = (uint32_t *)&acknack->reader_sn_state + sn_set_len / 4;
   *p_count = s_acknack_count++;
   uint8_t *p_next_submsg = (uint8_t *)p_count + 4;
   int payload_len = p_next_submsg - (uint8_t *)msg;
+#ifdef HORRIBLY_BROKEN
   fr_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
            part->metatraffic_unicast_locator.port,
            (const uint8_t *)msg, payload_len);
+#endif
 }

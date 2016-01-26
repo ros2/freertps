@@ -69,8 +69,8 @@ typedef struct
   fr_submsg_header_t header;
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
-  fr_eid_t reader_id;
-  fr_eid_t writer_id;
+  fr_entity_id_t reader_id;
+  fr_entity_id_t writer_id;
   fr_seq_num_t writer_sn;
   uint8_t data[];
 } __attribute__((packed)) fr_submsg_data_t;
@@ -80,8 +80,8 @@ typedef struct fr_submsg_data_frag
   fr_submsg_header_t header;
   uint16_t extraflags;
   uint16_t octets_to_inline_qos;
-  fr_eid_t reader_id;
-  fr_eid_t writer_id;
+  fr_entity_id_t reader_id;
+  fr_entity_id_t writer_id;
   fr_seq_num_t writer_sn;
   uint32_t fragment_starting_number;
   uint16_t fragments_in_submessage;
@@ -93,8 +93,8 @@ typedef struct fr_submsg_data_frag
 typedef struct
 {
   fr_submsg_header_t header;
-  fr_eid_t reader_id;
-  fr_eid_t writer_id;
+  fr_entity_id_t reader_id;
+  fr_entity_id_t writer_id;
   fr_seq_num_t first_sn;
   fr_seq_num_t last_sn;
   uint32_t count;
@@ -103,16 +103,16 @@ typedef struct
 typedef struct
 {
   fr_submsg_header_t header;
-  fr_eid_t reader_id;
-  fr_eid_t writer_id;
+  fr_entity_id_t reader_id;
+  fr_entity_id_t writer_id;
   fr_seq_num_t gap_start;
   fr_seq_num_set_t gap_end;
 } __attribute__((packed)) fr_submsg_gap_t;
 
 typedef struct
 {
-  fr_eid_t reader_id;
-  fr_eid_t writer_id;
+  fr_entity_id_t reader_id;
+  fr_entity_id_t writer_id;
   fr_seq_num_set_t reader_sn_state;
   // the "count" field that goes here is impossible to declare in legal C
 } __attribute__((packed)) fr_submsg_acknack_t;

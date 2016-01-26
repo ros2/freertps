@@ -7,8 +7,8 @@
 typedef struct fr_endpoint
 {
   struct fr_guid guid;
-  const char *topic_kind;
   bool reliable;
+  bool with_key;
   struct fr_container_t *unicast_locators;
   struct fr_container_t *multicast_locators;
 } fr_endpoint_t;

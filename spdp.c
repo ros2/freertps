@@ -12,8 +12,8 @@
 // local constants
 static fr_participant_t g_fr_spdp_rx_part; // just for rx buffer
 
-const fr_eid_t g_spdp_writer_id = { .u = 0xc2000100 };
-const fr_eid_t g_spdp_reader_id = { .u = 0xc7000100 };
+const fr_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
+const fr_entity_id_t g_spdp_reader_id = { .u = 0xc7000100 };
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////

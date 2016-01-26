@@ -6,10 +6,10 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
-static const fr_eid_t g_sedp_pub_writer_id = { .u = 0xc2030000 };
-static const fr_eid_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
-static const fr_eid_t g_sedp_sub_writer_id = { .u = 0xc2040000 };
-static const fr_eid_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
+static const fr_entity_id_t g_sedp_pub_writer_id = { .u = 0xc2030000 };
+static const fr_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
+static const fr_entity_id_t g_sedp_sub_writer_id = { .u = 0xc2040000 };
+static const fr_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -81,7 +81,7 @@ void fr_sedp_init()
   fr_sub_t sedp_sub_sub;
   sedp_sub_sub.topic_name = NULL;
   sedp_sub_sub.type_name = NULL;
-  sedp_sub_sub.reader_eid = g_sedp_sub_reader_id;
+  sedp_sub_sub.reader_entity_id = g_sedp_sub_reader_id;
   sedp_sub_sub.data_cb = fr_sedp_rx_sub_data;
   sedp_sub_sub.msg_cb = NULL;
   sedp_sub_sub.reliable = true;
@@ -90,7 +90,7 @@ void fr_sedp_init()
   fr_sub_t sedp_pub_sub; // subscribe to the publisher announcers
   sedp_pub_sub.topic_name = NULL;
   sedp_pub_sub.type_name = NULL;
-  sedp_pub_sub.reader_eid = g_sedp_pub_reader_id;
+  sedp_pub_sub.reader_entity_id = g_sedp_pub_reader_id;
   sedp_pub_sub.data_cb = fr_sedp_rx_pub_data;
   sedp_pub_sub.msg_cb = NULL;
   sedp_pub_sub.reliable = true;
@@ -199,7 +199,7 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
       {
         fr_reader_t r;
         r.writer_guid = info->guid;
-        r.reader_eid = sub->reader_eid;
+        r.reader_entity_id = sub->reader_entity_id;
         r.max_rx_sn.high = 0;
         r.max_rx_sn.low = 0;
         r.data_cb = sub->data_cb;
@@ -256,7 +256,7 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
     {
       fr_writer_t w;
       w.reader_guid = info->guid;
-      w.writer_eid = pub->writer_eid;
+      w.writer_entity_id = pub->writer_entity_id;
       fr_add_writer(&w);
     }
   }
@@ -401,12 +401,12 @@ static void fr_sedp_bcast()
 static void sedp_publish(const char *topic_name,
                          const char *type_name,
                          fr_pub_t *pub,
-                         const fr_eid_t eid,
+                         const fr_entity_id_t entity_id,
                          const bool is_pub) // is this for a pub or a sub
 {
   // first make sure we have an spdp packet out first
   printf("sedp publish [%s] via SEDP EID 0x%08x\r\n",
-      topic_name, (unsigned)freertps_htonl(pub->writer_eid.u));
+      topic_name, (unsigned)freertps_htonl(pub->writer_entity_id.u));
   fr_submsg_data_t *d = (fr_submsg_data_t *)g_sedp_msg_buf;
   d->header.id = FR_SUBMSG_ID_DATA;
   d->header.flags = FR_FLAGS_LITTLE_ENDIAN |
@@ -454,7 +454,7 @@ static void sedp_publish(const char *topic_name,
   param->len = 16;
   fr_guid_t guid;
   guid.prefix = g_fr_config.guid_prefix;
-  guid.eid = eid;
+  guid.entity_id = entity_id;
   memcpy(param->value, &guid, 16);
   //printf("reader_guid = 0x%08x\n", htonl(reader_guid.entity_id.u));
   /////////////////////////////////////////////////////////////
@@ -521,7 +521,7 @@ void sedp_publish_sub(fr_sub_t *sub)
   sedp_publish(sub->topic_name,
                sub->type_name,
                g_sedp_sub_pub,
-               sub->reader_eid,
+               sub->reader_entity_id,
                false); // false means "this is for a subscription"
 }
 
@@ -537,7 +537,7 @@ void sedp_publish_pub(fr_pub_t *pub)
   sedp_publish(pub->topic_name,
                pub->type_name,
                g_sedp_pub_pub,
-               pub->writer_eid,
+               pub->writer_entity_id,
                true); // true means "this is for a publication"
 }
 #endif
@@ -554,7 +554,7 @@ void sedp_add_builtin_endpoints(fr_participant_t *part)
   fr_stuff_guid(&pub_reader.writer_guid,
                    &part->guid_prefix,
                    &g_sedp_pub_writer_id);
-  pub_reader.reader_eid = g_sedp_pub_reader_id;
+  pub_reader.reader_entity_id = g_sedp_pub_reader_id;
   pub_reader.max_rx_sn.low = 0;
   pub_reader.max_rx_sn.high = 0;
   pub_reader.data_cb = fr_sedp_rx_pub_data;
@@ -567,7 +567,7 @@ void sedp_add_builtin_endpoints(fr_participant_t *part)
   fr_stuff_guid(&sub_reader.writer_guid,
                    &part->guid_prefix,
                    &g_sedp_sub_writer_id);
-  sub_reader.reader_eid = g_sedp_sub_reader_id;
+  sub_reader.reader_entity_id = g_sedp_sub_reader_id;
   sub_reader.max_rx_sn.low = 0;
   sub_reader.max_rx_sn.high = 0;
   sub_reader.data_cb = fr_sedp_rx_sub_data;

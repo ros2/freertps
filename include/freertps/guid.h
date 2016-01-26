@@ -12,14 +12,14 @@ typedef union
     uint8_t kind;
   } s;
   uint32_t u;
-} __attribute__((packed)) fr_eid_t; // entity ID
+} __attribute__((packed)) fr_entity_id_t;
 
 #define FR_ENTITY_KIND_USER_WRITER_WITH_KEY 0x02
 #define FR_ENTITY_KIND_USER_WRITER_NO_KEY   0x03
 #define FR_ENTITY_KIND_USER_READER_NO_KEY   0x04
 #define FR_ENTITY_KIND_USER_READER_WITH_KEY 0x07
 
-extern const fr_eid_t g_fr_eid_unknown;
+extern const fr_entity_id_t g_fr_entity_id_unknown;
 
 #define FR_GUID_PREFIX_LEN 12
 typedef struct fr_guid_prefix
@@ -30,7 +30,7 @@ typedef struct fr_guid_prefix
 typedef struct fr_guid
 {
   fr_guid_prefix_t prefix;
-  fr_eid_t eid;
+  fr_entity_id_t entity_id;
 } __attribute__((packed)) fr_guid_t;
 extern const fr_guid_t g_fr_guid_unknown;
 
@@ -42,11 +42,11 @@ bool fr_guid_identical(const fr_guid_t * const a,
 
 void fr_stuff_guid(fr_guid_t *guid,
                    const fr_guid_prefix_t *prefix,
-                   const fr_eid_t *id);
+                   const fr_entity_id_t *id);
 
 void fr_guid_print_prefix(const fr_guid_prefix_t *guid_prefix);
 void fr_guid_print(const fr_guid_t *guid);
 
-fr_eid_t fr_create_user_id(const uint8_t entity_kind);
+fr_entity_id_t fr_create_user_id(const uint8_t entity_kind);
 
 #endif
