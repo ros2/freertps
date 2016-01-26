@@ -10,7 +10,7 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
-static fr_part_t g_fr_spdp_rx_part; // just for rx buffer
+static fr_participant_t g_fr_spdp_rx_part; // just for rx buffer
 
 const fr_eid_t g_spdp_writer_id = { .u = 0xc2000100 };
 const fr_eid_t g_spdp_reader_id = { .u = 0xc7000100 };
@@ -35,7 +35,7 @@ static void fr_spdp_rx_data(fr_receiver_state_t *rcvr,
     FREERTPS_ERROR("expected spdp data to be PL_CDR_LE. bailing...\n");
     return;
   }
-  fr_part_t *part = &g_fr_spdp_rx_part;
+  fr_participant_t *part = &g_fr_spdp_rx_part;
   // todo: spin through this param list and save it
   fr_parameter_list_item_t *item = (fr_parameter_list_item_t *)data;
   while ((uint8_t *)item < submsg->contents + submsg->header.len)
@@ -183,7 +183,7 @@ static void fr_spdp_rx_data(fr_receiver_state_t *rcvr,
   bool found = false;
   for (int i = 0; !found && i < g_fr_disco_num_parts; i++)
   {
-    fr_part_t *p = &g_fr_disco_parts[i];
+    fr_participant_t *p = &g_fr_disco_participants[i];
     if (fr_guid_prefix_identical(&p->guid_prefix,
                                     &part->guid_prefix))
     {
@@ -202,7 +202,7 @@ static void fr_spdp_rx_data(fr_receiver_state_t *rcvr,
     if (g_fr_disco_num_parts < FR_DISCO_MAX_PARTS)
     {
       const int p_idx = g_fr_disco_num_parts; // save typing
-      fr_part_t *p = &g_fr_disco_parts[p_idx];
+      fr_participant_t *p = &g_fr_disco_participants[p_idx];
       *p = *part; // save everything plz
       //printf("    saved new participant in slot %d\n", p_idx);
       g_fr_disco_num_parts++;

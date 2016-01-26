@@ -542,7 +542,7 @@ void sedp_publish_pub(fr_pub_t *pub)
 }
 #endif
 
-void sedp_add_builtin_endpoints(fr_part_t *part)
+void sedp_add_builtin_endpoints(fr_participant_t *part)
 {
   printf("adding endpoints for ");
   fr_guid_print_prefix(&part->guid_prefix);

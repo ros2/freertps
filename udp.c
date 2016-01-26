@@ -464,7 +464,7 @@ static bool fr_rx_data_frag(RX_MSG_ARGS)
 bool fr_generic_init()
 {
   FREERTPS_INFO("fr_generic_init()\r\n");
-  fr_part_create();
+  fr_participant_create();
   fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
                   fr_mcast_builtin_port());
   fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
@@ -554,7 +554,7 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
   #endif
   static int s_acknack_count = 1;
   // find the participant we are trying to talk to
-  fr_part_t *part = fr_part_find(guid_prefix);
+  fr_participant_t *part = fr_participant_find(guid_prefix);
   if (!part)
   {
     FREERTPS_ERROR("tried to acknack an unknown participant\n");
