@@ -7,6 +7,8 @@
 #include "freertps/container.h"
 #include <stdbool.h>
 
+typedef uint32_t fr_builtin_endpoint_set_t;
+
 typedef struct fr_participant
 {
   fr_guid_prefix_t guid_prefix;
@@ -14,12 +16,8 @@ typedef struct fr_participant
   fr_vendor_id_t vendor_id;
   struct fr_container_t *default_unicast_locators;
   struct fr_container_t *default_multicast_locators;
-  /*
-  fr_locator_t default_unicast_locator;
-  fr_locator_t default_multicast_locator;
-  fr_locator_t metatraffic_unicast_locator;
-  fr_locator_t metatraffic_multicast_locator;
-  */
+  ////////////////////////////////////////////////////////////////////////
+  // the next two fields are things we discover from SPDP about others
   fr_duration_t lease_duration;
   fr_builtin_endpoint_set_t builtin_endpoints;
 } fr_participant_t;

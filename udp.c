@@ -1,11 +1,12 @@
-#include "freertps/udp.h"
-#include "freertps/freertps.h"
-#include "freertps/spdp.h"
-#include "freertps/disco.h"
-#include "freertps/bswap.h"
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
+#include "freertps/bswap.h"
+#include "freertps/disco.h"
+#include "freertps/freertps.h"
+#include "freertps/receiver.h"
+#include "freertps/udp.h"
+#include "freertps/spdp.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants
@@ -14,9 +15,8 @@ const fr_seq_num_t g_fr_seq_num_unknown = { .high = -1, .low = 0 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
-static bool fr_rx_submsg(fr_receiver_state_t *rcvr,
-                         const fr_submsg_t *submsg);
-#define RX_MSG_ARGS fr_receiver_state_t *rcvr, const fr_submsg_t *submsg
+static bool fr_rx_submsg(fr_receiver_t *rcvr, const fr_submsg_t *submsg);
+#define RX_MSG_ARGS fr_receiver_t *rcvr, const fr_submsg_t *submsg
 static bool fr_rx_acknack       (RX_MSG_ARGS);
 static bool fr_rx_heartbeat     (RX_MSG_ARGS);
 static bool fr_rx_gap           (RX_MSG_ARGS);
@@ -70,7 +70,7 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
                 fr_vendor(ntohs(msg->header.vid)));
 #endif
   // initialize the receiver state
-  fr_receiver_state_t rcvr;
+  fr_receiver_t rcvr;
   rcvr.src_protocol_version = msg->header.protocol_version;
   rcvr.src_vendor_id = msg->header.vendor_id;
 
@@ -98,7 +98,7 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
   return true;
 }
 
-static bool fr_rx_submsg(fr_receiver_state_t *rcvr,
+static bool fr_rx_submsg(fr_receiver_t *rcvr,
                          const fr_submsg_t *submsg)
 {
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX

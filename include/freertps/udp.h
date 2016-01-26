@@ -5,8 +5,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "freertps/guid.h"
-#include "freertps/seq_num.h"
 #include "freertps/protocol_version.h"
+#include "freertps/receiver.h"
+#include "freertps/seq_num.h"
 #include "freertps/vendor_id.h"
 
 /////////////////////////////////////////////////////////////////////
@@ -53,16 +54,6 @@ typedef struct
   fr_submsg_header_t header;
   uint8_t contents[];
 } fr_submsg_t;
-
-typedef struct
-{
-  struct fr_protocol_version src_protocol_version;
-  fr_vendor_id_t         src_vendor_id;
-  fr_guid_prefix_t src_guid_prefix;
-  fr_guid_prefix_t dst_guid_prefix;
-  bool             have_timestamp;
-  fr_time_t        timestamp;
-} fr_receiver_state_t;
 
 typedef struct
 {
@@ -139,18 +130,10 @@ typedef struct
 #define FR_SCHEME_CDR_LE    0x0001
 #define FR_SCHEME_PL_CDR_LE 0x0003
 
-typedef void (*fr_rx_data_cb_t)(fr_receiver_state_t *rcvr,
+typedef void (*fr_rx_data_cb_t)(fr_receiver_t *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data);
-/*
-typedef struct
-{
-  int32_t sec;
-  uint32_t nanosec;
-} fr_duration_t;
-*/
-typedef uint32_t fr_builtin_endpoint_set_t;
 
 typedef struct
 {

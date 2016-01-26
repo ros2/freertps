@@ -13,15 +13,15 @@ static const fr_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
-static void fr_sedp_rx_pub_data(fr_receiver_state_t *rcvr,
+static void fr_sedp_rx_pub_data(fr_receiver_t *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data);
-static void fr_sedp_rx_sub_data(fr_receiver_state_t *rcvr,
+static void fr_sedp_rx_sub_data(fr_receiver_t *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data);
-static void fr_sedp_rx_pubsub_data(fr_receiver_state_t *rcvr,
+static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
                                    const fr_submsg_t *submsg,
                                    const uint16_t scheme,
                                    const uint8_t *data,
@@ -140,7 +140,7 @@ void fr_sedp_tick()
 }
 
 //#define SEDP_PRINT_TOPICS
-static void fr_sedp_rx_pub_data(fr_receiver_state_t *rcvr,
+static void fr_sedp_rx_pub_data(fr_receiver_t *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data)
@@ -148,7 +148,7 @@ static void fr_sedp_rx_pub_data(fr_receiver_state_t *rcvr,
   //fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
 }
 
-static void fr_sedp_rx_sub_data(fr_receiver_state_t *rcvr,
+static void fr_sedp_rx_sub_data(fr_receiver_t *rcvr,
                                 const fr_submsg_t *submsg,
                                 const uint16_t scheme,
                                 const uint8_t *data)
@@ -263,7 +263,7 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
 #endif
 }
 
-static void fr_sedp_rx_pubsub_data(fr_receiver_state_t *rcvr,
+static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
                                    const fr_submsg_t *submsg,
                                    const uint16_t scheme,
                                    const uint8_t *data,
