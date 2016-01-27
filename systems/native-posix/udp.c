@@ -111,7 +111,6 @@ bool fr_init()
   //if (!fr_init_participant_id())
   //  return false;
   // some of the following stuff has been moved to fr_part_create()
-  //fr_generic_init();
   // not sure about endianness here.
   g_fr_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
   g_fr_config.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
@@ -121,9 +120,7 @@ bool fr_init()
   // 4 bytes left. let's use the POSIX process ID
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
   memcpy(&g_fr_config.guid_prefix.prefix[8], &pid, 4);
-  //fr_disco_init();
-  fr_generic_init();
-  return true;
+  return fr_participant_init();
 }
 
 bool fr_init_participant_id()

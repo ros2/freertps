@@ -6,7 +6,9 @@
 #include "freertps/locator.h"
 #include "freertps/protocol_version.h"
 #include "freertps/udp.h"
+#include "freertps/reader.h"
 #include "freertps/vendor_id.h"
+#include "freertps/writer.h"
 
 typedef struct fr_participant
 {
@@ -16,9 +18,14 @@ typedef struct fr_participant
   struct fr_container *default_unicast_locators;
   struct fr_container *default_multicast_locators;
   struct fr_container *matched_participants;
+  struct fr_container *writers;
+  struct fr_container *readers;
 } fr_participant_t;
 
 fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix);
-bool fr_participant_create();
+bool fr_participant_init();
+bool fr_participant_add_writer(struct fr_writer *writer);
+
+extern struct fr_participant g_fr_participant;
 
 #endif

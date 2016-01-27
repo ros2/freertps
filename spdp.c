@@ -223,6 +223,9 @@ void fr_spdp_init()
   FREERTPS_INFO("sdp init\r\n");
   fr_spdp_last_bcast.seconds = 0;
   fr_spdp_last_bcast.fraction = 0;
+  struct fr_writer *writer = fr_writer_create(NULL, NULL);
+  //writer.push_mod
+  fr_participant_add_writer(writer);
 #ifdef BROKEN
   fr_reader_t spdp_reader;
   spdp_reader.writer_guid = g_fr_guid_unknown;

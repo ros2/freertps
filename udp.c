@@ -460,20 +460,6 @@ static bool fr_rx_data_frag(RX_MSG_ARGS)
   return true;
 }
 
-bool fr_generic_init()
-{
-  FREERTPS_INFO("fr_generic_init()\r\n");
-  fr_participant_create();
-  fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
-                  fr_mcast_builtin_port());
-  fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
-                  fr_mcast_user_port());
-  fr_add_ucast_rx(fr_ucast_builtin_port());
-  fr_add_ucast_rx(fr_ucast_user_port());
-  fr_discovery_init();
-  return true;
-}
-
 uint16_t fr_mcast_builtin_port()
 {
   return FR_PORT_PB +

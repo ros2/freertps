@@ -29,7 +29,7 @@ typedef struct fr_guid_prefix
 
 typedef struct fr_guid
 {
-  fr_guid_prefix_t prefix;
+  struct fr_guid_prefix prefix;
   fr_entity_id_t entity_id;
 } __attribute__((packed)) fr_guid_t;
 extern const fr_guid_t g_fr_guid_unknown;
@@ -48,5 +48,7 @@ void fr_guid_print_prefix(const fr_guid_prefix_t *guid_prefix);
 void fr_guid_print(const fr_guid_t *guid);
 
 fr_entity_id_t fr_create_user_id(const uint8_t entity_kind);
+
+void fr_guid_set_zero(struct fr_guid *guid);
 
 #endif

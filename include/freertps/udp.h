@@ -20,7 +20,6 @@ typedef void (*fr_rx_data_cb_t)(fr_receiver_t *rcvr,
 bool fr_init();
 void fr_fini();
 
-bool fr_generic_init();
 bool fr_init_participant_id();
 
 bool fr_add_mcast_rx(const uint32_t group,

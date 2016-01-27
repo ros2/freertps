@@ -73,3 +73,10 @@ fr_entity_id_t fr_create_user_id(const uint8_t entity_kind)
   entity_id.s.key[2] = g_fr_next_user_entity_id++;
   return entity_id;
 }
+
+void fr_guid_set_zero(struct fr_guid *guid)
+{
+  for (int i = 0; i < FR_GUID_PREFIX_LEN; i++)
+    guid->prefix.prefix[i] = 0;
+  guid->entity_id.u = 0;
+}

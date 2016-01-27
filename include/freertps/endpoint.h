@@ -13,5 +13,7 @@ typedef struct fr_endpoint
   struct fr_container_t *multicast_locators;
 } fr_endpoint_t;
 
+void endpoint_init(struct fr_endpoint *ep);
+
 #endif
 
