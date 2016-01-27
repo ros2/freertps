@@ -11,6 +11,7 @@ static bool g_fr_participant_init_complete = false;
 
 fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix)
 {
+#ifdef HORRIBLY_BROKEN
   for (int i = 0; i < g_fr_discovery_num_participants; i++)
   {
     fr_participant_t *p = &g_fr_discovery_participants[i]; // shorter
@@ -23,6 +24,7 @@ fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix)
     if (match)
       return p;
   }
+#endif
   return NULL; // couldn't find it. sorry.
 }
 

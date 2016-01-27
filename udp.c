@@ -515,6 +515,7 @@ const char *fr_ip4_ntoa(const uint32_t addr)
   return ntoa_buf;
 }
 
+static uint32_t g_fr_udp_tx_buf_wpos;
 struct fr_message *fr_init_msg(struct fr_message *buf)
 {
   struct fr_message *msg = (struct fr_message *)buf;
@@ -525,10 +526,11 @@ struct fr_message *fr_init_msg(struct fr_message *buf)
   memcpy(msg->header.guid_prefix.prefix,
          g_fr_config.guid_prefix.prefix,
          FR_GUID_PREFIX_LEN);
-  g_fr_discovery_tx_buf_wpos = 0;
+  g_fr_udp_tx_buf_wpos = 0;
   return msg;
 }
 
+static uint8_t g_fr_udp_tx_buf[1536]; //FR_DISCOVERY_TX_BUFLEN];
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
                    const fr_entity_id_t         *reader_id,
                    const fr_guid_t        *writer_guid,
@@ -547,7 +549,7 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
     FREERTPS_ERROR("tried to acknack an unknown participant\n");
     return; // woah.
   }
-  struct fr_message *msg = (struct fr_message *)g_fr_discovery_tx_buf;
+  struct fr_message *msg = (struct fr_message *)g_fr_udp_tx_buf;
   fr_init_msg(msg);
   //printf("    about to tx acknack\n");
   struct fr_submessage *dst_submsg = 
