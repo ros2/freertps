@@ -19,14 +19,14 @@ int main(int argc, char **argv)
   fr_pub_t *pub = freertps_create_pub(
       "chatter", "std_msgs::msg::dds_::String_");
   */
-  fr_disco_start();
+  fr_discovery_start();
   char msg[64] = {0};
   for (int pub_count = 0;
        pub_count < n_msg && freertps_system_ok();
        pub_count++)
   {
     fr_listen(target_dt * 1000000);
-    fr_disco_tick();
+    fr_discovery_tick();
     snprintf(&msg[4], sizeof(msg) - 4, "Hello World: %d", pub_count);
     uint32_t rtps_string_len = strlen(&msg[4]) + 1;
     uint32_t *str_len_ptr = (uint32_t *)msg;

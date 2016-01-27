@@ -1,5 +1,5 @@
-#ifndef FREERTPS_DISCO_H
-#define FREERTPS_DISCO_H
+#ifndef FREERTPS_DISCOVERY_H
+#define FREERTPS_DISCOVERY_H
 
 // this has a bunch of discovery-related debris
 
@@ -45,17 +45,17 @@
 #define FR_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_WRITER 0x00000400
 #define FR_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_READER 0x00000800
 
-void fr_disco_init();
-void fr_disco_fini();
+void fr_discovery_init();
+void fr_discovery_fini();
 
-void fr_disco_start(); /// must be called to kick off discovery
-void fr_disco_tick();  /// must be called periodically to broadcast SPDP
+void fr_discovery_start(); /// must be called to kick off discovery
+void fr_discovery_tick();  /// must be called periodically to broadcast SPDP
 
-#define FR_DISCO_TX_BUFLEN 1536
-extern uint8_t g_fr_disco_tx_buf[FR_DISCO_TX_BUFLEN];
-extern uint16_t g_fr_disco_tx_buf_wpos;
+#define FR_DISCOVERY_TX_BUFLEN 1536
+extern uint8_t g_fr_discovery_tx_buf[FR_DISCOVERY_TX_BUFLEN];
+extern uint16_t g_fr_discovery_tx_buf_wpos;
 
-extern fr_participant_t g_fr_disco_participants[FR_DISCO_MAX_PARTICIPANTS];
-extern int g_fr_disco_num_participants;
+extern fr_participant_t g_fr_discovery_participants[FR_DISCOVERY_MAX_PARTICIPANTS];
+extern int g_fr_discovery_num_participants;
 
 #endif

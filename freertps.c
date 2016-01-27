@@ -49,6 +49,5 @@ bool freertps_publish(fr_pub_t *pub,
 
 void freertps_start()
 {
-  // todo: other physical layers...
-  fr_disco_start();
+  fr_discovery_start();
 }

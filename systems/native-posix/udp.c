@@ -1,7 +1,7 @@
 #include "freertps/freertps.h"
 #include "freertps/timer.h"
 #include "freertps/udp.h"
-#include "freertps/disco.h"
+#include "freertps/discovery.h"
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -146,7 +146,7 @@ bool fr_init_participant_id()
 
 void fr_fini()
 {
-  fr_disco_fini();
+  fr_discovery_fini();
   FREERTPS_INFO("fr_fini\n");
   for (int i = 0; i < g_fr_rx_socks_used; i++)
   {

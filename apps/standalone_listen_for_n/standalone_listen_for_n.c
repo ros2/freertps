@@ -30,11 +30,11 @@ int main(int argc, char **argv)
                       "std_msgs::msg::dds_::String_",
                       chatter_cb);
   */
-  fr_disco_start(); // we're alive now; announce ourselves to the world
+  fr_discovery_start(); // we're alive now; announce ourselves to the world
   while (freertps_system_ok())
   {
     fr_listen(100000);
-    fr_disco_tick(); // stayin' alive FLOOR-TOM FLOOR-TOM CYMBAL-CRASH
+    fr_discovery_tick(); // stayin' alive FLOOR-TOM FLOOR-TOM CYMBAL-CRASH
     fr_time_t t = fr_time_now();
     fr_duration_t dt = fr_time_diff(&t, &t_start);
     double dt_secs = fr_duration_double(&dt);

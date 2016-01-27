@@ -19,11 +19,11 @@ int main(int argc, char **argv)
                       "std_msgs::msg::dds_::String_",
                       chatter_cb);
   */
-  fr_disco_start(); // we're alive now; announce ourselves to the world
+  fr_discovery_start(); // we're alive now; announce ourselves to the world
   while (freertps_system_ok())
   {
     fr_listen(1000000);
-    fr_disco_tick();
+    fr_discovery_tick();
   }
   fr_fini();
   return 0;

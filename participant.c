@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertps/udp.h"
-#include "freertps/disco.h"
+#include "freertps/discovery.h"
 #include "freertps/participant.h"
 #include "freertps/config.h"
 #include "freertps/freertps.h"
@@ -11,9 +11,9 @@ static bool g_fr_participant_init_complete = false;
 
 fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix)
 {
-  for (int i = 0; i < g_fr_disco_num_participants; i++)
+  for (int i = 0; i < g_fr_discovery_num_participants; i++)
   {
-    fr_participant_t *p = &g_fr_disco_participants[i]; // shorter
+    fr_participant_t *p = &g_fr_discovery_participants[i]; // shorter
     bool match = true;
     for (int j = 0; match && j < FR_GUID_PREFIX_LEN; j++)
     {
@@ -43,7 +43,7 @@ bool fr_participant_create()
     return false;
   }
   //fr_generic_init();
-  //fr_disco_init();
+  //fr_discovery_init();
   g_fr_participant_init_complete = true;
   printf("prefix: ");
   fr_guid_print_prefix(&g_fr_config.guid_prefix);

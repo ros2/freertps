@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "freertps/bswap.h"
-#include "freertps/disco.h"
+#include "freertps/discovery.h"
 #include "freertps/freertps.h"
 #include "freertps/receiver.h"
 #include "freertps/udp.h"
@@ -470,7 +470,7 @@ bool fr_generic_init()
                   fr_mcast_user_port());
   fr_add_ucast_rx(fr_ucast_builtin_port());
   fr_add_ucast_rx(fr_ucast_user_port());
-  fr_disco_init();
+  fr_discovery_init();
   return true;
 }
 
@@ -525,7 +525,7 @@ struct fr_message *fr_init_msg(struct fr_message *buf)
   memcpy(msg->header.guid_prefix.prefix,
          g_fr_config.guid_prefix.prefix,
          FR_GUID_PREFIX_LEN);
-  g_fr_disco_tx_buf_wpos = 0;
+  g_fr_discovery_tx_buf_wpos = 0;
   return msg;
 }
 
@@ -547,7 +547,7 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
     FREERTPS_ERROR("tried to acknack an unknown participant\n");
     return; // woah.
   }
-  struct fr_message *msg = (struct fr_message *)g_fr_disco_tx_buf;
+  struct fr_message *msg = (struct fr_message *)g_fr_discovery_tx_buf;
   fr_init_msg(msg);
   //printf("    about to tx acknack\n");
   struct fr_submessage *dst_submsg = 

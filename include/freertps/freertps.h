@@ -17,7 +17,7 @@ typedef void (*freertps_msg_cb_t)(const void *msg);
 #include "freertps/time.h"
 #include "freertps/ports.h"
 #include "freertps/locator.h"
-#include "freertps/disco.h"
+#include "freertps/discovery.h"
 #include "freertps/bswap.h"
 #include "freertps/system.h"
 #include "freertps/writer.h"
@@ -25,11 +25,11 @@ typedef void (*freertps_msg_cb_t)(const void *msg);
 
 // maybe make this smarter someday
 #define FREERTPS_INFO(...) \
-  do { printf("freertps INFO : "); printf(__VA_ARGS__); } while (0)
+  do { printf(__VA_ARGS__); } while (0)
 #define FREERTPS_ERROR(...) \
-  do { printf("freertps ERROR: "); printf(__VA_ARGS__); } while (0)
+  do { printf(__VA_ARGS__); } while (0)
 #define FREERTPS_FATAL(...) \
-  do { printf("freertps FATAL: "); printf(__VA_ARGS__); } while (0)
+  do { printf(__VA_ARGS__); } while (0)
 
 #if 0
 void freertps_create_sub(const char *topic_name,
