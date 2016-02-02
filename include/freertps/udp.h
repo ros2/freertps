@@ -20,7 +20,6 @@ typedef void (*fr_rx_data_cb_t)(fr_receiver_t *rcvr,
 bool fr_init();
 void fr_fini();
 
-bool fr_init_participant_id();
 
 bool fr_add_mcast_rx(const uint32_t group,
                      const uint16_t port); //,
@@ -43,10 +42,6 @@ bool fr_tx(const uint32_t dst_addr,
            const uint8_t *tx_data,
            const uint16_t tx_len);
 
-uint16_t fr_ucast_builtin_port();
-uint16_t fr_mcast_builtin_port();
-uint16_t fr_ucast_user_port();
-uint16_t fr_mcast_user_port();
 uint16_t fr_spdp_port();
 
 const char *fr_ip4_ntoa(const uint32_t addr);

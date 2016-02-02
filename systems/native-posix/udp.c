@@ -2,6 +2,7 @@
 #include "freertps/timer.h"
 #include "freertps/udp.h"
 #include "freertps/discovery.h"
+#include "freertps/participant.h"
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -41,16 +42,15 @@ static int g_fr_rx_socks_used;
 static struct sockaddr_in g_fr_tx_addr;
 static int g_fr_tx_sock;
 
+static uint32_t g_fr_system_unicast_addr;
+
 #define FU_RX_BUFSIZE 4096
 
-bool fr_init()
+bool fr_system_udp_init()
 {
-  FREERTPS_INFO("fr_init()\n");
+  FREERTPS_INFO("fr_system_udp_init()\n");
   for (int i = 0; i < FRUDP_MAX_RX_SOCKS; i++)
-  {
     g_fr_rx_socks[i].sock = -1;
-    //g_freertps__rx_socks[i].cb = NULL;
-  }
 
   struct ifaddrs *ifaddr;
   if (getifaddrs(&ifaddr) == -1)
@@ -70,14 +70,14 @@ bool fr_init()
     if (getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
                     host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST))
       continue;
-    FREERTPS_INFO("found address %s on interface %s\n", host, ifa->ifa_name);
+    FREERTPS_INFO("  found address %s on interface %s\n", host, ifa->ifa_name);
     if (0 == strcmp(host, "127.0.0.1"))
       continue; // boring
     tx_addr_str = host; // save this one for now
   }
-  FREERTPS_INFO("using address %s for unicast\n", tx_addr_str);
+  FREERTPS_INFO("  using address %s for unicast\n", tx_addr_str);
   g_fr_tx_addr.sin_addr.s_addr = inet_addr(tx_addr_str);
-  g_fr_config.unicast_addr = (uint32_t)g_fr_tx_addr.sin_addr.s_addr;
+  g_fr_system_unicast_addr = (uint32_t)g_fr_tx_addr.sin_addr.s_addr;
   freeifaddrs(ifaddr);
 
   g_fr_tx_sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -112,29 +112,23 @@ bool fr_init()
   //  return false;
   // some of the following stuff has been moved to fr_part_create()
   // not sure about endianness here.
-  g_fr_config.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
-  g_fr_config.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
+  g_fr_participant.guid_prefix.prefix[0] = FREERTPS_VENDOR_ID >> 8;
+  g_fr_participant.guid_prefix.prefix[1] = FREERTPS_VENDOR_ID & 0xff;
   // todo: actually get mac address
   const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
-  memcpy(&g_fr_config.guid_prefix.prefix[2], mac, 6);
+  memcpy(&g_fr_participant.guid_prefix.prefix[2], mac, 6);
   // 4 bytes left. let's use the POSIX process ID
   uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
-  memcpy(&g_fr_config.guid_prefix.prefix[8], &pid, 4);
-  return fr_participant_init();
-}
+  memcpy(&g_fr_participant.guid_prefix.prefix[8], &pid, 4);
 
-bool fr_init_participant_id()
-{
-  FREERTPS_INFO("fr_init_participant_id()\n");
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
   {
     // see if we can open the port; if so, let's say we have a unique PID
-    g_fr_config.participant_id = pid;
-    const uint16_t port = fr_ucast_builtin_port();
-
+    g_fr_participant.participant_id = pid;
+    const uint16_t port = fr_participant_ucast_builtin_port();
     if (fr_add_ucast_rx(port))
     {
-      FREERTPS_INFO("using RTPS/DDS PID %d\n", pid);
+      FREERTPS_INFO("  using RTPS/DDS PID %d\n", pid);
       return true;
     }
   }
@@ -197,6 +191,15 @@ bool fr_add_ucast_rx(const uint16_t port)
   rxs->addr = rx_bind_addr.sin_addr.s_addr;
   //FREERTPS_INFO("  added in rx sock slot %d\n", g_fr_rx_socks_used);
   g_fr_rx_socks_used++;
+
+  // now, add this locator to the participant's locator list
+  struct fr_locator loc;
+  loc.kind = FR_LOCATOR_KIND_UDPV4;
+  loc.port = port;
+  memset(loc.addr.udp4.zeros, 0, 12);
+  loc.addr.udp4.addr = g_fr_system_unicast_addr;
+  fr_container_append(g_fr_participant.default_unicast_locators,
+      &loc, sizeof(struct fr_locator));
   return true;
 }
 
@@ -262,6 +265,15 @@ bool fr_add_mcast_rx(in_addr_t group, uint16_t port)
   rxs->port = port;
   rxs->addr = g_fr_tx_addr.sin_addr.s_addr;
   g_fr_rx_socks_used++;
+
+  // now, add this locator to the participant's locator list
+  struct fr_locator loc;
+  loc.kind = FR_LOCATOR_KIND_UDPV4;
+  loc.port = port;
+  memset(loc.addr.udp4.zeros, 0, 12);
+  loc.addr.udp4.addr = group;
+  fr_container_append(g_fr_participant.default_multicast_locators,
+      &loc, sizeof(struct fr_locator));
   return true;
 }
 

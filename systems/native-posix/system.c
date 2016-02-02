@@ -47,16 +47,23 @@ void freertps_init_malloc_hook()
 void (*volatile __malloc_initialize_hook)(void) = freertps_init_malloc_hook;
 #endif
 
-void freertps_system_init()
+extern bool fr_system_udp_init();
+
+void fr_system_init()
 {
+  printf("fr_system_init()\n");
   //__malloc_hook = freertps_malloc;
-  fr_init();
+  if (!fr_system_udp_init())
+  {
+    printf("udp initialization failed!\r\n");
+    exit(1);
+  }
 
   //signal(SIGINT, sigint_handler); // let ROS2 handle this now
   g_freertps_init_complete = true;
 }
 
-bool freertps_system_ok()
+bool fr_system_ok()
 {
   return true; //!g_done;
 }

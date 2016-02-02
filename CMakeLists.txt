@@ -61,6 +61,8 @@ add_library(freertps cdr_string.c
                      endpoint.c
                      freertps.c 
                      guid.c
+                     iterator.c
+                     locator.c
                      participant.c 
                      reader.c
                      sedp.c 

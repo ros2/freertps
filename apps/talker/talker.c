@@ -4,7 +4,8 @@
 
 int main(int argc, char **argv)
 {
-  freertps_system_init();
+  freertps_init();
+  //freertps_system_init();
   frudp_pub_t *pub = freertps_create_pub
                        ("chatter",
                         std_msgs__string__type.rtps_typename);
@@ -17,7 +18,7 @@ int main(int argc, char **argv)
   uint8_t cdr[68] = {0};
 
   int pub_count = 0;
-  while (freertps_system_ok())
+  while (freertps_ok())
   {
     frudp_listen(500000);
     frudp_disco_tick();

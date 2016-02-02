@@ -51,6 +51,9 @@ extern bool g_freertps_init_complete;
 
 void freertps_start();
 
+void freertps_init();
+bool freertps_ok();
+
 #ifdef __cplusplus
 }
 #endif

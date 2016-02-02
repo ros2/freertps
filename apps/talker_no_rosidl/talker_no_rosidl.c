@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 {
   printf("hello, world!\r\n");
-  freertps_system_init();
+  freertps_init();
   fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String");
   /*
   fr_pub_t *pub = freertps_create_pub(
@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   fr_discovery_start();
   int pub_count = 0;
   char msg[64] = {0};
-  while (freertps_system_ok())
+  while (freertps_ok())
   {
     fr_listen(500000);
     fr_discovery_tick();

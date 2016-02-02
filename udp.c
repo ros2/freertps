@@ -7,6 +7,7 @@
 #include "freertps/receiver.h"
 #include "freertps/udp.h"
 #include "freertps/spdp.h"
+#include "freertps/participant.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // global constants
@@ -77,7 +78,7 @@ bool fr_rx(const uint32_t src_addr, const uint16_t src_port,
   bool our_guid = true;
   for (int i = 0; i < 12 && our_guid; i++)
     if (msg->header.guid_prefix.prefix[i] !=
-        g_fr_config.guid_prefix.prefix[i])
+        g_fr_participant.guid_prefix.prefix[i])
       our_guid = false;
   if (our_guid)
     return true; // don't process our own messages
@@ -460,36 +461,6 @@ static bool fr_rx_data_frag(RX_MSG_ARGS)
   return true;
 }
 
-uint16_t fr_mcast_builtin_port()
-{
-  return FR_PORT_PB +
-         FR_PORT_DG * g_fr_config.domain_id +
-         FR_PORT_D0;
-}
-
-uint16_t fr_ucast_builtin_port()
-{
-  return FR_PORT_PB +
-         FR_PORT_DG * g_fr_config.domain_id +
-         FR_PORT_D1 +
-         FR_PORT_PG * g_fr_config.participant_id;
-}
-
-uint16_t fr_mcast_user_port()
-{
-  return FR_PORT_PB +
-         FR_PORT_DG * g_fr_config.domain_id +
-         FR_PORT_D2;
-}
-
-uint16_t fr_ucast_user_port()
-{
-  return FR_PORT_PB +
-         FR_PORT_DG * g_fr_config.domain_id +
-         FR_PORT_D3 +
-         FR_PORT_PG * g_fr_config.participant_id;
-}
-
 const char *fr_ip4_ntoa(const uint32_t addr)
 {
   static char ntoa_buf[20];
@@ -510,7 +481,7 @@ struct fr_message *fr_init_msg(struct fr_message *buf)
   msg->header.protocol_version.minor = 1;
   msg->header.vendor_id = FREERTPS_VENDOR_ID;
   memcpy(msg->header.guid_prefix.prefix,
-         g_fr_config.guid_prefix.prefix,
+         g_fr_participant.guid_prefix.prefix,
          FR_GUID_PREFIX_LEN);
   g_fr_udp_tx_buf_wpos = 0;
   return msg;

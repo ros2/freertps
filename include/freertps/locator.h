@@ -8,7 +8,7 @@
 #define FR_LOCATOR_KIND_UDPV4    1
 #define FR_LOCATOR_KIND_UDPV6    2
 
-typedef struct
+typedef struct fr_locator
 {
   int32_t kind;
   uint32_t port;
@@ -22,5 +22,7 @@ typedef struct
     } udp4;
   } addr; 
 } __attribute__((packed)) fr_locator_t;
+
+void locator_print(struct fr_locator *loc);
 
 #endif

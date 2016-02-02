@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "freertps/freertps.h"
 #include "freertps/udp.h"
+#include "freertps/system.h"
 //#include "freertps/sub.h"
 
 bool g_freertps_init_complete;
@@ -51,3 +52,22 @@ void freertps_start()
 {
   fr_discovery_start();
 }
+
+void freertps_init()
+{
+  printf("freertps_init()\n");
+  fr_participant_init();
+  fr_system_init();
+  fr_participant_add_default_locators();
+  printf("prefix: ");
+  fr_guid_print_prefix(&g_fr_participant.guid_prefix);
+  printf("\n");
+  fr_participant_print_locators();
+  fr_discovery_init();
+}
+
+bool freertps_ok()
+{
+  return fr_system_ok();
+}
+

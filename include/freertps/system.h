@@ -2,8 +2,9 @@
 #define FREERTPS_POSIX_SYSTEM_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
-void freertps_system_init();
-bool freertps_system_ok();
+void fr_system_init();
+bool fr_system_ok();
 
 #endif
