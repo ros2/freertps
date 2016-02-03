@@ -10,7 +10,7 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
-static fr_participant_t g_fr_spdp_rx_part; // just for rx buffer
+//static fr_participant_t g_fr_spdp_rx_part; // just for rx buffer
 
 const fr_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
 const fr_entity_id_t g_spdp_reader_id = { .u = 0xc7000100 };
@@ -216,13 +216,13 @@ static void fr_spdp_rx_data(fr_receiver_t *rcvr,
 #endif
 }
 
-static fr_time_t fr_spdp_last_bcast;
+//static fr_time_t fr_spdp_last_bcast;
 
 void fr_spdp_init()
 {
-  FREERTPS_INFO("sdp init\r\n");
-  fr_spdp_last_bcast.seconds = 0;
-  fr_spdp_last_bcast.fraction = 0;
+  FREERTPS_INFO("fr_spdp_init()\r\n");
+  //fr_spdp_last_bcast.seconds = 0;
+  //fr_spdp_last_bcast.fraction = 0;
   struct fr_writer *writer = fr_writer_create(NULL, NULL);
   //writer.push_mod
   fr_participant_add_writer(writer);
@@ -441,6 +441,8 @@ void fr_spdp_bcast()
 
 void fr_spdp_tick()
 {
+  return;
+#ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   const fr_time_t t = fr_time_now();
   if (fr_time_diff(&t, &fr_spdp_last_bcast).seconds >= 1) // every second
   //if (fr_time_diff(&t, &frudp_spdp_last_bcast).fraction >= 1000000000) // every second
@@ -450,4 +452,5 @@ void fr_spdp_tick()
     fr_spdp_last_bcast = t;
     //printf("%d participants known\n", (int)g_frudp_discovery_num_participants);
   }
+#endif
 }

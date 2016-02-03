@@ -5,14 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// initial implementation is just a normal single-linked list
-// the idea is that this is opaque and can be changed later...
-
-typedef struct fr_container
-{
-  struct fr_container_node *start;
-} fr_container_t;
-
 static bool fr_container_node_set(struct fr_container_node *n,
     void *data, size_t len)
 {
@@ -49,28 +41,42 @@ static struct fr_container_node *fr_container_node_create(
     return NULL;
   n->state = FR_CNS_NEW;
   n->next = NULL;
+  n->data_len = 0;
+  n->alloc_len = 0;
   return n;
 }
 
 bool fr_container_append(struct fr_container *c, void *data, size_t len)
 {
-  if (c->start == NULL) // if this list is empty. allocate the first node
+  if (c->type == FR_CT_LIST)
   {
-    c->start = fr_container_node_create(data, len);
-    return fr_container_node_set(c->start, data, len);
+    if (c->u.n == NULL) // if this list is empty. allocate the first node
+    {
+      c->u.n = fr_container_node_create(data, len);
+      return fr_container_node_set(c->u.n, data, len);
+    }
+    // find the end of the list, or an invalid currently-allocated block
+    // that is the same size as this object
+    struct fr_container_node *n = c->u.n;
+    while (n->next != NULL)
+    {
+      if (n->state == FR_CNS_UNUSED && n->alloc_len >= len)
+        return fr_container_node_set(n, data, len);
+      n = n->next;
+    }
+    // if we get here, we're at the tail of the list
+    n->next = fr_container_node_create(data, len);
+    return fr_container_node_set(n->next, data, len);
   }
-  // find the end of the list, or an invalid currently-allocated block
-  // that is the same size as this object
-  struct fr_container_node *n = c->start;
-  while (n->next != NULL)
+  else if (c->type == FR_CT_ARRAY_LIST)
   {
-    if (n->state == FR_CNS_UNUSED && n->alloc_len >= len)
-      return fr_container_node_set(n, data, len);
-    n = n->next;
+    return false;
   }
-  // if we get here, we're at the tail of the list
-  n->next = fr_container_node_create(data, len);
-  return fr_container_node_set(n->next, data, len);
+  else
+  {
+    printf("unknown container type: %d\n", (int)c->type);
+    return false;
+  }
 }
 
 uint32_t fr_container_len(struct fr_container *c)
@@ -78,31 +84,35 @@ uint32_t fr_container_len(struct fr_container *c)
   if (c == NULL)
     return 0;
   uint32_t len = 0;
-  struct fr_container_node *n = c->start;
-  while (n)
+  if (c->type == FR_CT_LIST)
   {
-    if (n->state != FR_CNS_UNUSED)
-      len++;
-    n = n->next;
+    struct fr_container_node *n = c->u.n;
+    while (n)
+    {
+      if (n->state != FR_CNS_UNUSED)
+        len++;
+      n = n->next;
+    }
+    return len;
   }
-  return len;
+  else if (c->type == FR_CT_ARRAY_LIST)
+  {
+    return 0;
+  }
+  else
+  {
+    printf("unknown container type: %d\n", (int)c->type);
+    return false;
+  }
 }
 
-struct fr_container *fr_container_create()
+struct fr_container *fr_container_create(const uint32_t type)
 {
+  printf("** sizeof(struct fr_container) = %d\n", (int)sizeof(struct fr_container));
   struct fr_container *c =
       (struct fr_container *)fr_malloc(sizeof(struct fr_container));
-  c->start = NULL;
+  c->type = type;
+  c->u.n = NULL;
   return c;
-}
-
-struct fr_iterator fr_container_start(struct fr_container *c)
-{
-  struct fr_iterator it;
-  if (!c)
-    it.node = NULL;
-  else
-    it.node = c->start;
-  return it;
 }
 

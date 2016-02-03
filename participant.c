@@ -76,10 +76,10 @@ bool fr_participant_init()
   FREERTPS_INFO("fr_participant_init() on domain_id %d\r\n",
       (int)g_fr_participant.domain_id);
   g_fr_participant.matched_participants = NULL;
-  g_fr_participant.writers = NULL;
-  g_fr_participant.readers = NULL;
-  g_fr_participant.default_unicast_locators = fr_container_create();
-  g_fr_participant.default_multicast_locators = fr_container_create();
+  g_fr_participant.writers = fr_container_create(FR_CT_ARRAY_LIST);
+  g_fr_participant.readers = fr_container_create(FR_CT_ARRAY_LIST);
+  g_fr_participant.default_unicast_locators = fr_container_create(FR_CT_POINTER_LIST);
+  g_fr_participant.default_multicast_locators = fr_container_create(FR_CT_POINTER_LIST);
   g_fr_participant_init_complete = true;
   return true;
 }
@@ -87,6 +87,7 @@ bool fr_participant_init()
 bool fr_participant_add_writer(struct fr_writer *writer)
 {
   printf("fr_participant_add_writer()\r\n");
+  fr_container_append(g_fr_participant.writers, writer, sizeof(writer));
   return false;
 }
 
