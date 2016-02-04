@@ -6,14 +6,12 @@
 #endif
 #include <execinfo.h>
 
-/*
 #include <signal.h>
 static bool g_done = false;
 static void sigint_handler(int signum)
 {
   g_done = true;
 }
-*/
 
 //#define MALLOC_DEBUG
 
@@ -48,6 +46,7 @@ void (*volatile __malloc_initialize_hook)(void) = freertps_init_malloc_hook;
 #endif
 
 extern bool fr_system_udp_init();
+extern bool fr_system_udp_fini();
 
 void fr_system_init()
 {
@@ -59,11 +58,17 @@ void fr_system_init()
     exit(1);
   }
 
-  //signal(SIGINT, sigint_handler); // let ROS2 handle this now
+  signal(SIGINT, sigint_handler); // todo: optional sigint registration for r2
   g_freertps_init_complete = true;
 }
 
 bool fr_system_ok()
 {
-  return true; //!g_done;
+  return !g_done; //true; //!g_done;
 }
+
+void fr_system_fini()
+{
+  fr_system_udp_fini();
+}
+

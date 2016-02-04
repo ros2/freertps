@@ -76,18 +76,42 @@ bool fr_participant_init()
   FREERTPS_INFO("fr_participant_init() on domain_id %d\r\n",
       (int)g_fr_participant.domain_id);
   g_fr_participant.matched_participants = NULL;
-  g_fr_participant.writers = fr_container_create(FR_CT_ARRAY_LIST);
-  g_fr_participant.readers = fr_container_create(FR_CT_ARRAY_LIST);
-  g_fr_participant.default_unicast_locators = fr_container_create(FR_CT_POINTER_LIST);
-  g_fr_participant.default_multicast_locators = fr_container_create(FR_CT_POINTER_LIST);
+  g_fr_participant.writers = fr_container_create(0, 0);
+  g_fr_participant.readers = fr_container_create(0, 0);
+  g_fr_participant.default_unicast_locators =
+      fr_container_create(sizeof(struct fr_locator), 2);
+  g_fr_participant.default_multicast_locators =
+      fr_container_create(sizeof(struct fr_locator), 2);
   g_fr_participant_init_complete = true;
   return true;
+}
+
+void fr_participant_fini()
+{
+  printf("fr_participant_fini()\n");
+  fr_container_free(g_fr_participant.writers);
+  fr_container_free(g_fr_participant.readers);
+  fr_container_free(g_fr_participant.default_unicast_locators);
+  fr_container_free(g_fr_participant.default_multicast_locators);
+  g_fr_participant.writers = NULL;
+  g_fr_participant.readers = NULL;
+  g_fr_participant.default_unicast_locators = NULL;
+  g_fr_participant.default_multicast_locators = NULL;
 }
 
 bool fr_participant_add_writer(struct fr_writer *writer)
 {
   printf("fr_participant_add_writer()\r\n");
-  fr_container_append(g_fr_participant.writers, writer, sizeof(writer));
+  fr_container_append(g_fr_participant.writers, writer, sizeof(writer),
+      FR_CFLAGS_TAKE_OWNERSHIP);
+  return false;
+}
+
+bool fr_participant_add_reader(struct fr_reader *reader)
+{
+  printf("fr_participant_add_reader()\r\n");
+  fr_container_append(g_fr_participant.readers, reader, sizeof(reader),
+      FR_CFLAGS_TAKE_OWNERSHIP);
   return false;
 }
 
@@ -107,24 +131,21 @@ void fr_participant_print_locators()
   printf("=== partcipant locators ===\n");
   printf("  unicast:\n");
   for (struct fr_iterator it = 
-         fr_container_start(g_fr_participant.default_unicast_locators);
-       it.node;
-       it = fr_iterator_next(it))
+           fr_iterator_begin(g_fr_participant.default_unicast_locators);
+       it.data; fr_iterator_next(&it))
   {
-    struct fr_locator *loc = (struct fr_locator *)it.node->data;
+    struct fr_locator *loc = (struct fr_locator *)it.data;
     printf("    ");
     locator_print(loc);
   }
   printf("  multicast:\n");
   for (struct fr_iterator it = 
-         fr_container_start(g_fr_participant.default_multicast_locators);
-       it.node;
-       it = fr_iterator_next(it))
+         fr_iterator_begin(g_fr_participant.default_multicast_locators);
+       it.data; fr_iterator_next(&it))
   {
-    struct fr_locator *loc = (struct fr_locator *)it.node->data;
+    struct fr_locator *loc = (struct fr_locator *)it.data;
     printf("    ");
     locator_print(loc);
   }
-
 }
 

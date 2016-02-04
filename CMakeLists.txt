@@ -58,9 +58,11 @@ endif()
 add_library(freertps cdr_string.c
                      container.c
                      discovery.c
+                     duration.c
                      endpoint.c
                      freertps.c 
                      guid.c
+                     history_cache.c
                      iterator.c
                      locator.c
                      participant.c 

@@ -1,8 +1,3 @@
-#include "freertps/freertps.h"
-#include "freertps/timer.h"
-#include "freertps/udp.h"
-#include "freertps/discovery.h"
-#include "freertps/participant.h"
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -15,12 +10,20 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <math.h>
+#include "freertps/discovery.h"
+#include "freertps/freertps.h"
+#include "freertps/participant.h"
+#include "freertps/rc.h"
+#include "freertps/timer.h"
+#include "freertps/udp.h"
 
 // tragedy this didn't get into POSIX...
 #ifndef NI_MAXHOST
 #define NI_MAXHOST 1025
 #endif
 
+// todo: replace this with something smarter... though it's nice for this
+// to be super efficient, too bad that won't scale to all situations... :(
 #define FRUDP_MAX_RX_SOCKS 10
 
 static freertps_timer_cb_t g_timer_cb = NULL;
@@ -126,7 +129,7 @@ bool fr_system_udp_init()
     // see if we can open the port; if so, let's say we have a unique PID
     g_fr_participant.participant_id = pid;
     const uint16_t port = fr_participant_ucast_builtin_port();
-    if (fr_add_ucast_rx(port))
+    if (fr_add_ucast_rx(port) == FR_RC_OK)
     {
       FREERTPS_INFO("  using RTPS/DDS PID %d\n", pid);
       return true;
@@ -135,10 +138,10 @@ bool fr_system_udp_init()
   return false; // couldn't find an available PID
 }
 
-void fr_fini()
+void fr_system_udp_fini()
 {
   fr_discovery_fini();
-  FREERTPS_INFO("fr_fini\n");
+  FREERTPS_INFO("fr_system_udp_fini\n");
   for (int i = 0; i < g_fr_rx_socks_used; i++)
   {
     close(g_fr_rx_socks[i].sock);
@@ -159,20 +162,20 @@ static int fr_create_sock()
   return s;
 }
 
-bool fr_add_ucast_rx(const uint16_t port)
+fr_rc_t fr_add_ucast_rx(const uint16_t port)
 {
-  FREERTPS_INFO("add ucast rx port %d\n", port);
+  //FREERTPS_INFO("add ucast rx port %d\n", port);
   // we may have already added this when searching for our participant ID
   // so, let's spin through and see if it's already there
   for (int i = 0; i < g_fr_rx_socks_used; i++)
     if (g_fr_rx_socks[i].port == port)
     {
-      FREERTPS_INFO("  found port match in slot %d\n", i);
-      return true; // it's already here
+      //FREERTPS_INFO("  found port match in slot %d\n", i);
+      return FR_RC_OK; // it's already here
     }
   int s = fr_create_sock();
   if (s < 0)
-    return false;
+    return FR_RC_NETWORK_ERROR;
   struct sockaddr_in rx_bind_addr;
   memset(&rx_bind_addr, 0, sizeof(rx_bind_addr));
   rx_bind_addr.sin_family = AF_INET;
@@ -183,7 +186,7 @@ bool fr_add_ucast_rx(const uint16_t port)
   {
     FREERTPS_ERROR("couldn't bind to unicast port %d\n", port);
     close(s);
-    return false;
+    return FR_RC_NETWORK_ERROR;
   }
   fr_rx_sock_t *rxs = &g_fr_rx_socks[g_fr_rx_socks_used];
   rxs->sock = s;
@@ -198,9 +201,8 @@ bool fr_add_ucast_rx(const uint16_t port)
   loc.port = port;
   memset(loc.addr.udp4.zeros, 0, 12);
   loc.addr.udp4.addr = g_fr_system_unicast_addr;
-  fr_container_append(g_fr_participant.default_unicast_locators,
-      &loc, sizeof(struct fr_locator));
-  return true;
+  return fr_container_append(g_fr_participant.default_unicast_locators,
+      &loc, sizeof(struct fr_locator), FR_CFLAGS_NONE);
 }
 
 static bool set_sock_reuse(int s)
@@ -226,15 +228,15 @@ static bool set_sock_reuse(int s)
   return true;
 }
 
-bool fr_add_mcast_rx(in_addr_t group, uint16_t port)
+fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port)
 {
-  FREERTPS_INFO("add mcast rx port %d\n", port);
+  //FREERTPS_INFO("add mcast rx port %d\n", port);
   int s = fr_create_sock();
   if (s < 0)
-    return false;
+    return FR_RC_NETWORK_ERROR;
 
   if (!set_sock_reuse(s))
-    return false;
+    return FR_RC_NETWORK_ERROR;
 
   int result;
   struct sockaddr_in rx_bind_addr;
@@ -247,7 +249,7 @@ bool fr_add_mcast_rx(in_addr_t group, uint16_t port)
   {
     FREERTPS_ERROR("couldn't bind rx sock to port %d, failed with errno %d\n",
                    port, errno);
-    return false;
+    return FR_RC_NETWORK_ERROR;
   }
 
   struct ip_mreq mreq;
@@ -258,7 +260,7 @@ bool fr_add_mcast_rx(in_addr_t group, uint16_t port)
   {
     FREERTPS_ERROR("couldn't add rx sock to multicast group, errno = %d\n",
                    errno);
-    return false;
+    return FR_RC_NETWORK_ERROR;
   }
   fr_rx_sock_t *rxs = &g_fr_rx_socks[g_fr_rx_socks_used];
   rxs->sock = s;
@@ -272,9 +274,8 @@ bool fr_add_mcast_rx(in_addr_t group, uint16_t port)
   loc.port = port;
   memset(loc.addr.udp4.zeros, 0, 12);
   loc.addr.udp4.addr = group;
-  fr_container_append(g_fr_participant.default_multicast_locators,
-      &loc, sizeof(struct fr_locator));
-  return true;
+  return fr_container_append(g_fr_participant.default_multicast_locators,
+      &loc, sizeof(struct fr_locator), FR_CFLAGS_NONE);
 }
 
 bool fr_listen(const uint32_t max_usec)

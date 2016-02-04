@@ -6,7 +6,8 @@ int main(int argc, char **argv)
 {
   printf("hello, world!\r\n");
   freertps_init();
-  fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String");
+  fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String",
+      FR_WRITER_TYPE_BEST_EFFORT);
   /*
   fr_pub_t *pub = freertps_create_pub(
       "chatter", "std_msgs::msg::dds_::String_");
@@ -25,6 +26,6 @@ int main(int argc, char **argv)
     //freertps_publish(pub, (uint8_t *)msg, rtps_string_len + 4);
     printf("sending: [%s]\r\n", &msg[4]);
   }
-  fr_fini();
+  freertps_fini();
   return 0;
 }

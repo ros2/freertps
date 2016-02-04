@@ -12,8 +12,8 @@
 // local constants
 //static fr_participant_t g_fr_spdp_rx_part; // just for rx buffer
 
-const fr_entity_id_t g_spdp_writer_id = { .u = 0xc2000100 };
-const fr_entity_id_t g_spdp_reader_id = { .u = 0xc7000100 };
+const union fr_entity_id g_spdp_writer_id = { .u = 0xc2000100 };
+const union fr_entity_id g_spdp_reader_id = { .u = 0xc7000100 };
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -223,9 +223,18 @@ void fr_spdp_init()
   FREERTPS_INFO("fr_spdp_init()\r\n");
   //fr_spdp_last_bcast.seconds = 0;
   //fr_spdp_last_bcast.fraction = 0;
-  struct fr_writer *writer = fr_writer_create(NULL, NULL);
-  //writer.push_mod
-  fr_participant_add_writer(writer);
+  struct fr_writer *w = fr_writer_create(
+      NULL, NULL, FR_WRITER_TYPE_BEST_EFFORT);
+  w->endpoint.entity_id = g_spdp_writer_id;
+  fr_participant_add_writer(w);
+
+  struct fr_reader *r = fr_reader_create(
+      NULL, NULL, FR_READER_TYPE_BEST_EFFORT);
+  r->endpoint.entity_id = g_spdp_reader_id;
+  fr_participant_add_reader(r);
+  // todo: previously reader_eid = g_spdp_reader_id was used to mark the 
+  // outbound messages from this writer. We'll need to do something a bit
+  // more elegant now
 #ifdef BROKEN
   fr_reader_t spdp_reader;
   spdp_reader.writer_guid = g_fr_guid_unknown;

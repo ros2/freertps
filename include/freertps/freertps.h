@@ -53,6 +53,7 @@ void freertps_start();
 
 void freertps_init();
 bool freertps_ok();
+void freertps_fini();
 
 #ifdef __cplusplus
 }

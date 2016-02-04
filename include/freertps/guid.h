@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef union
+typedef union fr_entity_id
 {
   struct
   {

@@ -13,8 +13,13 @@ typedef struct fr_reader
   bool expects_inline_qos;
   struct fr_duration heartbeat_response_delay;
   struct fr_duration heartbeat_suppression_duration;
-  fr_history_cache_t hc;
-  struct fr_container_t *matched_writers;
+  struct fr_container *matched_writers;
+  fr_history_cache_t reader_cache;
 } fr_reader_t;
+
+#define FR_READER_TYPE_BEST_EFFORT 0
+#define FR_READER_TYPE_RELIABLE    1
+fr_reader_t *fr_reader_create(const char *topic_name, const char *type_name,
+    const uint32_t type);
 
 #endif

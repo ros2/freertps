@@ -71,3 +71,10 @@ bool freertps_ok()
   return fr_system_ok();
 }
 
+void freertps_fini()
+{
+  printf("freertps fini()\n");
+  fr_system_fini();
+  fr_participant_fini();
+}
+

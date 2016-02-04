@@ -1,15 +1,19 @@
-#include "freertps/mem.h"
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include "freertps/mem.h"
+
+static uint32_t fr_malloc_bytes = 0;
 
 void *fr_malloc(size_t size)
 {
-  // todo: we can add some (optional) instrumentation here
-  printf("                         malloc(%d)\n", (int)size);
+  fr_malloc_bytes += size;
+  printf("                         malloc(%6d) total: %d\n",
+      (int)size, (int)fr_malloc_bytes);
   return malloc(size);
 }
 
 void fr_free(void *ptr)
 {
-  // todo: we can add some (optional) instrumentation here
   free(ptr);
 }

@@ -6,5 +6,6 @@
 
 void fr_system_init();
 bool fr_system_ok();
+void fr_system_fini();
 
 #endif

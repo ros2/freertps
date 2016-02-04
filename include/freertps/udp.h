@@ -1,13 +1,14 @@
 #ifndef FREERTPS_UDP_H
 #define FREERTPS_UDP_H
 
-#include "freertps/message.h"
-#include "freertps/time.h"
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "freertps/guid.h"
+#include "freertps/message.h"
+#include "freertps/rc.h"
 #include "freertps/receiver.h"
 #include "freertps/sequence_number.h"
+#include "freertps/time.h"
 #include "freertps/vendor_id.h"
 
 typedef void (*fr_rx_data_cb_t)(fr_receiver_t *rcvr,
@@ -21,12 +22,10 @@ bool fr_init();
 void fr_fini();
 
 
-bool fr_add_mcast_rx(const uint32_t group,
-                     const uint16_t port); //,
-                               //const freertps_udp_rx_callback_t rx_cb);
+fr_rc_t fr_add_mcast_rx(const uint32_t group, const uint16_t port);
 
 // todo: elicit desired interface from the user in a sane way
-bool fr_add_ucast_rx(const uint16_t port);
+fr_rc_t fr_add_ucast_rx(const uint16_t port);
 
 bool fr_listen(const uint32_t max_usec);
 
