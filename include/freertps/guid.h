@@ -14,6 +14,7 @@ typedef union fr_entity_id
   uint32_t u;
 } __attribute__((packed)) fr_entity_id_t;
 
+#define FR_ENTITY_ID_PARTICIPANT 0xc1010000
 #define FR_ENTITY_KIND_USER_WRITER_WITH_KEY 0x02
 #define FR_ENTITY_KIND_USER_WRITER_NO_KEY   0x03
 #define FR_ENTITY_KIND_USER_READER_NO_KEY   0x04
@@ -30,7 +31,7 @@ typedef struct fr_guid_prefix
 typedef struct fr_guid
 {
   struct fr_guid_prefix prefix;
-  fr_entity_id_t entity_id;
+  union fr_entity_id entity_id;
 } __attribute__((packed)) fr_guid_t;
 extern const fr_guid_t g_fr_guid_unknown;
 

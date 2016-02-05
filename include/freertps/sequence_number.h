@@ -9,6 +9,8 @@ typedef struct fr_sequence_number
   uint32_t low;
 } fr_sequence_number_t;
 
+void fr_sequence_number_increment(struct fr_sequence_number *seq_num);
+
 typedef struct fr_sequence_number_set
 {
   struct fr_sequence_number bitmap_base;

@@ -78,9 +78,13 @@ bool fr_participant_init()
   g_fr_participant.matched_participants = NULL;
   g_fr_participant.writers = fr_container_create(0, 0);
   g_fr_participant.readers = fr_container_create(0, 0);
-  g_fr_participant.default_unicast_locators =
+  g_fr_participant.builtin_unicast_locators =
       fr_container_create(sizeof(struct fr_locator), 2);
-  g_fr_participant.default_multicast_locators =
+  g_fr_participant.builtin_multicast_locators =
+      fr_container_create(sizeof(struct fr_locator), 2);
+  g_fr_participant.user_unicast_locators =
+      fr_container_create(sizeof(struct fr_locator), 2);
+  g_fr_participant.user_multicast_locators =
       fr_container_create(sizeof(struct fr_locator), 2);
   g_fr_participant_init_complete = true;
   return true;
@@ -91,12 +95,16 @@ void fr_participant_fini()
   printf("fr_participant_fini()\n");
   fr_container_free(g_fr_participant.writers);
   fr_container_free(g_fr_participant.readers);
-  fr_container_free(g_fr_participant.default_unicast_locators);
-  fr_container_free(g_fr_participant.default_multicast_locators);
+  fr_container_free(g_fr_participant.builtin_unicast_locators);
+  fr_container_free(g_fr_participant.builtin_multicast_locators);
+  fr_container_free(g_fr_participant.user_unicast_locators);
+  fr_container_free(g_fr_participant.user_multicast_locators);
   g_fr_participant.writers = NULL;
   g_fr_participant.readers = NULL;
-  g_fr_participant.default_unicast_locators = NULL;
-  g_fr_participant.default_multicast_locators = NULL;
+  g_fr_participant.builtin_unicast_locators = NULL;
+  g_fr_participant.builtin_multicast_locators = NULL;
+  g_fr_participant.user_unicast_locators = NULL;
+  g_fr_participant.user_multicast_locators = NULL;
 }
 
 bool fr_participant_add_writer(struct fr_writer *writer)
@@ -118,34 +126,61 @@ bool fr_participant_add_reader(struct fr_reader *reader)
 bool fr_participant_add_default_locators()
 {
   fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
-      fr_participant_mcast_builtin_port());
+      fr_participant_mcast_builtin_port(),
+      g_fr_participant.builtin_multicast_locators);
+
   fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
-      fr_participant_mcast_user_port());
-  fr_add_ucast_rx(fr_participant_ucast_builtin_port());
-  fr_add_ucast_rx(fr_participant_ucast_user_port());
+      fr_participant_mcast_user_port(),
+      g_fr_participant.user_multicast_locators);
+
+  fr_add_ucast_rx(fr_participant_ucast_builtin_port(),
+      g_fr_participant.builtin_unicast_locators);
+
+  fr_add_ucast_rx(fr_participant_ucast_user_port(),
+      g_fr_participant.user_unicast_locators);
+
   return true;
 }
 
 void fr_participant_print_locators()
 {
   printf("=== partcipant locators ===\n");
-  printf("  unicast:\n");
+  printf("  unicast builtin:\n");
   for (struct fr_iterator it = 
-           fr_iterator_begin(g_fr_participant.default_unicast_locators);
+           fr_iterator_begin(g_fr_participant.builtin_unicast_locators);
        it.data; fr_iterator_next(&it))
   {
     struct fr_locator *loc = (struct fr_locator *)it.data;
     printf("    ");
     locator_print(loc);
   }
-  printf("  multicast:\n");
+  printf("  multicast builtin:\n");
   for (struct fr_iterator it = 
-         fr_iterator_begin(g_fr_participant.default_multicast_locators);
+         fr_iterator_begin(g_fr_participant.builtin_multicast_locators);
        it.data; fr_iterator_next(&it))
   {
     struct fr_locator *loc = (struct fr_locator *)it.data;
     printf("    ");
     locator_print(loc);
   }
+  printf("  unicast user:\n");
+  for (struct fr_iterator it = 
+           fr_iterator_begin(g_fr_participant.user_unicast_locators);
+       it.data; fr_iterator_next(&it))
+  {
+    struct fr_locator *loc = (struct fr_locator *)it.data;
+    printf("    ");
+    locator_print(loc);
+  }
+  printf("  multicast user:\n");
+  for (struct fr_iterator it = 
+         fr_iterator_begin(g_fr_participant.user_multicast_locators);
+       it.data; fr_iterator_next(&it))
+  {
+    struct fr_locator *loc = (struct fr_locator *)it.data;
+    printf("    ");
+    locator_print(loc);
+  }
+
 }
 

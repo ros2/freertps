@@ -24,5 +24,7 @@ typedef struct fr_locator
 } __attribute__((packed)) fr_locator_t;
 
 void locator_print(struct fr_locator *loc);
+fr_rc_t locator_container_append(uint32_t udpv4, uint16_t port, 
+    struct fr_container *c);
 
 #endif

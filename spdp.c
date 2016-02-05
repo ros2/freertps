@@ -1,12 +1,13 @@
+#include <inttypes.h>
+#include <string.h>
+#include <time.h>
+#include "freertps/bswap.h"
+#include "freertps/cache_change.h"
 #include "freertps/freertps.h"
+#include "freertps/mem.h"
 #include "freertps/spdp.h"
 #include "freertps/sedp.h"
 #include "freertps/udp.h"
-#include <string.h>
-#include <time.h>
-#include <inttypes.h>
-#include "freertps/bswap.h"
-//#include "freertps/sub.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
@@ -235,6 +236,26 @@ void fr_spdp_init()
   // todo: previously reader_eid = g_spdp_reader_id was used to mark the 
   // outbound messages from this writer. We'll need to do something a bit
   // more elegant now
+
+  // craft the outbound SPDP message
+  //struct fr_cache_change cc;
+  struct fr_guid *guid = fr_malloc(sizeof(struct fr_guid));
+  memcpy(guid->prefix.prefix, g_fr_participant.guid_prefix.prefix,
+      FR_GUID_PREFIX_LEN);
+  guid->entity_id.u = FR_ENTITY_ID_PARTICIPANT;
+
+  struct fr_parameter_list *spdp_data = fr_malloc(350);
+  fr_parameter_list_init(spdp_data);
+  uint32_t pver = 0x00000102;
+  fr_parameter_list_append(spdp_data, FR_PID_PROTOCOL_VERSION, &pver, 4);
+  uint32_t vid = FREERTPS_VENDOR_ID;
+  fr_parameter_list_append(spdp_data, FR_PID_VENDOR_ID, &vid, 4);
+  fr_parameter_list_append(spdp_data, FR_PID_SENTINEL, NULL, 0);
+
+  fr_writer_new_change(w,
+      spdp_data->serialization, spdp_data->serialized_len,
+      guid, sizeof(struct fr_guid));
+
 #ifdef BROKEN
   fr_reader_t spdp_reader;
   spdp_reader.writer_guid = g_fr_guid_unknown;

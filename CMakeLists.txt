@@ -65,6 +65,7 @@ add_library(freertps cdr_string.c
                      history_cache.c
                      iterator.c
                      locator.c
+                     parameter.c
                      participant.c 
                      reader.c
                      sedp.c 

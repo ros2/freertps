@@ -16,8 +16,8 @@ typedef struct fr_participant
   struct fr_protocol_version protocol_version;
   fr_vendor_id_t vendor_id;
   uint32_t domain_id, participant_id;
-  struct fr_container *default_unicast_locators;
-  struct fr_container *default_multicast_locators;
+  struct fr_container *user_unicast_locators, *builtin_unicast_locators;
+  struct fr_container *user_multicast_locators, *builtin_multicast_locators;
   struct fr_container *matched_participants;
   struct fr_container *writers;
   struct fr_container *readers;

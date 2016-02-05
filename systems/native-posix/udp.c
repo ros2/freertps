@@ -129,7 +129,8 @@ bool fr_system_udp_init()
     // see if we can open the port; if so, let's say we have a unique PID
     g_fr_participant.participant_id = pid;
     const uint16_t port = fr_participant_ucast_builtin_port();
-    if (fr_add_ucast_rx(port) == FR_RC_OK)
+    if (fr_add_ucast_rx(
+        port, g_fr_participant.user_unicast_locators) == FR_RC_OK)
     {
       FREERTPS_INFO("  using RTPS/DDS PID %d\n", pid);
       return true;
@@ -162,7 +163,7 @@ static int fr_create_sock()
   return s;
 }
 
-fr_rc_t fr_add_ucast_rx(const uint16_t port)
+fr_rc_t fr_add_ucast_rx(const uint16_t port, struct fr_container *c)
 {
   //FREERTPS_INFO("add ucast rx port %d\n", port);
   // we may have already added this when searching for our participant ID
@@ -195,6 +196,8 @@ fr_rc_t fr_add_ucast_rx(const uint16_t port)
   //FREERTPS_INFO("  added in rx sock slot %d\n", g_fr_rx_socks_used);
   g_fr_rx_socks_used++;
 
+  return locator_container_append(g_fr_system_unicast_addr, port, c);
+  /*
   // now, add this locator to the participant's locator list
   struct fr_locator loc;
   loc.kind = FR_LOCATOR_KIND_UDPV4;
@@ -203,6 +206,7 @@ fr_rc_t fr_add_ucast_rx(const uint16_t port)
   loc.addr.udp4.addr = g_fr_system_unicast_addr;
   return fr_container_append(g_fr_participant.default_unicast_locators,
       &loc, sizeof(struct fr_locator), FR_CFLAGS_NONE);
+  */
 }
 
 static bool set_sock_reuse(int s)
@@ -228,7 +232,7 @@ static bool set_sock_reuse(int s)
   return true;
 }
 
-fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port)
+fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port, struct fr_container *c)
 {
   //FREERTPS_INFO("add mcast rx port %d\n", port);
   int s = fr_create_sock();
@@ -268,6 +272,8 @@ fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port)
   rxs->addr = g_fr_tx_addr.sin_addr.s_addr;
   g_fr_rx_socks_used++;
 
+  return locator_container_append(group, port, c);
+  /*
   // now, add this locator to the participant's locator list
   struct fr_locator loc;
   loc.kind = FR_LOCATOR_KIND_UDPV4;
@@ -276,6 +282,7 @@ fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port)
   loc.addr.udp4.addr = group;
   return fr_container_append(g_fr_participant.default_multicast_locators,
       &loc, sizeof(struct fr_locator), FR_CFLAGS_NONE);
+  */
 }
 
 bool fr_listen(const uint32_t max_usec)

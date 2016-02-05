@@ -8,10 +8,12 @@
 typedef struct fr_cache_change
 {
   // include the change_kind enum here? not sure it's needed...
-  struct fr_guid writer_guid;
+  union fr_entity_id writer_entity_id;
   struct fr_sequence_number sequence_number;
   void *data;
   size_t data_len;
+  void *instance_handle;
+  uint32_t instance_handle_len;
 } fr_cache_change_t;
 
 #endif 

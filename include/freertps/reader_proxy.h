@@ -9,9 +9,8 @@ typedef struct fr_reader_proxy
 {
   struct fr_guid remote_reader_guid;
   bool expects_inline_qos;
-  struct fr_locator *locator;              // for stateless writing
-  struct fr_container *unicast_locators;   // for stateful writing
-  struct fr_container *multicast_locators; // for stateful writing
+  struct fr_container *unicast_locators;
+  struct fr_container *multicast_locators;
 } fr_reader_proxy_t;
 
 #endif
