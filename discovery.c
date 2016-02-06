@@ -10,13 +10,6 @@ void fr_discovery_init()
   fr_sedp_init();
 }
 
-void fr_discovery_start()
-{
-  FREERTPS_INFO("discovery_start()\r\n");
-  fr_spdp_start();
-  fr_sedp_start();
-}
-
 void fr_discovery_fini()
 {
   FREERTPS_INFO("discovery_fini()\r\n");

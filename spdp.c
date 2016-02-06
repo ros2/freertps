@@ -3,7 +3,9 @@
 #include <time.h>
 #include "freertps/bswap.h"
 #include "freertps/cache_change.h"
+#include "freertps/container.h"
 #include "freertps/freertps.h"
+#include "freertps/iterator.h"
 #include "freertps/mem.h"
 #include "freertps/spdp.h"
 #include "freertps/sedp.h"
@@ -21,6 +23,12 @@ const union fr_entity_id g_spdp_reader_id = { .u = 0xc7000100 };
 //////////////////////////////////////////////////////////////////////////
 
 //#define SPDP_VERBOSE
+static struct fr_writer *g_fr_spdp_writer;
+
+static void fr_spdp_timer()
+{
+  fr_writer_unsent_changes_reset(g_fr_spdp_writer);
+}
 
 static void fr_spdp_rx_data(fr_receiver_t *rcvr,
                             const struct fr_submessage *submsg,
@@ -224,15 +232,11 @@ void fr_spdp_init()
   FREERTPS_INFO("fr_spdp_init()\r\n");
   //fr_spdp_last_bcast.seconds = 0;
   //fr_spdp_last_bcast.fraction = 0;
-  struct fr_writer *w = fr_writer_create(
+  struct fr_writer *w = g_fr_spdp_writer = fr_writer_create(
       NULL, NULL, FR_WRITER_TYPE_BEST_EFFORT);
   w->endpoint.entity_id = g_spdp_writer_id;
   fr_participant_add_writer(w);
 
-  struct fr_reader *r = fr_reader_create(
-      NULL, NULL, FR_READER_TYPE_BEST_EFFORT);
-  r->endpoint.entity_id = g_spdp_reader_id;
-  fr_participant_add_reader(r);
   // todo: previously reader_eid = g_spdp_reader_id was used to mark the 
   // outbound messages from this writer. We'll need to do something a bit
   // more elegant now
@@ -250,12 +254,49 @@ void fr_spdp_init()
   fr_parameter_list_append(spdp_data, FR_PID_PROTOCOL_VERSION, &pver, 4);
   uint32_t vid = FREERTPS_VENDOR_ID;
   fr_parameter_list_append(spdp_data, FR_PID_VENDOR_ID, &vid, 4);
+  fr_parameter_list_append(spdp_data, FR_PID_DEFAULT_UNICAST_LOCATOR,
+      fr_container_head(g_fr_participant.user_unicast_locators),
+      sizeof(struct fr_locator));
+  fr_parameter_list_append(spdp_data, FR_PID_DEFAULT_MULTICAST_LOCATOR,
+      fr_container_head(g_fr_participant.user_multicast_locators),
+      sizeof(struct fr_locator));
+  fr_parameter_list_append(spdp_data, FR_PID_METATRAFFIC_UNICAST_LOCATOR,
+      fr_container_head(g_fr_participant.builtin_unicast_locators),
+      sizeof(struct fr_locator));
+  fr_parameter_list_append(spdp_data, FR_PID_METATRAFFIC_MULTICAST_LOCATOR,
+      fr_container_head(g_fr_participant.builtin_multicast_locators),
+      sizeof(struct fr_locator));
+  struct fr_duration lease_duration = { .seconds = 100, .fraction = 0 }; // ?
+  fr_parameter_list_append(spdp_data, FR_PID_PARTICIPANT_LEASE_DURATION,
+      &lease_duration, sizeof(struct fr_duration));
+  fr_parameter_list_append(spdp_data, FR_PID_PARTICIPANT_GUID,
+      guid, sizeof(struct fr_guid));
+  uint32_t builtin_endpoint_set = 0x3f; // i guess this means we've got em all
+  fr_parameter_list_append(spdp_data, FR_PID_BUILTIN_ENDPOINT_SET,
+      &builtin_endpoint_set, sizeof(uint32_t));
   fr_parameter_list_append(spdp_data, FR_PID_SENTINEL, NULL, 0);
-
+  //printf("spdp bcast len = %d\n", (int)spdp_data->serialized_len);
   fr_writer_new_change(w,
       spdp_data->serialization, spdp_data->serialized_len,
       guid, sizeof(struct fr_guid));
 
+  struct fr_reader_locator spdp_reader_locator;
+  fr_reader_locator_init(&spdp_reader_locator);
+  //rl->locator = 
+  fr_locator_set_udp4(&spdp_reader_locator.locator, FR_DEFAULT_MCAST_GROUP,
+      fr_participant_mcast_builtin_port());
+  fr_writer_add_reader_locator(w, &spdp_reader_locator);
+
+  ////////////////////
+
+  struct fr_reader *r = fr_reader_create(
+      NULL, NULL, FR_READER_TYPE_BEST_EFFORT);
+  r->endpoint.entity_id = g_spdp_reader_id;
+  fr_participant_add_reader(r);
+
+  freertps_add_timer(500000, fr_spdp_timer);
+
+  /*
 #ifdef BROKEN
   fr_reader_t spdp_reader;
   spdp_reader.writer_guid = g_fr_guid_unknown;
@@ -267,17 +308,13 @@ void fr_spdp_init()
   spdp_reader.reliable = false;
   fr_add_reader(&spdp_reader);
 #endif
+  */
   /*
   frudp_subscribe(g_frudp_entity_id_unknown,
                   g_spdp_writer_id,
                   frudp_spdp_rx_data,
                   NULL);
   */
-}
-
-void fr_spdp_start()
-{
-  fr_spdp_tick();
 }
 
 void fr_spdp_fini()

@@ -7,5 +7,6 @@
 void fr_system_init();
 bool fr_system_ok();
 void fr_system_fini();
+int  fr_system_listen_at_most(uint32_t microseconds);
 
 #endif

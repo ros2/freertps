@@ -240,7 +240,7 @@ void fr_container_free(struct fr_container *c)
       n = n_next;
     }
   }
-  else
+  else if (c->type == FR_CT_LIST)
   {
     struct fr_container_list *cl = (struct fr_container_list *)c;
     for (struct fr_container_node *n = cl->head; n;)
@@ -251,5 +251,11 @@ void fr_container_free(struct fr_container *c)
       n = n_next;
     }
   }
+}
+
+void *fr_container_head(struct fr_container *c)
+{
+  struct fr_iterator it = fr_iterator_begin(c);
+  return it.data;
 }
 

@@ -4,7 +4,6 @@
 
 int main(int argc, char **argv)
 {
-  printf("hello, world!\r\n");
   freertps_init();
   fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String",
       FR_WRITER_TYPE_BEST_EFFORT);
@@ -12,13 +11,11 @@ int main(int argc, char **argv)
   fr_pub_t *pub = freertps_create_pub(
       "chatter", "std_msgs::msg::dds_::String_");
   */
-  fr_discovery_start();
   int pub_count = 0;
   char msg[64] = {0};
   while (freertps_ok())
   {
-    fr_listen(500000);
-    fr_discovery_tick();
+    freertps_spin(500000);
     snprintf(&msg[4], sizeof(msg) - 4, "Hello World: %d", pub_count++);
     uint32_t rtps_string_len = strlen(&msg[4]) + 1;
     uint32_t *str_len_ptr = (uint32_t *)msg;

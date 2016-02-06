@@ -49,7 +49,7 @@ static uint8_t g_sedp_msg_buf[SEDP_MSG_BUF_LEN];
 
 void fr_sedp_init()
 {
-  FREERTPS_INFO("sedp init\r\n");
+  FREERTPS_INFO("fr_sedp_init()\r\n");
   for (int i = 0; i < FR_MAX_SUBS; i++)
   {
     struct fr_data_submessage *d = 

@@ -25,11 +25,6 @@
 // todo: replace this with something smarter... though it's nice for this
 // to be super efficient, too bad that won't scale to all situations... :(
 #define FRUDP_MAX_RX_SOCKS 10
-
-static freertps_timer_cb_t g_timer_cb = NULL;
-static double g_timer_period = -1;
-static double g_timer_last_t = 0;
-
 typedef struct
 {
   int sock;
@@ -130,7 +125,7 @@ bool fr_system_udp_init()
     g_fr_participant.participant_id = pid;
     const uint16_t port = fr_participant_ucast_builtin_port();
     if (fr_add_ucast_rx(
-        port, g_fr_participant.user_unicast_locators) == FR_RC_OK)
+        port, g_fr_participant.builtin_unicast_locators) == FR_RC_OK)
     {
       FREERTPS_INFO("  using RTPS/DDS PID %d\n", pid);
       return true;
@@ -196,7 +191,7 @@ fr_rc_t fr_add_ucast_rx(const uint16_t port, struct fr_container *c)
   //FREERTPS_INFO("  added in rx sock slot %d\n", g_fr_rx_socks_used);
   g_fr_rx_socks_used++;
 
-  return locator_container_append(g_fr_system_unicast_addr, port, c);
+  return fr_locator_container_append(g_fr_system_unicast_addr, port, c);
   /*
   // now, add this locator to the participant's locator list
   struct fr_locator loc;
@@ -272,7 +267,7 @@ fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port, struct fr_container *c)
   rxs->addr = g_fr_tx_addr.sin_addr.s_addr;
   g_fr_rx_socks_used++;
 
-  return locator_container_append(group, port, c);
+  return fr_locator_container_append(group, port, c);
   /*
   // now, add this locator to the participant's locator list
   struct fr_locator loc;
@@ -285,82 +280,56 @@ fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port, struct fr_container *c)
   */
 }
 
-bool fr_listen(const uint32_t max_usec)
+int fr_system_listen_at_most(uint32_t microseconds)
 {
   //printf("fr_listen(%d)\n", (int)max_usec);
   static uint8_t s_fr_listen_buf[FU_RX_BUFSIZE]; // haha
-  double t_start = fr_time_now_double();
-  double t_now = t_start;
-  while (t_now - t_start <= 1.0e-6 * max_usec)
+
+  fd_set rdset;
+  FD_ZERO(&rdset);
+  int max_fd = 0;
+  for (int i = 0; i < g_fr_rx_socks_used; i++)
   {
-    fd_set rdset;
-    FD_ZERO(&rdset);
-    int max_fd = 0;
+    const int s = g_fr_rx_socks[i].sock;
+    FD_SET(s, &rdset);
+    if (s > max_fd)
+      max_fd = s;
+  }
+  struct timeval timeout;
+  timeout.tv_sec = microseconds / 1000000;
+  timeout.tv_usec = microseconds - (timeout.tv_sec * 1000000);
+  int rv = select(max_fd+1, &rdset, NULL, NULL, &timeout);
+  if (rv < 0)
+    return rv; // badness
+  if (rv > 0)
+  {
+    // find out which of our rx socks had something exciting happen
     for (int i = 0; i < g_fr_rx_socks_used; i++)
     {
-      const int s = g_fr_rx_socks[i].sock;
-      FD_SET(s, &rdset);
-      if (s > max_fd)
-        max_fd = s;
-    }
-    double t_elapsed = t_now - t_start;
-    double t_remaining = (max_usec * 1.0e-6) - t_elapsed;
-    if (g_timer_period > 0)
-    {
-      double t_until_timeout = g_timer_last_t + g_timer_period - t_now;
-      if (t_until_timeout < 0)
-        t_remaining = 0;
-      else if (t_until_timeout < t_remaining)
-        t_remaining = t_until_timeout;
-    }
-    struct timeval timeout;
-    timeout.tv_sec = floor(t_remaining);// max_usec / 1000000;
-    timeout.tv_usec = (t_remaining - timeout.tv_sec) * 1000000;  /*max_usec - timeout.tv_sec * 1000000*/;
-    int rv = select(max_fd+1, &rdset, NULL, NULL, &timeout);
-    if (rv < 0)
-      return false; // badness
-    if (rv > 0)
-    {
-      // find out which of our rx socks had something exciting happen
-      for (int i = 0; i < g_fr_rx_socks_used; i++)
+      fr_rx_sock_t *rxs = &g_fr_rx_socks[i];
+      if (FD_ISSET(rxs->sock, &rdset))
       {
-        fr_rx_sock_t *rxs = &g_fr_rx_socks[i];
-        if (FD_ISSET(rxs->sock, &rdset))
-        {
-          struct sockaddr_in src_addr;
-          int addrlen = sizeof(src_addr);
-          int nbytes = recvfrom(rxs->sock,
-                                s_fr_listen_buf, sizeof(s_fr_listen_buf),
-                                0,
-                                (struct sockaddr *)&src_addr,
-                                (socklen_t *)&addrlen);
-          //printf("rx %d\r\n", nbytes);
-          fr_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
-                rxs->addr, rxs->port,
-                s_fr_listen_buf, nbytes);
-        }
-      }
-    }
-    if (max_usec == 0) // this is a common case from, e.g., spin_some()
-      break;
-    t_now = fr_time_now_double();
-    if (g_timer_period > 0)
-    {
-      double t_until_timeout = g_timer_last_t + g_timer_period - t_now;
-      if (t_until_timeout <= 0)
-      {
-        g_timer_last_t = t_now;
-        g_timer_cb();
+        struct sockaddr_in src_addr;
+        int addrlen = sizeof(src_addr);
+        int nbytes = recvfrom(rxs->sock,
+                              s_fr_listen_buf, sizeof(s_fr_listen_buf),
+                              0,
+                              (struct sockaddr *)&src_addr,
+                              (socklen_t *)&addrlen);
+        //printf("rx %d\r\n", nbytes);
+        fr_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
+              rxs->addr, rxs->port,
+              s_fr_listen_buf, nbytes);
       }
     }
   }
-  return true;
+  return rv;
 }
 
 bool fr_tx(const in_addr_t dst_addr,
-              const in_port_t dst_port,
-              const uint8_t *tx_data,
-              const uint16_t tx_len)
+           const in_port_t dst_port,
+           const uint8_t *tx_data,
+           const uint16_t tx_len)
 {
   //struct sockaddr_in g_freertps_tx_addr;
   g_fr_tx_addr.sin_port = htons(dst_port);
@@ -374,8 +343,4 @@ bool fr_tx(const in_addr_t dst_addr,
     return false;
 }
 
-void freertps_timer_set_freq(uint32_t freq, freertps_timer_cb_t cb)
-{
-  g_timer_period = 1.0 / (double)freq;
-  g_timer_cb = cb;
-}
+

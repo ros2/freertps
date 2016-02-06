@@ -98,7 +98,6 @@ struct fr_iterator fr_iterator_begin(struct fr_container *c)
     // if we get here, we made it through the first array node without
     // ever finding a valid element. todo: chase through all array nodes
     // so we correctly handle pathological cases.
-    printf("invalid initial array-list seek...\n");
     return it;
   }
   // if we get here, we have an unknown container type!

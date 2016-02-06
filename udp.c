@@ -34,7 +34,7 @@ static bool fr_rx_data_frag     (RX_MSG_ARGS);
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
                    const fr_entity_id_t *reader_entity_id,
                    const fr_guid_t *writer_guid,
-                   const fr_sequence_number_set_t *set);
+                   const struct fr_sequence_number_set *set);
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -491,7 +491,7 @@ static uint8_t g_fr_udp_tx_buf[1536]; //FR_DISCOVERY_TX_BUFLEN];
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
                    const fr_entity_id_t         *reader_id,
                    const fr_guid_t        *writer_guid,
-                   const fr_sequence_number_set_t *set)
+                   const struct fr_sequence_number_set *set)
 {
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",

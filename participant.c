@@ -142,45 +142,35 @@ bool fr_participant_add_default_locators()
   return true;
 }
 
+static void print_locators(const char *header, struct fr_container *c)
+{
+  printf("    %s\n", header);
+  for (struct fr_iterator it = fr_iterator_begin(c);
+      it.data; fr_iterator_next(&it))
+  {
+    struct fr_locator *loc = (struct fr_locator *)it.data;
+    printf("      ");
+    fr_locator_print(loc);
+  }
+}
+
 void fr_participant_print_locators()
 {
   printf("=== partcipant locators ===\n");
-  printf("  unicast builtin:\n");
-  for (struct fr_iterator it = 
-           fr_iterator_begin(g_fr_participant.builtin_unicast_locators);
-       it.data; fr_iterator_next(&it))
-  {
-    struct fr_locator *loc = (struct fr_locator *)it.data;
-    printf("    ");
-    locator_print(loc);
-  }
-  printf("  multicast builtin:\n");
-  for (struct fr_iterator it = 
-         fr_iterator_begin(g_fr_participant.builtin_multicast_locators);
-       it.data; fr_iterator_next(&it))
-  {
-    struct fr_locator *loc = (struct fr_locator *)it.data;
-    printf("    ");
-    locator_print(loc);
-  }
-  printf("  unicast user:\n");
-  for (struct fr_iterator it = 
-           fr_iterator_begin(g_fr_participant.user_unicast_locators);
-       it.data; fr_iterator_next(&it))
-  {
-    struct fr_locator *loc = (struct fr_locator *)it.data;
-    printf("    ");
-    locator_print(loc);
-  }
-  printf("  multicast user:\n");
-  for (struct fr_iterator it = 
-         fr_iterator_begin(g_fr_participant.user_multicast_locators);
-       it.data; fr_iterator_next(&it))
-  {
-    struct fr_locator *loc = (struct fr_locator *)it.data;
-    printf("    ");
-    locator_print(loc);
-  }
-
+  printf("  metatraffic:\n");
+  print_locators("unicast:", g_fr_participant.builtin_unicast_locators);
+  print_locators("multicast:", g_fr_participant.builtin_multicast_locators);
+  printf("  user traffic:\n");
+  print_locators("unicast:", g_fr_participant.user_unicast_locators);
+  print_locators("multicast:", g_fr_participant.user_multicast_locators);
 }
 
+void fr_participant_send_changes()
+{
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.writers);
+      it.data; fr_iterator_next(&it))
+  {
+    struct fr_writer *w = it.data;
+    fr_writer_send_changes(w);
+  }
+}

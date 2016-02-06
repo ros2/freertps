@@ -24,6 +24,8 @@ uint32_t fr_container_len(struct fr_container *c);
 fr_rc_t fr_container_append(
     struct fr_container *c, void *data, size_t len, uint32_t flags);
 
+void *fr_container_head(struct fr_container *c);
+
 // these are not intended to be user APIs, but need to be seen by
 // both the container and iterator classes. Thus, they're here (for now).
 

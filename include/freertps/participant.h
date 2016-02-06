@@ -39,5 +39,6 @@ uint16_t fr_participant_mcast_user_port();
 bool fr_participant_add_default_locators();
 
 void fr_participant_print_locators();
+void fr_participant_send_changes();
 
 #endif

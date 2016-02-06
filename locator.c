@@ -3,7 +3,7 @@
 #include "freertps/container.h"
 #include "freertps/locator.h"
 
-void locator_print(struct fr_locator *loc)
+void fr_locator_print(struct fr_locator *loc)
 {
   // assume they are udp4 for now...
   if (loc->kind == FR_LOCATOR_KIND_UDPV4)
@@ -19,14 +19,22 @@ void locator_print(struct fr_locator *loc)
   printf(":%d\n", loc->port);
 }
 
-fr_rc_t locator_container_append(uint32_t udpv4, uint16_t port,
+fr_rc_t fr_locator_container_append(uint32_t udp4, uint16_t port,
     struct fr_container *c)
 {
   struct fr_locator loc;
-  loc.kind = FR_LOCATOR_KIND_UDPV4;
-  loc.port = port;
-  memset(loc.addr.udp4.zeros, 0, 12);
-  loc.addr.udp4.addr = udpv4;
+  fr_locator_set_udp4(&loc, udp4, port);
   return fr_container_append(c, &loc, sizeof(struct fr_locator), 
       FR_CFLAGS_NONE);
+}
+
+void fr_locator_set_udp4(struct fr_locator *loc,
+    const uint32_t udp4, const uint16_t port)
+{
+  if (!loc)
+    return;
+  loc->kind = FR_LOCATOR_KIND_UDPV4;
+  memset(loc->addr.udp4.zeros, 0, 12);
+  loc->addr.udp4.addr = udp4;
+  loc->port = port;
 }

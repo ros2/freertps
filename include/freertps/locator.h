@@ -23,8 +23,10 @@ typedef struct fr_locator
   } addr; 
 } __attribute__((packed)) fr_locator_t;
 
-void locator_print(struct fr_locator *loc);
-fr_rc_t locator_container_append(uint32_t udpv4, uint16_t port, 
+void fr_locator_print(struct fr_locator *loc);
+fr_rc_t fr_locator_container_append(uint32_t udp4, uint16_t port, 
     struct fr_container *c);
+void fr_locator_set_udp4(struct fr_locator *loc,
+    const uint32_t udp4, const uint16_t port);
 
 #endif

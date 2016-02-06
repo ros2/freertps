@@ -12,9 +12,12 @@ extern "C" {
 
 typedef void (*freertps_msg_cb_t)(const void *msg);
 
+#include <stdint.h>
+
 #include "freertps/udp.h"
 #include "freertps/config.h"
 #include "freertps/time.h"
+#include "freertps/timer.h"
 #include "freertps/ports.h"
 #include "freertps/locator.h"
 #include "freertps/discovery.h"
@@ -54,6 +57,8 @@ void freertps_start();
 void freertps_init();
 bool freertps_ok();
 void freertps_fini();
+void freertps_spin(const uint32_t microseconds);
+void freertps_add_timer(uint32_t usec, freertps_timer_cb_t cb);
 
 #ifdef __cplusplus
 }
