@@ -13,8 +13,8 @@ struct fr_reader_locator *fr_reader_locator_create()
 void fr_reader_locator_init(struct fr_reader_locator *rl)
 {
   rl->locator.kind = FR_LOCATOR_KIND_INVALID;
-  rl->highest_seq_num_sent = FR_SEQUENCE_NUMBER_UNKNOWN;
-  rl->lowest_requested_change = FR_SEQUENCE_NUMBER_UNKNOWN;
+  rl->highest_seq_num_sent = 0;
+  rl->lowest_requested_change = 0;
   rl->expects_inline_qos = false;
 }
 

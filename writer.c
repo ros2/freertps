@@ -1,8 +1,13 @@
 #include <stdio.h>
+#include <string.h>
 #include "freertps/container.h"
 #include "freertps/iterator.h"
 #include "freertps/mem.h"
+#include "freertps/message.h"
 #include "freertps/writer.h"
+
+static void fr_writer_send(fr_sequence_number_t seq_num,
+    struct fr_locator *loc);
 
 struct fr_writer *fr_writer_create(
     const char *topic_name,
@@ -52,6 +57,8 @@ bool fr_writer_new_change(struct fr_writer *w, void *data, size_t data_len,
 {
   struct fr_cache_change cc;
   w->last_change_sequence_number++;
+  printf("fr_writer_new_change()  max_sn now = %d\n",
+      (int)w->last_change_sequence_number);
   cc.writer_entity_id.u = w->endpoint.entity_id.u;
   cc.sequence_number = w->last_change_sequence_number;
   cc.data = data;
@@ -78,22 +85,55 @@ fr_rc_t fr_writer_add_reader_locator(struct fr_writer *w,
 
 void fr_writer_unsent_changes_reset(struct fr_writer *w)
 {
+  //printf("unsent changes reset\n");
   for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
        it.data; fr_iterator_next(&it))
   {
     //printf("spdp tx\n");
     struct fr_reader_locator *rl = it.data;
-    rl->highest_seq_num_sent = FR_SEQUENCE_NUMBER_UNKNOWN;
+    rl->highest_seq_num_sent = 0;
   }
 }
 
 void fr_writer_send_changes(struct fr_writer *w)
 {
+  fr_sequence_number_t max_sn = fr_history_cache_max(&w->writer_cache);
+  //printf("fr_writer_send_changes() where max_sn = %d\n", (int)max_sn);
   for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
        it.data; fr_iterator_next(&it))
   {
     struct fr_reader_locator *rl = it.data;
-    // TODO: more hacking here...
+    while (rl->highest_seq_num_sent < max_sn)
+    {
+      rl->highest_seq_num_sent++;
+      fr_writer_send(rl->highest_seq_num_sent, &rl->locator);
+      //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+    }
   }
+}
 
+// many/most messages are small. for now, we'll just build our submessage
+// stream into this buffer. In the future, as we deal with large messages
+// again, we'll have a way to spill over into a 64K buffer (max udp packet)
+#define FR_SMALL_MSG_BUF_LEN 1024
+static uint8_t fr_writer_small_msg_buf[FR_SMALL_MSG_BUF_LEN];
+
+static void fr_writer_send(fr_sequence_number_t seq_num,
+    struct fr_locator *loc)
+{
+  printf("sending SN %d to ", (int)seq_num);
+  fr_locator_print(loc);
+
+  struct fr_message *msg = (struct fr_message *)fr_writer_small_msg_buf;
+  fr_message_init(msg);
+  struct fr_time t = fr_time_now();
+  uint16_t submsg_wpos = 0;
+  struct fr_submessage *ts_submsg =
+      (struct fr_submessage *)&msg->submessages[submsg_wpos];
+  ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+  ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
+  ts_submsg->header.len = 8;
+  memcpy(ts_submsg->contents, &t, 8); // optimize later with direct assign...
+  submsg_wpos += 4 + 8;
+  // todo: continue copy-pasting here from the spdp broadcast tx function...
 }

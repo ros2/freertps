@@ -22,32 +22,32 @@
 #define FR_SUBMSG_ID_DATA           0x15
 #define FR_SUBMSG_ID_DATA_FRAG      0x16
 
-typedef struct fr_header
+struct fr_header
 {
   uint32_t magic_word; // RTPS in ASCII
   struct fr_protocol_version protocol_version; // protocol version
   fr_vendor_id_t vendor_id;  // vendor ID
   struct fr_guid_prefix guid_prefix;
-} fr_header_t;
+};
 
-typedef struct fr_message
+struct fr_message
 {
   struct fr_header header;
   uint8_t submessages[];
-} fr_message_t;
+};
 
-typedef struct fr_submessage_header
+struct fr_submessage_header
 {
   uint8_t id;
   uint8_t flags;
   uint16_t len;
-} fr_submessage_header_t;
+};
 
-typedef struct fr_submessage
+struct fr_submessage
 {
   struct fr_submessage_header header;
   uint8_t contents[];
-} fr_submessage_t;
+};
 
 typedef struct fr_data_submessage
 {
@@ -107,4 +107,8 @@ typedef struct fr_info_dest_submessage
   struct fr_guid_prefix guid_prefix;
 } __attribute__((packed)) fr_info_dest_submessage_t;
 
+//////////////////////////////////////////////////////////////////////////
+struct fr_message *fr_message_init(struct fr_message *buf);
+
 #endif
+

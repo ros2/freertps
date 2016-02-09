@@ -287,7 +287,8 @@ static bool fr_rx_info_ts(RX_MSG_ARGS)
     // todo: care about alignment
     //memcpy("
     //printf("about to read %08x\r\n", (unsigned)submsg->contents);
-    const fr_time_t * const t_msg = (const fr_time_t * const)submsg->contents;
+    const struct fr_time * const t_msg =
+        (const struct fr_time * const)submsg->contents;
     rcvr->timestamp = *t_msg; //*((fr_time_t *)(submsg->contents));
     /*
     FREERTPS_INFO("info_ts rx timestamp %.6f\n",
@@ -473,19 +474,6 @@ const char *fr_ip4_ntoa(const uint32_t addr)
 }
 
 static uint32_t g_fr_udp_tx_buf_wpos;
-struct fr_message *fr_init_msg(struct fr_message *buf)
-{
-  struct fr_message *msg = (struct fr_message *)buf;
-  msg->header.magic_word = 0x53505452;
-  msg->header.protocol_version.major = 2;
-  msg->header.protocol_version.minor = 1;
-  msg->header.vendor_id = FREERTPS_VENDOR_ID;
-  memcpy(msg->header.guid_prefix.prefix,
-         g_fr_participant.guid_prefix.prefix,
-         FR_GUID_PREFIX_LEN);
-  g_fr_udp_tx_buf_wpos = 0;
-  return msg;
-}
 
 static uint8_t g_fr_udp_tx_buf[1536]; //FR_DISCOVERY_TX_BUFLEN];
 void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
@@ -493,6 +481,7 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
                    const fr_guid_t        *writer_guid,
                    const struct fr_sequence_number_set *set)
 {
+#ifdef HORRIBLY_BROKEN
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",
                (int)set->bitmap_base.low,
@@ -531,6 +520,7 @@ void fr_tx_acknack(const fr_guid_prefix_t *guid_prefix,
   *p_count = s_acknack_count++;
   uint8_t *p_next_submsg = (uint8_t *)p_count + 4;
   int payload_len = p_next_submsg - (uint8_t *)msg;
+#endif
 #ifdef HORRIBLY_BROKEN
   fr_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
            part->metatraffic_unicast_locator.port,

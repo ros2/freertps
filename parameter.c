@@ -1,3 +1,4 @@
+#include <string.h>
 #include "freertps/encapsulation_scheme.h"
 #include "freertps/parameter.h"
 

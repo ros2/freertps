@@ -10,7 +10,7 @@
 typedef struct
 {
   uint32_t kind;
-  fr_duration_t max_blocking_time;
+  struct fr_duration max_blocking_time;
 } __attribute__((packed)) fr_qos_reliability_t;
 
 ///////////////////////////////////////////////////////////////

@@ -16,9 +16,9 @@ static uint64_t frac_sec(uint64_t nsec)
   return frac_sec_lcm / 1953125;
 }
 
-fr_time_t fr_time_now()
+struct fr_time fr_time_now()
 {
-  fr_time_t now;
+  struct fr_time now;
 
 #if (defined __linux__)
   struct timespec ts;

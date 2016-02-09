@@ -13,7 +13,8 @@
 #include "freertps/vendor_id.h"
 
 typedef void (*fr_rx_data_cb_t)(fr_receiver_t *rcvr,
-    const fr_submessage_t *submsg, const uint16_t scheme, const uint8_t *data);
+    const struct fr_submessage *submsg, const uint16_t scheme,
+    const uint8_t *data);
 
 /////////////////////////////////////////////////////////////////////
 // FUNCTIONS

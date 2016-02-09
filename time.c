@@ -2,10 +2,11 @@
 #include "freertps/freertps.h"
 #include <limits.h>
 
-fr_duration_t fr_time_diff(const fr_time_t *end, const fr_time_t *start)
+struct fr_duration fr_time_diff(const struct fr_time *end,
+    const struct fr_time *start)
 {
   // FUTURE: this can probably be simplified.
-  fr_duration_t d;
+  struct fr_duration d;
   if (end->seconds >= start->seconds)
   {
     d.fraction = end->fraction - start->fraction;
@@ -25,7 +26,7 @@ fr_duration_t fr_time_diff(const fr_time_t *end, const fr_time_t *start)
   return d;
 }
 
-double fr_time_double(const fr_time_t *t)
+double fr_time_double(const struct fr_time *t)
 {
   if (t->seconds >= 0)
     return t->seconds + t->fraction / (double)UINT_MAX;
@@ -40,6 +41,6 @@ double fr_time_double(const fr_time_t *t)
 
 double fr_time_now_double()
 {
-  fr_time_t t = fr_time_now();
+  struct fr_time t = fr_time_now();
   return fr_time_double(&t);
 }

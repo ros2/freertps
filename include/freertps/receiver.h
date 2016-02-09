@@ -14,7 +14,7 @@ typedef struct fr_receiver
   fr_guid_prefix_t           src_guid_prefix;
   fr_guid_prefix_t           dst_guid_prefix;
   bool                       have_timestamp;
-  fr_time_t                  timestamp;
+  struct fr_time             timestamp;
 } fr_receiver_t;
 
 #endif

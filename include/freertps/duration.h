@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-typedef struct fr_duration
+struct fr_duration
 {
   int32_t  seconds;
   uint32_t fraction;
-} __attribute__((packed)) fr_duration_t;
+} __attribute__((packed));
 
 double fr_duration_double(const struct fr_duration *t);
 

@@ -4,15 +4,16 @@
 #include <stdint.h>
 #include "freertps/duration.h"
 
-typedef struct fr_time
+struct fr_time
 {
   int32_t  seconds;
   uint32_t fraction;
-} fr_time_t;
+};
 
-fr_time_t     fr_time_now();
-fr_duration_t fr_time_diff(const fr_time_t *end, const fr_time_t *start);
-double fr_time_double(const fr_time_t *t);
+struct fr_time fr_time_now();
+struct fr_duration fr_time_diff(const struct fr_time *end,
+    const struct fr_time *start);
+double fr_time_double(const struct fr_time *t);
 double fr_time_now_double(); // convenience function
 
 #endif

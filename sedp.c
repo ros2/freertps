@@ -30,7 +30,7 @@ static void fr_sedp_rx_pubsub_data(fr_receiver_t *rcvr,
 static void fr_sedp_bcast();
 ////////////////////////////////////////////////////////////////////////////
 // static globals
-static fr_time_t fr_sedp_last_bcast;
+static struct fr_time fr_sedp_last_bcast;
 #ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
 fr_pub_t *g_sedp_sub_pub = NULL; // SEDP subscription publication
 fr_pub_t *g_sedp_pub_pub = NULL; // SEDP publication publication
@@ -132,7 +132,7 @@ void fr_sedp_fini()
 
 void fr_sedp_tick()
 {
-  const fr_time_t t = fr_time_now();
+  const struct fr_time t = fr_time_now();
   if (fr_time_diff(&t, &fr_sedp_last_bcast).seconds >= 1)
   {
     fr_sedp_bcast();
