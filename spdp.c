@@ -348,22 +348,6 @@ uint16_t fr_append_submsg(fr_msg_t *msg, const uint16_t msg_wpos,
 void fr_spdp_bcast()
 {
 #ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  //FREERTPS_INFO("spdp bcast\n");
-  fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_fr_disco_tx_buf);
-  fr_time_t t = fr_time_now();
-  uint16_t submsg_wpos = 0;
-
-  fr_submsg_t *ts_submsg = (fr_submsg_t *)&msg->submsgs[submsg_wpos];
-  ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
-  ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
-  ts_submsg->header.len = 8;
-  memcpy(ts_submsg->contents, &t, 8);
-  submsg_wpos += 4 + 8;
-
-/*
-  fr_submsg_t *data_submsg =
-*/
-  fr_submsg_data_t *data_submsg = (fr_submsg_data_t *)&msg->submsgs[submsg_wpos];
   //(fr_submsg_data_t *)data_submsg->contents;
   data_submsg->header.id = FR_SUBMSG_ID_DATA;
   data_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |

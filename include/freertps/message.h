@@ -28,28 +28,28 @@ struct fr_header
   struct fr_protocol_version protocol_version; // protocol version
   fr_vendor_id_t vendor_id;  // vendor ID
   struct fr_guid_prefix guid_prefix;
-};
+} __attribute__((packed));
 
 struct fr_message
 {
   struct fr_header header;
   uint8_t submessages[];
-};
+} __attribute__((packed));
 
 struct fr_submessage_header
 {
   uint8_t id;
   uint8_t flags;
   uint16_t len;
-};
+} __attribute__((packed));
 
 struct fr_submessage
 {
   struct fr_submessage_header header;
   uint8_t contents[];
-};
+} __attribute__((packed));
 
-typedef struct fr_data_submessage
+struct fr_submessage_data
 {
   struct fr_submessage_header header;
   uint16_t extraflags;
@@ -58,7 +58,7 @@ typedef struct fr_data_submessage
   union fr_entity_id writer_id;
   struct fr_sequence_number writer_sn;
   uint8_t data[];
-} __attribute__((packed)) fr_data_submessage_t;
+} __attribute__((packed));
 
 typedef struct fr_data_frag_submessage
 {

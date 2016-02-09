@@ -135,5 +135,6 @@ static void fr_writer_send(fr_sequence_number_t seq_num,
   ts_submsg->header.len = 8;
   memcpy(ts_submsg->contents, &t, 8); // optimize later with direct assign...
   submsg_wpos += 4 + 8;
+  struct fr_submessage_data *data_submsg = (fr_submsg_data_t *)&msg->submsgs[submsg_wpos];
   // todo: continue copy-pasting here from the spdp broadcast tx function...
 }
