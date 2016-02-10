@@ -349,18 +349,6 @@ void fr_spdp_bcast()
 {
 #ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   //(fr_submsg_data_t *)data_submsg->contents;
-  data_submsg->header.id = FR_SUBMSG_ID_DATA;
-  data_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |
-                              FR_FLAGS_INLINE_QOS    |
-                              FR_FLAGS_DATA_PRESENT  ;
-  data_submsg->header.len = 336; // need to compute this dynamically?
-  data_submsg->extraflags = 0;
-  data_submsg->octets_to_inline_qos = 16; // ?
-  data_submsg->reader_id = g_fr_eid_unknown;
-  data_submsg->writer_id = g_spdp_writer_id;
-  data_submsg->writer_sn.high = 0;
-  //static uint32_t bcast_count = 0;
-  data_submsg->writer_sn.low = 1; //++bcast_count;
   /////////////////////////////////////////////////////////////
   fr_parameter_list_item_t *inline_qos_param =
     (fr_parameter_list_item_t *)(((uint8_t *)data_submsg) +

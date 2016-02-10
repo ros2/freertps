@@ -37,3 +37,17 @@ fr_sequence_number_t fr_history_cache_max(struct fr_history_cache *hc)
   }
   return max_sn;
 }
+
+struct fr_cache_change *fr_history_cache_get_change(
+    struct fr_history_cache *hc, fr_sequence_number_t seq_num)
+{
+  for (struct fr_iterator it = fr_iterator_begin(hc->changes);
+       it.data; fr_iterator_next(&it))
+  {
+    struct fr_cache_change *cc = it.data;
+    if (cc->sequence_number == seq_num)
+      return cc;
+  }
+  return NULL;
+}
+

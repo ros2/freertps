@@ -18,7 +18,8 @@ void fr_history_cache_add_change(struct fr_history_cache *hc,
 void fr_history_cache_remove_change(struct fr_history_cache *hc,
                                     struct fr_cache_change *cc);
 
-fr_cache_change_t *fr_hc_get_change(struct fr_history_cache *hc);
+struct fr_cache_change *fr_history_cache_get_change(
+    struct fr_history_cache *hc, fr_sequence_number_t seq_num);
 fr_sequence_number_t fr_history_cache_max(struct fr_history_cache *hc);
 fr_sequence_number_t fr_history_cache_min(struct fr_history_cache *hc);
 

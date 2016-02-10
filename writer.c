@@ -6,8 +6,8 @@
 #include "freertps/message.h"
 #include "freertps/writer.h"
 
-static void fr_writer_send(fr_sequence_number_t seq_num,
-    struct fr_locator *loc);
+static void fr_writer_send(struct fr_writer *writer,
+    fr_sequence_number_t seq_num, struct fr_locator *loc);
 
 struct fr_writer *fr_writer_create(
     const char *topic_name,
@@ -106,7 +106,7 @@ void fr_writer_send_changes(struct fr_writer *w)
     while (rl->highest_seq_num_sent < max_sn)
     {
       rl->highest_seq_num_sent++;
-      fr_writer_send(rl->highest_seq_num_sent, &rl->locator);
+      fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
       //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
     }
   }
@@ -118,23 +118,45 @@ void fr_writer_send_changes(struct fr_writer *w)
 #define FR_SMALL_MSG_BUF_LEN 1024
 static uint8_t fr_writer_small_msg_buf[FR_SMALL_MSG_BUF_LEN];
 
-static void fr_writer_send(fr_sequence_number_t seq_num,
-    struct fr_locator *loc)
+static void fr_writer_send(struct fr_writer *writer,
+    fr_sequence_number_t seq_num, struct fr_locator *loc)
 {
-  printf("sending SN %d to ", (int)seq_num);
+  struct fr_cache_change *cc = fr_history_cache_get_change(
+      &writer->writer_cache, seq_num);
+  if (!cc)
+  {
+    printf("woah! couldn't find cache change SN #%d\n", (int)seq_num);
+    return;
+  }
+  printf("sending SN #%d length %d to ", (int)seq_num, (int)cc->data_len);
   fr_locator_print(loc);
 
   struct fr_message *msg = (struct fr_message *)fr_writer_small_msg_buf;
   fr_message_init(msg);
   struct fr_time t = fr_time_now();
-  uint16_t submsg_wpos = 0;
-  struct fr_submessage *ts_submsg =
-      (struct fr_submessage *)&msg->submessages[submsg_wpos];
-  ts_submsg->header.id = FR_SUBMSG_ID_INFO_TS;
-  ts_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
-  ts_submsg->header.len = 8;
-  memcpy(ts_submsg->contents, &t, 8); // optimize later with direct assign...
-  submsg_wpos += 4 + 8;
-  struct fr_submessage_data *data_submsg = (fr_submsg_data_t *)&msg->submsgs[submsg_wpos];
-  // todo: continue copy-pasting here from the spdp broadcast tx function...
+  struct fr_submessage *submsg =
+      (struct fr_submessage *)&msg->submessages;
+  submsg->header.id = FR_SUBMSG_ID_INFO_TS;
+  submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
+  submsg->header.len = 8;
+  memcpy(submsg->contents, &t, 8); // optimize later with direct assign...
+  struct fr_submessage_data *data_submsg =
+      (struct fr_submessage_data *)&msg->submessages[12];
+  data_submsg->header.id = FR_SUBMSG_ID_DATA;
+  data_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |
+                              FR_FLAGS_INLINE_QOS    |
+                              FR_FLAGS_DATA_PRESENT  ;
+  data_submsg->header.len = 16 + cc->data_len; // 336;
+  data_submsg->extraflags = 0;
+  data_submsg->octets_to_inline_qos = 16; // ?
+  data_submsg->reader_id = g_fr_entity_id_unknown;
+  data_submsg->writer_id = writer->endpoint.entity_id;   //g_spdp_writer_id;
+  data_submsg->writer_sn.high = (int32_t)(seq_num >> 32);
+  data_submsg->writer_sn.low = (uint32_t)(seq_num & 0xffffffff);
+  memcpy(data_submsg->data, cc->data, cc->data_len);
+  uint8_t *end_of_submessages = &data_submsg->data[cc->data_len];
+  uint32_t payload_len = end_of_submessages - (uint8_t *)msg;
+  printf("udp payload: %d bytes\n", (int)payload_len);
+  //submsg = (struct fr_submessage *)&data_submsg->data[cc->data_len];
+
 }

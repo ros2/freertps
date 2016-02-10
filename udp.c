@@ -341,7 +341,7 @@ static bool fr_rx_heartbeat_frag(RX_MSG_ARGS)
 
 static bool fr_rx_data(RX_MSG_ARGS)
 {
-  struct fr_data_submessage *data_submsg = (struct fr_data_submessage *)submsg;
+  struct fr_submessage_data *data_submsg = (struct fr_submessage_data *)submsg;
 #ifdef EXCESSIVELY_VERBOSE_MSG_RX
   FREERTPS_INFO("rx data flags = %d\n", 0x0f7 & submsg->header.flags);
 #endif

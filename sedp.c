@@ -42,8 +42,8 @@ fr_pub_t *g_sedp_pub_pub = NULL; // SEDP publication publication
 //static uint8_t fr_pub_sample_t[SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_sub_writer_data_buf[SEDP_MSG_BUF_LEN * FR_MAX_SUBS];
 static uint8_t g_sedp_pub_writer_data_buf[SEDP_MSG_BUF_LEN * FR_MAX_PUBS];
-static struct fr_data_submessage *g_sedp_sub_writer_data_submsgs[FR_MAX_SUBS];
-static struct fr_data_submessage *g_sedp_pub_writer_data_submsgs[FR_MAX_PUBS];
+static struct fr_submessage_data *g_sedp_sub_writer_data_submsgs[FR_MAX_SUBS];
+static struct fr_submessage_data *g_sedp_pub_writer_data_submsgs[FR_MAX_PUBS];
 //sizeof [MAX_SUBS][SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_msg_buf[SEDP_MSG_BUF_LEN];
 
@@ -52,15 +52,15 @@ void fr_sedp_init()
   FREERTPS_INFO("fr_sedp_init()\r\n");
   for (int i = 0; i < FR_MAX_SUBS; i++)
   {
-    struct fr_data_submessage *d = 
-      (struct fr_data_submessage *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
+    struct fr_submessage_data *d = 
+      (struct fr_submessage_data *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
     d->writer_sn = g_fr_sequence_number_unknown;
     g_sedp_sub_writer_data_submsgs[i] = d;
   }
   for (int i = 0; i < FR_MAX_PUBS; i++)
   {
-    struct fr_data_submessage *d = 
-      (struct fr_data_submessage *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
+    struct fr_submessage_data *d = 
+      (struct fr_submessage_data *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
     d->writer_sn = g_fr_sequence_number_unknown;
     g_sedp_pub_writer_data_submsgs[i] = d;
   }
