@@ -326,10 +326,10 @@ int fr_system_listen_at_most(uint32_t microseconds)
   return rv;
 }
 
-bool fr_tx(const in_addr_t dst_addr,
-           const in_port_t dst_port,
-           const uint8_t *tx_data,
-           const uint16_t tx_len)
+bool fr_udp_tx(const in_addr_t dst_addr,
+               const in_port_t dst_port,
+               const uint8_t *tx_data,
+               const uint16_t tx_len)
 {
   //struct sockaddr_in g_freertps_tx_addr;
   g_fr_tx_addr.sin_port = htons(dst_port);

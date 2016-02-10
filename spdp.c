@@ -235,6 +235,7 @@ void fr_spdp_init()
   struct fr_writer *w = g_fr_spdp_writer = fr_writer_create(
       NULL, NULL, FR_WRITER_TYPE_BEST_EFFORT);
   w->endpoint.entity_id = g_spdp_writer_id;
+  w->endpoint.with_key = true;
   fr_participant_add_writer(w);
 
   // todo: previously reader_eid = g_spdp_reader_id was used to mark the 
@@ -242,13 +243,12 @@ void fr_spdp_init()
   // more elegant now
 
   // craft the outbound SPDP message
-  //struct fr_cache_change cc;
   struct fr_guid *guid = fr_malloc(sizeof(struct fr_guid));
   memcpy(guid->prefix.prefix, g_fr_participant.guid_prefix.prefix,
       FR_GUID_PREFIX_LEN);
   guid->entity_id.u = FR_ENTITY_ID_PARTICIPANT;
 
-  struct fr_parameter_list *spdp_data = fr_malloc(350);
+  struct fr_parameter_list *spdp_data = fr_malloc(350); // some will leak...
   fr_parameter_list_init(spdp_data);
   uint32_t pver = 0x00000102;
   fr_parameter_list_append(spdp_data, FR_PID_PROTOCOL_VERSION, &pver, 4);

@@ -39,10 +39,10 @@ bool fr_rx(const uint32_t src_addr,
            const uint8_t *rx_data,
            const uint16_t rx_len);
 
-bool fr_tx(const uint32_t dst_addr,
-           const uint16_t dst_port,
-           const uint8_t *tx_data,
-           const uint16_t tx_len);
+bool fr_udp_tx(const uint32_t dst_addr,
+               const uint16_t dst_port,
+               const uint8_t *tx_data,
+               const uint16_t tx_len);
 
 uint16_t fr_spdp_port();
 

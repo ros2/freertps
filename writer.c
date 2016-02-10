@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include "freertps/bswap.h"
 #include "freertps/container.h"
 #include "freertps/iterator.h"
 #include "freertps/mem.h"
 #include "freertps/message.h"
 #include "freertps/writer.h"
+#include "freertps/udp.h"
 
 static void fr_writer_send(struct fr_writer *writer,
     fr_sequence_number_t seq_num, struct fr_locator *loc);
@@ -143,9 +145,7 @@ static void fr_writer_send(struct fr_writer *writer,
   struct fr_submessage_data *data_submsg =
       (struct fr_submessage_data *)&msg->submessages[12];
   data_submsg->header.id = FR_SUBMSG_ID_DATA;
-  data_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |
-                              FR_FLAGS_INLINE_QOS    |
-                              FR_FLAGS_DATA_PRESENT  ;
+  data_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN | FR_FLAGS_DATA_PRESENT;
   data_submsg->header.len = 16 + cc->data_len; // 336;
   data_submsg->extraflags = 0;
   data_submsg->octets_to_inline_qos = 16; // ?
@@ -153,10 +153,29 @@ static void fr_writer_send(struct fr_writer *writer,
   data_submsg->writer_id = writer->endpoint.entity_id;   //g_spdp_writer_id;
   data_submsg->writer_sn.high = (int32_t)(seq_num >> 32);
   data_submsg->writer_sn.low = (uint32_t)(seq_num & 0xffffffff);
-  memcpy(data_submsg->data, cc->data, cc->data_len);
-  uint8_t *end_of_submessages = &data_submsg->data[cc->data_len];
-  uint32_t payload_len = end_of_submessages - (uint8_t *)msg;
+  uint8_t *wpos = (uint8_t *)data_submsg->data;
+  if (writer->endpoint.with_key)
+  {
+    data_submsg->header.flags |= FR_FLAGS_INLINE_QOS;
+    struct fr_parameter_list_item *item =
+        (struct fr_parameter_list_item *)wpos;
+    item->pid = FR_PID_KEY_HASH;
+    item->len = 16;
+    memcpy(item->value, cc->instance_handle, cc->instance_handle_len);
+    wpos += 4 + item->len;
+    item = (struct fr_parameter_list_item *)wpos;
+    item->pid = FR_PID_SENTINEL;
+    item->len = 0;
+    wpos += 4;
+  }
+  memcpy(wpos, cc->data, cc->data_len);
+  wpos += cc->data_len;
+  uint32_t payload_len = (uint32_t)(wpos - (uint8_t *)msg);
   printf("udp payload: %d bytes\n", (int)payload_len);
-  //submsg = (struct fr_submessage *)&data_submsg->data[cc->data_len];
-
+  fr_udp_tx(freertps_htonl(loc->addr.udp4.addr), loc->port,
+      (const uint8_t *)msg, payload_len);
+  // todo: this seems to be not quite long enough. look at how the 
+  // message bundle length is getting computed. someting is slightly
+  // too short.
 }
+
