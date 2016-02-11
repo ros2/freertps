@@ -1,4 +1,5 @@
 #include <string.h>
+#include "freertps/bswap.h"
 #include "freertps/encapsulation_scheme.h"
 #include "freertps/parameter.h"
 
@@ -7,7 +8,7 @@ void fr_parameter_list_init(
 {
   struct fr_encapsulation_scheme *scheme = 
       (struct fr_encapsulation_scheme *)s->serialization;
-  scheme->scheme = FR_SCHEME_PL_CDR_LE;
+  scheme->scheme = freertps_htons(FR_SCHEME_PL_CDR_LE);
   scheme->options = 0;
   s->serialized_len = 4;
 }

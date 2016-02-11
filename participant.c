@@ -4,6 +4,7 @@
 #include "freertps/discovery.h"
 #include "freertps/freertps.h"
 #include "freertps/participant.h"
+#include "freertps/participant_proxy.h"
 #include "freertps/udp.h"
 #include "freertps/iterator.h"
 #include "freertps/locator.h"
@@ -75,7 +76,8 @@ bool fr_participant_init()
   g_fr_participant.domain_id = 0; // todo: accept domain_id from outside
   FREERTPS_INFO("fr_participant_init() on domain_id %d\r\n",
       (int)g_fr_participant.domain_id);
-  g_fr_participant.matched_participants = NULL;
+  g_fr_participant.matched_participants =
+      fr_container_create(sizeof(struct fr_participant_proxy), 10);
   g_fr_participant.writers = fr_container_create(0, 0);
   g_fr_participant.readers = fr_container_create(0, 0);
   g_fr_participant.builtin_unicast_locators =
@@ -99,12 +101,14 @@ void fr_participant_fini()
   fr_container_free(g_fr_participant.builtin_multicast_locators);
   fr_container_free(g_fr_participant.user_unicast_locators);
   fr_container_free(g_fr_participant.user_multicast_locators);
+  fr_container_free(g_fr_participant.matched_participants);
   g_fr_participant.writers = NULL;
   g_fr_participant.readers = NULL;
   g_fr_participant.builtin_unicast_locators = NULL;
   g_fr_participant.builtin_multicast_locators = NULL;
   g_fr_participant.user_unicast_locators = NULL;
   g_fr_participant.user_multicast_locators = NULL;
+  g_fr_participant.matched_participants = NULL;
 }
 
 bool fr_participant_add_writer(struct fr_writer *writer)

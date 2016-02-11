@@ -16,10 +16,10 @@ typedef struct fr_participant_proxy
   fr_vendor_id_t vendor_id;
   bool expects_inline_qos;
   fr_builtin_endpoint_set_t available_builtin_endpoints;
-  struct fr_container *metatraffic_unicast_locators;
-  struct fr_container *metatraffic_multicast_locators;
-  struct fr_container *default_unicast_locators;
-  struct fr_container *default_multicast_locators;
+  struct fr_locator metatraffic_unicast_locator;
+  struct fr_locator metatraffic_multicast_locator;
+  struct fr_locator default_unicast_locator;
+  struct fr_locator default_multicast_locator;
   uint32_t manual_liveliness_count;
   struct fr_duration lease_duration;
 } fr_participant_proxy_t;

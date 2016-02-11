@@ -543,24 +543,23 @@ void sedp_publish_pub(fr_pub_t *pub)
 }
 #endif
 
-void sedp_add_builtin_endpoints(fr_participant_t *part)
+void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
 {
   printf("adding endpoints for ");
-  fr_guid_print_prefix(&part->guid_prefix);
+  fr_guid_print_prefix(prefix);
   printf("\r\n");
 
+  struct fr_reader *pub_reader = fr_reader_create(
+      NULL, NULL, FR_READER_TYPE_RELIABLE);
+  pub_reader->endpoint.entity_id = g_sedp_pub_reader_id;
+  pub_reader->data_rx_cb = fr_sedp_rx_pub_data;
+  // stuff matched_writer object now since we know prefix, etc.
+
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  fr_reader_t pub_reader; // this reads the remote peer's publications
-  pub_reader.writer_guid = g_fr_guid_unknown;
   fr_stuff_guid(&pub_reader.writer_guid,
                    &part->guid_prefix,
                    &g_sedp_pub_writer_id);
-  pub_reader.reader_entity_id = g_sedp_pub_reader_id;
-  pub_reader.max_rx_sn.low = 0;
-  pub_reader.max_rx_sn.high = 0;
   pub_reader.data_cb = fr_sedp_rx_pub_data;
-  pub_reader.msg_cb = NULL;
-  pub_reader.reliable = true;
   fr_add_reader(&pub_reader);
 
   fr_reader_t sub_reader; // this reads the remote peer's subscriptions

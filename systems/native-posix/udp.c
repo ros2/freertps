@@ -116,7 +116,7 @@ bool fr_system_udp_init()
   const uint8_t mac[6] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab };
   memcpy(&g_fr_participant.guid_prefix.prefix[2], mac, 6);
   // 4 bytes left. let's use the POSIX process ID
-  uint32_t pid = (uint32_t)getpid(); // on linux, this will be 4 bytes
+  uint32_t pid = freertps_htonl((uint32_t)getpid()); // on linux, this will be 4 bytes
   memcpy(&g_fr_participant.guid_prefix.prefix[8], &pid, 4);
 
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
