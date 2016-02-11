@@ -146,7 +146,7 @@ static void fr_writer_send(struct fr_writer *writer,
       (struct fr_submessage_data *)&msg->submessages[12];
   data_submsg->header.id = FR_SUBMSG_ID_DATA;
   data_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN | FR_FLAGS_DATA_PRESENT;
-  data_submsg->header.len = 16 + cc->data_len; // 336;
+  //data_submsg->header.len = 16 + cc->data_len; // 336;
   data_submsg->extraflags = 0;
   data_submsg->octets_to_inline_qos = 16; // ?
   data_submsg->reader_id = g_fr_entity_id_unknown;
@@ -170,12 +170,15 @@ static void fr_writer_send(struct fr_writer *writer,
   }
   memcpy(wpos, cc->data, cc->data_len);
   wpos += cc->data_len;
+  data_submsg->header.len =
+      (uint16_t)(wpos - (uint8_t *)&data_submsg->extraflags);
   uint32_t payload_len = (uint32_t)(wpos - (uint8_t *)msg);
   printf("udp payload: %d bytes\n", (int)payload_len);
   fr_udp_tx(freertps_htonl(loc->addr.udp4.addr), loc->port,
       (const uint8_t *)msg, payload_len);
-  // todo: this seems to be not quite long enough. look at how the 
-  // message bundle length is getting computed. someting is slightly
-  // too short.
+  if (writer->endpoint.reliable)
+  {
+    // send heartbeats
+  }
 }
 

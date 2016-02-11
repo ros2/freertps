@@ -7,14 +7,14 @@
 #include "freertps/guid.h"
 #include "freertps/time.h"
 
-typedef struct fr_receiver
+struct fr_receiver
 {
   struct fr_protocol_version src_protocol_version;
   fr_vendor_id_t             src_vendor_id;
-  fr_guid_prefix_t           src_guid_prefix;
-  fr_guid_prefix_t           dst_guid_prefix;
+  struct fr_guid_prefix      src_guid_prefix;
+  struct fr_guid_prefix      dst_guid_prefix;
   bool                       have_timestamp;
   struct fr_time             timestamp;
-} fr_receiver_t;
+};
 
 #endif

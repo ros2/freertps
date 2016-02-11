@@ -35,14 +35,14 @@ typedef struct fr_guid
 } __attribute__((packed)) fr_guid_t;
 extern const fr_guid_t g_fr_guid_unknown;
 
-bool fr_guid_prefix_identical(fr_guid_prefix_t * const a,
-                              fr_guid_prefix_t * const b);
+bool fr_guid_prefix_identical(struct fr_guid_prefix * const a,
+                              struct fr_guid_prefix * const b);
 
 bool fr_guid_identical(const fr_guid_t * const a,
                        const fr_guid_t * const b);
 
-void fr_stuff_guid(fr_guid_t *guid,
-                   const fr_guid_prefix_t *prefix,
+void fr_guid_stuff(struct fr_guid *guid,
+                   const struct fr_guid_prefix *prefix,
                    const fr_entity_id_t *id);
 
 void fr_guid_print_prefix(const fr_guid_prefix_t *guid_prefix);

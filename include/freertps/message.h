@@ -5,6 +5,7 @@
 #include "freertps/guid.h"
 #include "freertps/parameter.h"
 #include "freertps/protocol_version.h"
+#include "freertps/receiver.h"
 #include "freertps/sequence_number.h"
 #include "freertps/vendor_id.h"
 
@@ -94,13 +95,13 @@ typedef struct fr_gap_submessage
   struct fr_sequence_number_set gap_end;
 } __attribute__((packed)) fr_gap_submessage_t;
 
-typedef struct fr_acknack_submessage
+struct fr_submessage_acknack
 {
   union fr_entity_id reader_id;
   union fr_entity_id writer_id;
   struct fr_sequence_number_set reader_sn_state;
   // the "count" field that goes here is impossible to declare in legal C
-} __attribute__((packed)) fr_acknack_submessage_t;
+} __attribute__((packed));
 
 typedef struct fr_info_dest_submessage
 {
@@ -109,6 +110,12 @@ typedef struct fr_info_dest_submessage
 
 //////////////////////////////////////////////////////////////////////////
 struct fr_message *fr_message_init(struct fr_message *buf);
+void fr_message_rx(struct fr_receiver *receiver,
+    const struct fr_submessage *submsg);
+
+typedef void (*fr_message_rx_data_cb_t)(struct fr_receiver *rcvr,
+    const struct fr_submessage *submsg, const uint16_t scheme,
+    const uint8_t *data);
 
 #endif
 

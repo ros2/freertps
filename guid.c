@@ -12,8 +12,8 @@ const fr_entity_id_t g_fr_entity_id_unknown = { .u = 0 };
 static unsigned g_fr_next_user_entity_id = 1;
 ///////////////////////////////////////////////////////////////////////////
 
-bool fr_guid_prefix_identical(fr_guid_prefix_t * const a,
-                              fr_guid_prefix_t * const b)
+bool fr_guid_prefix_identical(struct fr_guid_prefix * const a,
+                              struct fr_guid_prefix * const b)
 {
   for (int i = 0; i < FR_GUID_PREFIX_LEN; i++)
     if (a->prefix[i] != b->prefix[i])
@@ -49,8 +49,8 @@ void fr_guid_print_prefix(const fr_guid_prefix_t *p)
          (unsigned)p->prefix[11]);
 }
 
-void fr_stuff_guid(fr_guid_t *guid,
-                   const fr_guid_prefix_t *prefix,
+void fr_guid_stuff(struct fr_guid *guid,
+                   const struct fr_guid_prefix *prefix,
                    const fr_entity_id_t *id)
 {
   memcpy(&guid->prefix, prefix, sizeof(fr_guid_prefix_t));

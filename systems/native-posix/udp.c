@@ -317,9 +317,9 @@ int fr_system_listen_at_most(uint32_t microseconds)
                               (struct sockaddr *)&src_addr,
                               (socklen_t *)&addrlen);
         //printf("rx %d\r\n", nbytes);
-        fr_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
-              rxs->addr, rxs->port,
-              s_fr_listen_buf, nbytes);
+        fr_udp_rx(src_addr.sin_addr.s_addr, src_addr.sin_port,
+                  rxs->addr, rxs->port,
+                  s_fr_listen_buf, nbytes);
       }
     }
   }

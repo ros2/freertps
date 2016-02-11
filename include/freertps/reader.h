@@ -5,6 +5,7 @@
 #include "freertps/container.h"
 #include "freertps/endpoint.h"
 #include "freertps/history_cache.h"
+#include "freertps/message.h"
 #include "freertps/time.h"
 
 typedef struct fr_reader
@@ -15,6 +16,8 @@ typedef struct fr_reader
   struct fr_duration heartbeat_suppression_duration;
   struct fr_container *matched_writers;
   fr_history_cache_t reader_cache;
+  ///////////////////////////////////////////////////////////
+  fr_message_rx_data_cb_t data_rx_cb;
 } fr_reader_t;
 
 #define FR_READER_TYPE_BEST_EFFORT 0
