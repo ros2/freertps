@@ -26,8 +26,11 @@ typedef struct fr_participant
 fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix);
 bool fr_participant_init();
 void fr_participant_fini();
+
 bool fr_participant_add_writer(struct fr_writer *writer);
 bool fr_participant_add_reader(struct fr_reader *reader);
+struct fr_writer *fr_participant_get_writer(const union fr_entity_id entity_id);
+struct fr_reader *fr_participant_get_reader(const union fr_entity_id entity_id);
 
 extern struct fr_participant g_fr_participant;
 

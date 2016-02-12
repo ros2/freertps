@@ -16,7 +16,6 @@ struct fr_writer *fr_writer_create(
     const char *type_name,
     const uint32_t type)
 {
-  // todo: duplicate topic_name and type_name?
   struct fr_writer *w = fr_malloc(sizeof(struct fr_writer));
   fr_endpoint_init(&w->endpoint);
   w->endpoint.reliable = (type == FR_WRITER_TYPE_RELIABLE);
@@ -46,6 +45,23 @@ struct fr_writer *fr_writer_create(
         fr_container_create(sizeof(struct fr_reader_proxy), 5);
   }
   fr_history_cache_init(&w->writer_cache);
+
+  if (topic_name)
+  {
+    w->topic_name = fr_malloc(strlen(topic_name)+1);
+    strcpy(w->topic_name, topic_name);
+  }
+  else
+    w->topic_name = NULL;
+
+  if (type_name)
+  {
+    w->type_name = fr_malloc(strlen(type_name)+1);
+    strcpy(w->type_name, type_name);
+  }
+  else
+    w->type_name = NULL;
+
   return w;
 }
 

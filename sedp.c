@@ -1,16 +1,19 @@
 #include "freertps/cdr_string.h"
 #include "freertps/sedp.h"
 #include "freertps/freertps.h"
+#include "freertps/iterator.h"
 #include "freertps/qos.h"
 #include "freertps/spdp.h"
+#include "freertps/reader_proxy.h"
+#include "freertps/writer_proxy.h"
 #include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
-static const fr_entity_id_t g_sedp_pub_writer_id = { .u = 0xc2030000 };
-static const fr_entity_id_t g_sedp_pub_reader_id = { .u = 0xc7030000 };
-static const fr_entity_id_t g_sedp_sub_writer_id = { .u = 0xc2040000 };
-static const fr_entity_id_t g_sedp_sub_reader_id = { .u = 0xc7040000 };
+static const fr_entity_id_t g_fr_sedp_pub_writer_id = { .u = 0xc2030000 };
+static const fr_entity_id_t g_fr_sedp_pub_reader_id = { .u = 0xc7030000 };
+static const fr_entity_id_t g_fr_sedp_sub_writer_id = { .u = 0xc2040000 };
+static const fr_entity_id_t g_fr_sedp_sub_reader_id = { .u = 0xc7040000 };
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -31,72 +34,33 @@ static void fr_sedp_bcast();
 ////////////////////////////////////////////////////////////////////////////
 // static globals
 static struct fr_time fr_sedp_last_bcast;
-#ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-fr_pub_t *g_sedp_sub_pub = NULL; // SEDP subscription publication
-fr_pub_t *g_sedp_pub_pub = NULL; // SEDP publication publication
-#endif
-// todo: an option to generate SEDP messages on-the-fly as requested,
-// rather than buffering them in precious SRAM. or maybe auto-generate the
-// pub/sub messages and hold them in flash. That would be way better.
-#define SEDP_MSG_BUF_LEN 1024
-//static uint8_t fr_pub_sample_t[SEDP_MSG_BUF_LEN];
-static uint8_t g_sedp_sub_writer_data_buf[SEDP_MSG_BUF_LEN * FR_MAX_SUBS];
-static uint8_t g_sedp_pub_writer_data_buf[SEDP_MSG_BUF_LEN * FR_MAX_PUBS];
-static struct fr_submessage_data *g_sedp_sub_writer_data_submsgs[FR_MAX_SUBS];
-static struct fr_submessage_data *g_sedp_pub_writer_data_submsgs[FR_MAX_PUBS];
-//sizeof [MAX_SUBS][SEDP_MSG_BUF_LEN];
-static uint8_t g_sedp_msg_buf[SEDP_MSG_BUF_LEN];
+//#define SEDP_MSG_BUF_LEN 1024
 
 void fr_sedp_init()
 {
   FREERTPS_INFO("fr_sedp_init()\r\n");
-  for (int i = 0; i < FR_MAX_SUBS; i++)
-  {
-    struct fr_submessage_data *d = 
-      (struct fr_submessage_data *)&g_sedp_sub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    d->writer_sn = g_fr_sequence_number_unknown;
-    g_sedp_sub_writer_data_submsgs[i] = d;
-  }
-  for (int i = 0; i < FR_MAX_PUBS; i++)
-  {
-    struct fr_submessage_data *d = 
-      (struct fr_submessage_data *)&g_sedp_pub_writer_data_buf[i * SEDP_MSG_BUF_LEN];
-    d->writer_sn = g_fr_sequence_number_unknown;
-    g_sedp_pub_writer_data_submsgs[i] = d;
-  }
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  g_sedp_sub_pub = fr_create_pub(
-    NULL, // no topic name
-    NULL, // no type name
-    g_sedp_sub_writer_id,
-    g_sedp_sub_writer_data_submsgs,
-    FR_MAX_SUBS);
 
-  g_sedp_pub_pub = fr_create_pub(
-    NULL, // no topic name
-    NULL, // no type name
-    g_sedp_pub_writer_id,
-    g_sedp_pub_writer_data_submsgs,
-    FR_MAX_PUBS);
+  struct fr_writer *pub_writer = fr_writer_create(
+      NULL, NULL, FR_WRITER_TYPE_RELIABLE);
+  pub_writer->endpoint.entity_id = g_fr_sedp_pub_writer_id;
+  fr_participant_add_writer(pub_writer);
 
-  fr_sub_t sedp_sub_sub;
-  sedp_sub_sub.topic_name = NULL;
-  sedp_sub_sub.type_name = NULL;
-  sedp_sub_sub.reader_entity_id = g_sedp_sub_reader_id;
-  sedp_sub_sub.data_cb = fr_sedp_rx_sub_data;
-  sedp_sub_sub.msg_cb = NULL;
-  sedp_sub_sub.reliable = true;
-  fr_add_sub(&sedp_sub_sub);
+  struct fr_writer *sub_writer = fr_writer_create(
+      NULL, NULL, FR_WRITER_TYPE_RELIABLE);
+  sub_writer->endpoint.entity_id = g_fr_sedp_sub_writer_id;
+  fr_participant_add_writer(sub_writer);
 
-  fr_sub_t sedp_pub_sub; // subscribe to the publisher announcers
-  sedp_pub_sub.topic_name = NULL;
-  sedp_pub_sub.type_name = NULL;
-  sedp_pub_sub.reader_entity_id = g_sedp_pub_reader_id;
-  sedp_pub_sub.data_cb = fr_sedp_rx_pub_data;
-  sedp_pub_sub.msg_cb = NULL;
-  sedp_pub_sub.reliable = true;
-  fr_add_sub(&sedp_pub_sub);
-#endif
+  struct fr_reader *pub_reader = fr_reader_create(
+      NULL, NULL, FR_READER_TYPE_RELIABLE);
+  pub_reader->endpoint.entity_id = g_fr_sedp_pub_reader_id;
+  pub_reader->data_rx_cb = fr_sedp_rx_pub_data;
+  fr_participant_add_reader(pub_reader);
+
+  struct fr_reader *sub_reader = fr_reader_create(
+      NULL, NULL, FR_READER_TYPE_RELIABLE);
+  sub_reader->endpoint.entity_id = g_fr_sedp_sub_reader_id;
+  sub_reader->data_rx_cb = fr_sedp_rx_sub_data;
+  fr_participant_add_reader(sub_reader);
 }
 
 void fr_sedp_start()
@@ -146,7 +110,7 @@ static void fr_sedp_rx_pub_data(struct fr_receiver *rcvr,
                                 const uint16_t scheme,
                                 const uint8_t *data)
 {
-  //fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
+  fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, true);
 }
 
 static void fr_sedp_rx_sub_data(struct fr_receiver *rcvr,
@@ -154,7 +118,7 @@ static void fr_sedp_rx_sub_data(struct fr_receiver *rcvr,
                                 const uint16_t scheme,
                                 const uint8_t *data)
 {
-  //fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
+  fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
 }
 
 typedef struct{
@@ -167,11 +131,10 @@ static sedp_topic_info_t g_topic_info;
 
 static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
 {
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  printf("sedp pub: [%s / %s] num_subs = %d\r\n",
+  printf("sedp pub: [%s / %s]\n",
       info->topic_name ? info->topic_name : "",
-      info->type_name ? info->type_name : "",
-      (int)g_fr_num_subs);
+      info->type_name ? info->type_name : "");
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   // look to see if we are subscribed to this topic
   for (unsigned i = 0; i < g_fr_num_subs; i++)
   {
@@ -218,40 +181,56 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
 //#define SEDP_VERBOSE
 static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
 {
-  printf("sedp sub: [%s]\r\n", info->topic_name ? info->topic_name : "");
+  printf("sedp sub: [%s / %s]\r\n",
+      info->topic_name ? info->topic_name : "",
+      info->type_name  ? info->type_name  : "");
   // look to see if we publish this topic
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  for (unsigned i = 0; i < g_fr_num_pubs; i++)
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.writers);
+       it.data; fr_iterator_next(&it))
   {
-    fr_pub_t *pub = &g_fr_pubs[i];
-#ifdef SEDP_VERBOSE
+    struct fr_writer *writer = it.data;
+//#ifdef SEDP_VERBOSE
     printf("comparing incoming SEDP sub to our publisher %s of type %s\r\n",
-           (pub->topic_name ? pub->topic_name : "(no name)"),
-           (pub->type_name  ? pub->type_name  : "(no type)"));
-#endif
-           
-    if (!pub->topic_name || !pub->type_name)
+           (writer->topic_name ? writer->topic_name : "(no name)"),
+           (writer->type_name  ? writer->type_name  : "(no type)"));
+//#endif
+    if (!writer->topic_name || !writer->type_name)
       continue; // sanity check. some built-ins don't have names.
-    if (strcmp(pub->topic_name, info->topic_name))
+    if (strcmp(writer->topic_name, info->topic_name))
       continue; // not the same topic. move along.
-    if (strcmp(pub->type_name, info->type_name))
+    if (strcmp(writer->type_name, info->type_name))
     {
       printf("    SEDP type mismatch: [%s] != [%s]\r\n",
-             pub->type_name, info->type_name);
+             writer->type_name, info->type_name);
       continue;
     }
     printf("    hooray! heard a request for a topic we publish: [%s]\r\n",
-           pub->topic_name);
-    // see if we already have a writer for this subscriber
+           writer->topic_name);
+    // see if we already have a matched-reader for this subscriber
     bool found = false;
-    for (unsigned j = 0; !found && j < g_fr_num_writers; j++)
+    // todo: for now, this only handles unreliable readers !
+    for (struct fr_iterator rl_it = fr_iterator_begin(writer->reader_locators);
+         !found && rl_it.data; fr_iterator_next(&rl_it))
     {
-      fr_writer_t *w = &g_fr_writers[j];
+      struct fr_reader_locator *reader_locator = rl_it.data;
+      // TODO: look up reader locator from the participant_proxy list and
+      // scrape its locators from there.
+      /*
       if (fr_guid_identical(&w->reader_guid, &info->guid))
       {
         printf("    nah, already had it in our list of readers\r\n");
         found = true;
       }
+      */
+    }
+  }
+ 
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
+  for (unsigned i = 0; i < g_fr_num_pubs; i++)
+  {
+    for (unsigned j = 0; !found && j < g_fr_num_writers; j++)
+    {
+      fr_writer_t *w = &g_fr_writers[j];
     }
     if (!found)
     {
@@ -273,35 +252,30 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
 #ifdef SEDP_VERBOSE
   printf("  sedp_writer data rx\r\n");
 #endif
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   if (scheme != FR_SCHEME_PL_CDR_LE)
   {
-    FREERTPS_ERROR("expected sedp data to be PL_CDR_LE. bailing...\r\n");
+    FREERTPS_ERROR("expected sedp data to be PL_CDR_LE, found 0x%04x\n",
+        (unsigned)scheme);
     return;
   }
   memset(&g_topic_info, 0, sizeof(sedp_topic_info_t));
-  fr_parameter_list_item_t *item = (fr_parameter_list_item_t *)data;
+  struct fr_parameter_list_item *item = (struct fr_parameter_list_item *)data;
   while ((uint8_t *)item < submsg->contents + submsg->header.len)
   {
-    const fr_parameterid_t pid = item->pid;
+    const fr_parameter_id_t pid = item->pid;
     if (pid == FR_PID_SENTINEL)
       break;
     const uint8_t *pval = item->value;
     if (pid == FR_PID_ENDPOINT_GUID)
     {
-      fr_guid_t *guid = (fr_guid_t *)pval;
+      struct fr_guid *guid = (struct fr_guid *)pval;
       memcpy(&g_topic_info.guid, guid, sizeof(fr_guid_t));
-#ifdef SEDP_VERBOSE
+//#ifdef SEDP_VERBOSE
       //memcpy(&part->guid_prefix, &guid->guid_prefix, FR_GUID_PREFIX_LEN);
-      uint8_t *p = guid->prefix.prefix;
-      printf("    endpoint guid 0x%02x%02x%02x%02x"
-                                 "%02x%02x%02x%02x"
-                                 "%02x%02x%02x%02x"
-                                 "%02x%02x%02x%02x\n",
-             p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-             p[8], p[9], p[10], p[11],
-             p[12], p[13], p[14], p[15]);
-#endif
+      printf("    endpoint guid ");
+      fr_guid_print(guid);
+      printf("\n");
+//#endif
       //if (guid->entity_id.u == 0x03010000)
       //  printf("found entity 0x103\n");
     }
@@ -311,9 +285,9 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
                               sizeof(g_topic_info.topic_name),
                               (struct fr_cdr_string *)pval))
       {
-#ifdef SEDP_PRINT_TOPICS
+//#ifdef SEDP_PRINT_TOPICS
         printf("    topic name: [%s]\r\n", g_topic_info.topic_name);
-#endif
+//#endif
       }
       else
         FREERTPS_ERROR("couldn't parse topic name\n");
@@ -324,9 +298,9 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
                               sizeof(g_topic_info.type_name),
                               (struct fr_cdr_string *)pval))
       {
-#ifdef SEDP_VERBOSE
+//#ifdef SEDP_VERBOSE
         printf("    type name: [%s]\r\n", g_topic_info.type_name);
-#endif
+//#endif
       }
       else
         FREERTPS_ERROR("couldn't parse type name\r\n");
@@ -375,8 +349,9 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
 #endif
     }
     // now, advance to next item in list...
-    item = (fr_parameter_list_item_t *)(((uint8_t *)item) + 4 + item->len);
+    item = (struct fr_parameter_list_item *)(((uint8_t *)item) + 4 + item->len);
   }
+
   // make sure we have received all necessary parameters
   if (!strlen(g_topic_info.type_name) ||
       !strlen(g_topic_info.topic_name) ||
@@ -389,7 +364,6 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
     fr_sedp_rx_pub_info(&g_topic_info);
   else // this is information about someone else's subscription
     fr_sedp_rx_sub_info(&g_topic_info);
-#endif
 }
 
 static void fr_sedp_bcast()
@@ -549,11 +523,46 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   fr_guid_print_prefix(prefix);
   printf("\r\n");
 
+/*
   struct fr_reader *pub_reader = fr_reader_create(
       NULL, NULL, FR_READER_TYPE_RELIABLE);
-  pub_reader->endpoint.entity_id = g_sedp_pub_reader_id;
+  pub_reader->endpoint.entity_id = g_fr_sedp_pub_reader_id;
   pub_reader->data_rx_cb = fr_sedp_rx_pub_data;
   // stuff matched_writer object now since we know prefix, etc.
+*/
+  struct fr_writer_proxy pub_writer_proxy;
+  fr_guid_stuff(&pub_writer_proxy.remote_writer_guid, prefix, 
+      &g_fr_sedp_pub_writer_id);
+  struct fr_reader *pub_r = fr_participant_get_reader(g_fr_sedp_pub_reader_id);
+  fr_container_append(pub_r->matched_writers,
+      &pub_writer_proxy, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);
+
+  struct fr_writer_proxy sub_writer_proxy;
+  fr_guid_stuff(&sub_writer_proxy.remote_writer_guid, prefix, 
+      &g_fr_sedp_sub_writer_id);
+  struct fr_reader *sub_r = fr_participant_get_reader(g_fr_sedp_sub_reader_id);
+  fr_container_append(sub_r->matched_writers,
+      &sub_writer_proxy, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);
+
+  struct fr_reader_proxy sub_reader_proxy;
+  sub_reader_proxy.expects_inline_qos = false;
+  sub_reader_proxy.highest_seq_num_sent = 0;
+  sub_reader_proxy.lowest_requested_change = 0;
+  fr_guid_stuff(&sub_reader_proxy.remote_reader_guid, prefix, 
+      &g_fr_sedp_sub_reader_id);
+  struct fr_writer *sub_w = fr_participant_get_writer(g_fr_sedp_sub_writer_id);
+  fr_container_append(sub_w->matched_readers,
+      &sub_reader_proxy, sizeof(struct fr_reader_proxy), FR_CFLAGS_NONE);
+
+  struct fr_reader_proxy pub_reader_proxy;
+  pub_reader_proxy.expects_inline_qos = false;
+  pub_reader_proxy.highest_seq_num_sent = 0;
+  pub_reader_proxy.lowest_requested_change = 0;
+  fr_guid_stuff(&pub_reader_proxy.remote_reader_guid, prefix, 
+      &g_fr_sedp_pub_reader_id);
+  struct fr_writer *pub_w = fr_participant_get_writer(g_fr_sedp_pub_writer_id);
+  fr_container_append(pub_w->matched_readers,
+      &pub_reader_proxy, sizeof(struct fr_reader_proxy), FR_CFLAGS_NONE);
 
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   fr_stuff_guid(&pub_reader.writer_guid,

@@ -5,6 +5,7 @@
 #include "freertps/message.h"
 #include "freertps/participant.h"
 #include "freertps/spdp.h"
+#include "freertps/writer_proxy.h"
 
 #define RX_MSG_ARGS struct fr_receiver *rcvr, const struct fr_submessage *submsg
 static void fr_message_rx_acknack       (RX_MSG_ARGS);
@@ -338,14 +339,21 @@ static void fr_message_rx_data(RX_MSG_ARGS)
                fr_iterator_begin(reader->matched_writers);
            matched_writer_it.data; fr_iterator_next(&matched_writer_it))
       {
-        //struct fr_writer_proxy *matched_writer = matched_writer_it.data;
+        struct fr_writer_proxy *matched_writer = matched_writer_it.data;
         // todo: something smart
         // check if the writer GUID is equal to the matched-writer GUID
-//           fr_guid_prefix_identical(&rcvr->src_guid_prefix, 
-//               &g_fr_participant.guid_prefix)))
-//        if (data_submsg->writer_sn.low > match->max_rx_sn.low) // todo: 64-bit
-//          match->max_rx_sn = data_submsg->writer_sn;
-       }
+        if (fr_guid_prefix_identical(&rcvr->src_guid_prefix, 
+            &matched_writer->remote_writer_guid.prefix) &&
+            matched_writer->remote_writer_guid.entity_id.u ==
+            data_submsg->writer_id.u)
+        {
+          match_found = true;
+          fr_sequence_number_t msg_sn = (data_submsg->writer_sn.high << 32) |
+              data_submsg->writer_sn.low;
+          if (msg_sn > matched_writer->highest_sequence_number)
+            matched_writer->highest_sequence_number = msg_sn;
+        }
+      }
     }
     else // this is an unreliable reader.
     {

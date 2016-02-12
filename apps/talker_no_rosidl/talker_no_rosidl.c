@@ -5,8 +5,9 @@
 int main(int argc, char **argv)
 {
   freertps_init();
-  fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String",
+  fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String_",
       FR_WRITER_TYPE_BEST_EFFORT);
+  fr_participant_add_writer(w);
   /*
   fr_pub_t *pub = freertps_create_pub(
       "chatter", "std_msgs::msg::dds_::String_");

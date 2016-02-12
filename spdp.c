@@ -43,7 +43,8 @@ static void fr_spdp_rx_data(struct fr_receiver *rcvr,
 #endif
   if (scheme != FR_SCHEME_PL_CDR_LE)
   {
-    FREERTPS_ERROR("expected spdp data to be PL_CDR_LE. bailing...\n");
+    FREERTPS_ERROR("expected spdp data to be PL_CDR_LE but found %d...\n",
+        scheme);
     return;
   }
   fr_participant_proxy_t *part = &g_fr_spdp_participant_proxy;

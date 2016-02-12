@@ -23,6 +23,9 @@ typedef struct fr_writer
   struct fr_container *matched_readers; // for stateful writing
   struct fr_container *reader_locators; // for stateless writing
   struct fr_history_cache writer_cache; 
+  //////////////////////////////////////////////////////////////
+  char *topic_name;
+  char *type_name;
 } fr_writer_t;
 
 #define FR_WRITER_TYPE_BEST_EFFORT 0

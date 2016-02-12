@@ -178,3 +178,28 @@ void fr_participant_send_changes()
     fr_writer_send_changes(w);
   }
 }
+
+struct fr_writer *fr_participant_get_writer(const union fr_entity_id entity_id)
+{
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.writers);
+      it.data; fr_iterator_next(&it))
+  {
+    struct fr_writer *w = it.data;
+    if (w->endpoint.entity_id.u == entity_id.u)
+      return w;
+  }
+  return NULL;
+}
+
+struct fr_reader *fr_participant_get_reader(const union fr_entity_id entity_id)
+{
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.readers);
+      it.data; fr_iterator_next(&it))
+  {
+    struct fr_reader *r = it.data;
+    if (r->endpoint.entity_id.u == entity_id.u)
+      return r;
+  }
+  return NULL;
+}
+
