@@ -110,14 +110,14 @@ class StringType(PrimitiveType):
     f.write("  for (uint32_t _{0}_idx = 0; _{0}_idx < {1}; _{0}_idx++)\n".format(field_name, size_var))
     f.write("  {\n")
     enforce_alignment(cur_alignment, 4, f, indent=4)
-    f.write("    size_t len = strlen(_s->{0}[_{0}_idx].data) + 1;\n".format(field_name))
+    f.write("    size_t len = strlen(_s->{0}.data[_{0}_idx]) + 1;\n".format(field_name))
     f.write("    _p += 4;\n")
-    f.write("    memcpy(_p, _s->{0}[_{0}_idx], len);\n".format(field_name))
+    f.write("    memcpy(_p, _s->{0}.data[_{0}_idx], len);\n".format(field_name))
     f.write("    _p += len;\n".format(field_name))
     f.write("  }\n")
 
   def deserialize_variable_array(self, field_name, cur_alignment, f):
-    f.write("  printf(\"deserialization of variable-length string arrays not implemented!\n\");")
+    f.write("  printf(\"deserialization of variable-length string arrays not implemented!\\n\");")
     f.write("  exit(1);\n")
 
 
