@@ -10,6 +10,8 @@
 
 static void fr_writer_send(struct fr_writer *writer,
     fr_sequence_number_t seq_num, struct fr_locator *loc);
+static void fr_writer_send_change(struct fr_writer *writer,
+    struct fr_cache_change *cc, struct fr_locator *loc);
 
 struct fr_writer *fr_writer_create(
     const char *topic_name,
@@ -87,6 +89,28 @@ bool fr_writer_new_change(struct fr_writer *w, void *data, size_t data_len,
   return true;
 }
 
+void fr_writer_blocking_write(struct fr_writer *w, void *data, size_t data_len,
+    void *handle, uint32_t handle_len)
+{
+  struct fr_cache_change cc;
+  w->last_change_sequence_number++;
+  printf("fr_writer_blocking_write()  max_sn now = %d\n",
+      (int)w->last_change_sequence_number);
+  cc.writer_entity_id.u = w->endpoint.entity_id.u;
+  cc.sequence_number = w->last_change_sequence_number;
+  cc.data = data;
+  cc.data_len = data_len;
+  cc.instance_handle = handle;
+  cc.instance_handle_len = handle_len;
+  for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
+       it.data; fr_iterator_next(&it))
+  {
+    struct fr_reader_locator *rl = it.data;
+    rl->highest_seq_num_sent = cc.sequence_number;
+    fr_writer_send_change(w, &cc, &rl->locator);
+  }
+}
+
 fr_rc_t fr_writer_add_reader_locator(struct fr_writer *w,
     struct fr_reader_locator *reader_locator)
 {
@@ -146,7 +170,16 @@ static void fr_writer_send(struct fr_writer *writer,
     printf("woah! couldn't find cache change SN #%d\n", (int)seq_num);
     return;
   }
-  printf("sending SN #%d length %d to ", (int)seq_num, (int)cc->data_len);
+  fr_writer_send_change(writer, cc, loc);
+}
+
+void fr_writer_send_change(struct fr_writer *writer,
+    struct fr_cache_change *cc, struct fr_locator *loc)
+{
+  if (!cc)
+    return;
+  printf("sending SN #%d length %d to ",
+      (int)cc->sequence_number, (int)cc->data_len);
   fr_locator_print(loc);
 
   struct fr_message *msg = (struct fr_message *)fr_writer_small_msg_buf;
@@ -167,8 +200,8 @@ static void fr_writer_send(struct fr_writer *writer,
   data_submsg->octets_to_inline_qos = 16; // ?
   data_submsg->reader_id = g_fr_entity_id_unknown;
   data_submsg->writer_id = writer->endpoint.entity_id;   //g_spdp_writer_id;
-  data_submsg->writer_sn.high = (int32_t)(seq_num >> 32);
-  data_submsg->writer_sn.low = (uint32_t)(seq_num & 0xffffffff);
+  data_submsg->writer_sn.high = (int32_t)(cc->sequence_number >> 32);
+  data_submsg->writer_sn.low = (uint32_t)(cc->sequence_number & 0xffffffff);
   uint8_t *wpos = (uint8_t *)data_submsg->data;
   if (writer->endpoint.with_key)
   {
@@ -184,13 +217,21 @@ static void fr_writer_send(struct fr_writer *writer,
     item->len = 0;
     wpos += 4;
   }
+  if (writer->type_name)
+  {
+    // assume all non-NULL type names mean that we are doing CDR serialization
+    fr_encapsulation_scheme_t *scheme = (fr_encapsulation_scheme_t *)wpos;
+    scheme->scheme = freertps_htons(FR_SCHEME_PL_CDR_LE);
+    scheme->options = 0;
+    wpos += 4;
+  }
   memcpy(wpos, cc->data, cc->data_len);
   wpos += cc->data_len;
   data_submsg->header.len =
       (uint16_t)(wpos - (uint8_t *)&data_submsg->extraflags);
   uint32_t payload_len = (uint32_t)(wpos - (uint8_t *)msg);
   printf("udp payload: %d bytes\n", (int)payload_len);
-  fr_udp_tx(freertps_htonl(loc->addr.udp4.addr), loc->port,
+  fr_udp_tx(loc->addr.udp4.addr, loc->port,
       (const uint8_t *)msg, payload_len);
   if (writer->endpoint.reliable)
   {

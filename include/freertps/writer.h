@@ -40,5 +40,8 @@ fr_rc_t fr_writer_add_reader_locator(struct fr_writer *w,
     struct fr_reader_locator *reader_loc);
 void fr_writer_unsent_changes_reset(struct fr_writer *w);
 void fr_writer_send_changes(struct fr_writer *w);
+void fr_writer_blocking_write(
+    struct fr_writer *w, void *data, size_t data_len,
+    void *handle, uint32_t handle_len);
 
 #endif

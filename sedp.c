@@ -1,10 +1,12 @@
 #include "freertps/cdr_string.h"
-#include "freertps/sedp.h"
 #include "freertps/freertps.h"
+#include "freertps/guid.h"
 #include "freertps/iterator.h"
+#include "freertps/participant_proxy.h"
 #include "freertps/qos.h"
-#include "freertps/spdp.h"
 #include "freertps/reader_proxy.h"
+#include "freertps/sedp.h"
+#include "freertps/spdp.h"
 #include "freertps/writer_proxy.h"
 #include <string.h>
 
@@ -121,7 +123,7 @@ static void fr_sedp_rx_sub_data(struct fr_receiver *rcvr,
   fr_sedp_rx_pubsub_data(rcvr, submsg, scheme, data, false);
 }
 
-typedef struct{
+typedef struct {
   fr_guid_t guid;
   char topic_name[FR_MAX_TOPIC_NAME_LEN];
   char type_name[FR_MAX_TYPE_NAME_LEN];
@@ -207,40 +209,59 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
     printf("    hooray! heard a request for a topic we publish: [%s]\r\n",
            writer->topic_name);
     // see if we already have a matched-reader for this subscriber
-    bool found = false;
-    // todo: for now, this only handles unreliable readers !
+    // TODO: for now, this only handles unreliable readers !
+    // first, try to find this participant in our matched_participant list
+    struct fr_participant_proxy *matched_participant = NULL;
+    for (struct fr_iterator pp_it =
+         fr_iterator_begin(g_fr_participant.matched_participants);
+         !matched_participant && pp_it.data; fr_iterator_next(&pp_it))
+    {
+      struct fr_participant_proxy *pp = pp_it.data;
+      if (fr_guid_prefix_identical(&pp->guid_prefix, &info->guid.prefix))
+        matched_participant = pp;
+    }
+    if (!matched_participant)
+    {
+      printf("    couldn't find SPDP participant ");
+      fr_guid_print_prefix(&info->guid.prefix);
+      return; // adios amigo
+    }
+      
+    bool already_sending = false;
+    // make sure we aren't already sending to this participant
     for (struct fr_iterator rl_it = fr_iterator_begin(writer->reader_locators);
-         !found && rl_it.data; fr_iterator_next(&rl_it))
+         !already_sending && rl_it.data; fr_iterator_next(&rl_it))
     {
       struct fr_reader_locator *reader_locator = rl_it.data;
-      // TODO: look up reader locator from the participant_proxy list and
-      // scrape its locators from there.
-      /*
-      if (fr_guid_identical(&w->reader_guid, &info->guid))
-      {
-        printf("    nah, already had it in our list of readers\r\n");
-        found = true;
-      }
-      */
+      // compare against all known locators of matched_participant
+      if (fr_locator_identical(&reader_locator->locator,
+            &matched_participant->metatraffic_unicast_locator) || 
+          fr_locator_identical(&reader_locator->locator,
+            &matched_participant->metatraffic_multicast_locator) ||
+          fr_locator_identical(&reader_locator->locator,
+            &matched_participant->default_unicast_locator) ||
+          fr_locator_identical(&reader_locator->locator,
+            &matched_participant->default_multicast_locator))
+        already_sending = true;
     }
-  }
- 
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  for (unsigned i = 0; i < g_fr_num_pubs; i++)
-  {
-    for (unsigned j = 0; !found && j < g_fr_num_writers; j++)
+    if (already_sending)
     {
-      fr_writer_t *w = &g_fr_writers[j];
+      printf("  already had it in our list of readers\n");
+      return;
     }
-    if (!found)
-    {
-      fr_writer_t w;
-      w.reader_guid = info->guid;
-      w.writer_entity_id = pub->writer_entity_id;
-      fr_add_writer(&w);
-    }
+    // create a reader locator and append it to this writer's locator list
+    struct fr_reader_locator reader_locator;
+    fr_reader_locator_init(&reader_locator);
+    struct fr_locator *participant_locator = NULL;
+    if (!info->topic_name || !info->type_name) // built-in topic
+      participant_locator = &matched_participant->metatraffic_unicast_locator;
+    else
+      participant_locator = &matched_participant->default_unicast_locator;
+    fr_locator_set_udp4(&reader_locator.locator,
+        participant_locator->addr.udp4.addr,
+        participant_locator->port);
+    fr_writer_add_reader_locator(writer, &reader_locator);
   }
-#endif
 }
 
 static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,

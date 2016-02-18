@@ -6,7 +6,8 @@
 
 
 // default multicast group is 239.255.0.1
-#define FR_DEFAULT_MCAST_GROUP 0xefff0001
+//#define FR_DEFAULT_MCAST_GROUP 0xefff0001
+#define FR_DEFAULT_MCAST_GROUP 0x0100ffef
 
 #define FR_MAX_PUBS 5
 #define FR_MAX_SUBS 5

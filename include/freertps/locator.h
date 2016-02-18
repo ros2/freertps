@@ -28,5 +28,6 @@ fr_rc_t fr_locator_container_append(uint32_t udp4, uint16_t port,
     struct fr_container *c);
 void fr_locator_set_udp4(struct fr_locator *loc,
     const uint32_t udp4, const uint16_t port);
+bool fr_locator_identical(struct fr_locator *a, struct fr_locator *b);
 
 #endif

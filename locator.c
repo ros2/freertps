@@ -38,3 +38,23 @@ void fr_locator_set_udp4(struct fr_locator *loc,
   loc->addr.udp4.addr = udp4;
   loc->port = port;
 }
+
+bool fr_locator_identical(struct fr_locator *a, struct fr_locator *b)
+{
+  if (a == b)
+    return true;
+  if (!a || !b)
+    return false;
+  if (a->kind != b->kind)
+    return false;
+  if (a->port != b->port)
+    return false;
+  if (a->kind == FR_LOCATOR_KIND_UDPV4)
+    return a->addr.udp4.addr == b->addr.udp4.addr;
+  else
+  {
+    printf("fr_locator_identical() not implemented for locator kind %d\n",
+        (int)a->kind);
+    return false;
+  }
+}

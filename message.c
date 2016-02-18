@@ -348,7 +348,8 @@ static void fr_message_rx_data(RX_MSG_ARGS)
             data_submsg->writer_id.u)
         {
           match_found = true;
-          fr_sequence_number_t msg_sn = (data_submsg->writer_sn.high << 32) |
+          fr_sequence_number_t msg_sn =
+              ((int64_t)data_submsg->writer_sn.high << 32) |
               data_submsg->writer_sn.low;
           if (msg_sn > matched_writer->highest_sequence_number)
             matched_writer->highest_sequence_number = msg_sn;

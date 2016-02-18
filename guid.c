@@ -12,8 +12,8 @@ const fr_entity_id_t g_fr_entity_id_unknown = { .u = 0 };
 static unsigned g_fr_next_user_entity_id = 1;
 ///////////////////////////////////////////////////////////////////////////
 
-bool fr_guid_prefix_identical(struct fr_guid_prefix * const a,
-                              struct fr_guid_prefix * const b)
+bool fr_guid_prefix_identical(const struct fr_guid_prefix * const a,
+                              const struct fr_guid_prefix * const b)
 {
   for (int i = 0; i < FR_GUID_PREFIX_LEN; i++)
     if (a->prefix[i] != b->prefix[i])

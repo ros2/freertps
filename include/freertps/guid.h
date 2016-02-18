@@ -35,8 +35,8 @@ typedef struct fr_guid
 } __attribute__((packed)) fr_guid_t;
 extern const fr_guid_t g_fr_guid_unknown;
 
-bool fr_guid_prefix_identical(struct fr_guid_prefix * const a,
-                              struct fr_guid_prefix * const b);
+bool fr_guid_prefix_identical(const struct fr_guid_prefix * const a,
+                              const struct fr_guid_prefix * const b);
 
 bool fr_guid_identical(const fr_guid_t * const a,
                        const fr_guid_t * const b);

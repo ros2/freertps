@@ -129,11 +129,11 @@ bool fr_participant_add_reader(struct fr_reader *reader)
 
 bool fr_participant_add_default_locators()
 {
-  fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
+  fr_add_mcast_rx(FR_DEFAULT_MCAST_GROUP,
       fr_participant_mcast_builtin_port(),
       g_fr_participant.builtin_multicast_locators);
 
-  fr_add_mcast_rx(freertps_htonl(FR_DEFAULT_MCAST_GROUP),
+  fr_add_mcast_rx(FR_DEFAULT_MCAST_GROUP,
       fr_participant_mcast_user_port(),
       g_fr_participant.user_multicast_locators);
 

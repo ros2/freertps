@@ -21,8 +21,8 @@ int main(int argc, char **argv)
     uint32_t rtps_string_len = strlen(&msg[4]) + 1;
     uint32_t *str_len_ptr = (uint32_t *)msg;
     *str_len_ptr = rtps_string_len;
-    //freertps_publish(pub, (uint8_t *)msg, rtps_string_len + 4);
-    printf("sending: [%s]\r\n", &msg[4]);
+    fr_writer_blocking_write(w, (uint8_t *)msg, rtps_string_len+4, NULL, 0);
+    printf("sent: [%s]\r\n", &msg[4]);
   }
   freertps_fini();
   return 0;
