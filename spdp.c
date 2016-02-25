@@ -294,18 +294,3 @@ void fr_spdp_fini()
   FREERTPS_INFO("sdp fini\n");
 }
 
-void fr_spdp_tick()
-{
-  return;
-#ifdef HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  const fr_time_t t = fr_time_now();
-  if (fr_time_diff(&t, &fr_spdp_last_bcast).seconds >= 1) // every second
-  //if (fr_time_diff(&t, &frudp_spdp_last_bcast).fraction >= 1000000000) // every second
-  {
-    //printf("spdp bcast\r\n");
-    fr_spdp_bcast();
-    fr_spdp_last_bcast = t;
-    //printf("%d participants known\n", (int)g_frudp_discovery_num_participants);
-  }
-#endif
-}

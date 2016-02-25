@@ -8,10 +8,6 @@ int main(int argc, char **argv)
   fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String_",
       FR_WRITER_TYPE_BEST_EFFORT);
   fr_participant_add_writer(w);
-  /*
-  fr_pub_t *pub = freertps_create_pub(
-      "chatter", "std_msgs::msg::dds_::String_");
-  */
   int pub_count = 0;
   char msg[64] = {0};
   while (freertps_ok())

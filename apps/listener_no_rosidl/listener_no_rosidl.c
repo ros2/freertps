@@ -12,20 +12,14 @@ void chatter_cb(const void *msg)
 
 int main(int argc, char **argv)
 {
-  printf("hello, world!\r\n");
-  freertps_system_init();
-  /*
-  freertps_create_sub("chatter", 
-                      "std_msgs::msg::dds_::String_",
-                      chatter_cb);
-  */
-  fr_discovery_start(); // we're alive now; announce ourselves to the world
-  while (freertps_system_ok())
-  {
-    fr_listen(1000000);
-    fr_discovery_tick();
-  }
-  fr_fini();
+  freertps_init();
+  fr_reader_t *r = fr_reader_create("chatter", "std_msgs::msg::dds_::String_",
+      FR_READER_TYPE_BEST_EFFORT);
+  r->msg_rx_cb = chatter_cb;
+  fr_participant_add_reader(r);
+  while (freertps_ok())
+    freertps_spin(500000);
+  freertps_fini();
   return 0;
 }
 

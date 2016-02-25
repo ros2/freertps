@@ -76,7 +76,7 @@ typedef struct fr_data_frag_submessage
   uint8_t data[];
 } __attribute__((packed)) fr_data_frag_submessage_t;
 
-typedef struct fr_heartbeat_submessage
+struct fr_submessage_heartbeat
 {
   struct fr_submessage_header header;
   union fr_entity_id reader_id;
@@ -84,7 +84,7 @@ typedef struct fr_heartbeat_submessage
   struct fr_sequence_number first_sn;
   struct fr_sequence_number last_sn;
   uint32_t count;
-} __attribute__((packed)) fr_heartbeat_submessage_t;
+} __attribute__((packed));
 
 typedef struct fr_gap_submessage
 {
@@ -116,6 +116,8 @@ void fr_message_rx(struct fr_receiver *receiver,
 typedef void (*fr_message_rx_data_cb_t)(struct fr_receiver *rcvr,
     const struct fr_submessage *submsg, const uint16_t scheme,
     const uint8_t *data);
+
+typedef void (*fr_message_rx_cb_t)(const void *msg);
 
 #endif
 

@@ -23,14 +23,11 @@
 void fr_discovery_init();
 void fr_discovery_fini();
 
-void fr_discovery_start(); /// must be called to kick off discovery
-void fr_discovery_tick();  /// must be called periodically to broadcast SPDP
-
 //#define FR_DISCOVERY_TX_BUFLEN 1536
 //extern uint8_t g_fr_discovery_tx_buf[FR_DISCOVERY_TX_BUFLEN];
 //extern uint16_t g_fr_discovery_tx_buf_wpos;
 
-extern fr_participant_t g_fr_discovery_participants[FR_DISCOVERY_MAX_PARTICIPANTS];
-extern int g_fr_discovery_num_participants;
+//extern fr_participant_t g_fr_discovery_participants[FR_DISCOVERY_MAX_PARTICIPANTS];
+//extern int g_fr_discovery_num_participants;
 
 #endif

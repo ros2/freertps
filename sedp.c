@@ -32,11 +32,7 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
                                    const uint16_t scheme,
                                    const uint8_t *data,
                                    const bool is_pub);
-static void fr_sedp_bcast();
 ////////////////////////////////////////////////////////////////////////////
-// static globals
-static struct fr_time fr_sedp_last_bcast;
-//#define SEDP_MSG_BUF_LEN 1024
 
 void fr_sedp_init()
 {
@@ -65,45 +61,9 @@ void fr_sedp_init()
   fr_participant_add_reader(sub_reader);
 }
 
-void fr_sedp_start()
-{
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  // go through and send SEDP messages for all of our subscriptions
-  for (int i = 0; i < g_fr_num_subs; i++)
-  {
-    if (g_fr_subs[i].topic_name) // user subs have topic names
-    {
-      printf("sending SEDP message about subscription [%s]\r\n",
-         g_fr_subs[i].topic_name);
-      sedp_publish_sub(&g_fr_subs[i]);
-    }
-  }
-  // now go through and send SEDP messages for all our publications
-  for (int i = 0; i < g_fr_num_pubs; i++)
-  {
-    if (g_fr_pubs[i].topic_name)
-    {
-      printf("sending SEDP message about publication [%s]\r\n",
-          g_fr_pubs[i].topic_name);
-      sedp_publish_pub(&g_fr_pubs[i]);
-    }
-  }
-#endif
-}
-
 void fr_sedp_fini()
 {
   FREERTPS_INFO("sedp fini\r\n");
-}
-
-void fr_sedp_tick()
-{
-  const struct fr_time t = fr_time_now();
-  if (fr_time_diff(&t, &fr_sedp_last_bcast).seconds >= 1)
-  {
-    fr_sedp_bcast();
-    fr_sedp_last_bcast = t;
-  }
 }
 
 //#define SEDP_PRINT_TOPICS
@@ -136,18 +96,20 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
   printf("sedp pub: [%s / %s]\n",
       info->topic_name ? info->topic_name : "",
       info->type_name ? info->type_name : "");
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.writers);
+       it.data; fr_iterator_next(&it))
+  {
+    struct fr_reader *reader = it.data;
+    printf("comparing incoming SEDP pub to our subscriber %s of type %s\r\n",
+           (reader->topic_name ? reader->topic_name : "(no name)"),
+           (reader->type_name  ? reader->type_name  : "(no type)"));
+    if (!reader->topic_name || !reader->type_name)
+      continue; // sanity check. some built-ins don't have names.
+    // TODO: keep hacking here, copying stuff from the ifdef block below...
+  }
+
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   // look to see if we are subscribed to this topic
-  for (unsigned i = 0; i < g_fr_num_subs; i++)
-  {
-    fr_sub_t *sub = &g_fr_subs[i];
-#ifdef SEDP_VERBOSE
-    printf("comparing incoming SEDP pub to our subscriber %s of type %s\r\n",
-           (sub->topic_name ? sub->topic_name : "(no name)"),
-           (sub->type_name  ? sub->type_name  : "(no type)"));
-#endif
-    if (!sub->topic_name || !sub->type_name)
-      continue; // sanity check. some built-ins don't have names.
     if (!strcmp(sub->topic_name, info->topic_name) &&
         !strcmp(sub->type_name, info->type_name))
     {
@@ -385,12 +347,6 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
     fr_sedp_rx_pub_info(&g_topic_info);
   else // this is information about someone else's subscription
     fr_sedp_rx_sub_info(&g_topic_info);
-}
-
-static void fr_sedp_bcast()
-{
-  //fr_msg_t *msg = fr_init_msg((fr_msg_t *)g_fr_discovery_tx_buf);
-  //fr_time_t t = fr_time_now();
 }
 
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE

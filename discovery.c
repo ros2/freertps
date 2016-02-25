@@ -17,8 +17,3 @@ void fr_discovery_fini()
   fr_sedp_fini();
 }
 
-void fr_discovery_tick()
-{
-  fr_spdp_tick();
-  fr_sedp_tick();
-}

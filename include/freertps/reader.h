@@ -16,8 +16,11 @@ typedef struct fr_reader
   struct fr_duration heartbeat_suppression_duration;
   struct fr_container *matched_writers;
   fr_history_cache_t reader_cache;
+  char *topic_name;
+  char *type_name;
   ///////////////////////////////////////////////////////////
-  fr_message_rx_data_cb_t data_rx_cb;
+  fr_message_rx_data_cb_t data_rx_cb; // has some receiver-state debris
+  fr_message_rx_cb_t msg_rx_cb; // just gives a pointer to the message
 } fr_reader_t;
 
 #define FR_READER_TYPE_BEST_EFFORT 0

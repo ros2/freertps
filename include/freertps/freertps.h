@@ -10,7 +10,6 @@ extern "C" {
 // NOTE: the prefix freertps_ is too long to type, so it will often
 // be shortened to fr_
 
-typedef void (*freertps_msg_cb_t)(const void *msg);
 
 #include <stdint.h>
 
@@ -25,6 +24,7 @@ typedef void (*freertps_msg_cb_t)(const void *msg);
 #include "freertps/system.h"
 #include "freertps/writer.h"
 #include "freertps/reader.h"
+#include "freertps/message.h"
 
 // maybe make this smarter someday
 #define FREERTPS_INFO(...) \

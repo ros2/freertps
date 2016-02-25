@@ -20,10 +20,13 @@ static void fr_message_rx_nack_frag     (RX_MSG_ARGS);
 static void fr_message_rx_heartbeat_frag(RX_MSG_ARGS);
 static void fr_message_rx_data          (RX_MSG_ARGS);
 static void fr_message_rx_data_frag     (RX_MSG_ARGS);
+/*
+// currently unused but will need it again someday for reliable readers
 static void fr_message_tx_acknack(const struct fr_guid_prefix *guid_prefix,
     const fr_entity_id_t *reader_entity_id,
     const struct fr_guid *writer_guid,
     const struct fr_sequence_number_set *set);
+*/
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -43,26 +46,28 @@ struct fr_message *fr_message_init(struct fr_message *msg)
 void fr_message_rx(struct fr_receiver *r,
     const struct fr_submessage *m)
 {
-#ifdef EXCESSIVELY_VERBOSE_MSG_RX
-  FREERTPS_INFO("rx submsg ID %d len %d\n", m->header.id, m->header.len);
-#endif
-  // dispatch to message handlers
+  FREERTPS_INFO("rx submsg ID 0x%02x len %d\n",
+      (unsigned)m->header.id, m->header.len);
+  // dispatch to message handlers; otherwise have to indent like crazy
   switch (m->header.id)
   {
-    case 0x01:                   break; // pad submessage. ignore for now ?
-    case FR_SUBMSG_ID_ACKNACK:   fr_message_rx_acknack(r, m);        break;
-    case FR_SUBMSG_ID_HEARTBEAT: fr_message_rx_heartbeat(r, m);      break;
-    case 0x08:                   fr_message_rx_gap(r, m);            break;
-    case FR_SUBMSG_ID_INFO_TS:   fr_message_rx_info_ts(r, m);        break;
-    case 0x0c:                   fr_message_rx_info_src(r, m);       break;
-    case 0x0d:                   fr_message_rx_info_reply_ip4(r, m); break;
-    case FR_SUBMSG_ID_INFO_DEST: fr_message_rx_dst(r, m);            break;
-    case 0x0f:                   fr_message_rx_reply(r, m);          break;
-    case 0x12:                   fr_message_rx_nack_frag(r, m);      break;
-    case 0x13:                   fr_message_rx_heartbeat_frag(r, m); break;
-    case FR_SUBMSG_ID_DATA:      fr_message_rx_data(r, m);           break;
-    case 0x16:                   fr_message_rx_data_frag(r, m);      break;
-    default:                     break;
+    case 0x01:                        break; // pad submessage. ignore for now?
+    case FR_SUBMSG_ID_ACKNACK:        fr_message_rx_acknack(r, m);       break;
+    case FR_SUBMSG_ID_HEARTBEAT:      fr_message_rx_heartbeat(r, m);     break;
+    case 0x08:                        fr_message_rx_gap(r, m);           break;
+    case FR_SUBMSG_ID_INFO_TS:        fr_message_rx_info_ts(r, m);       break;
+    case 0x0c:                        fr_message_rx_info_src(r, m);      break;
+    case 0x0d:                        fr_message_rx_info_reply_ip4(r,m); break;
+    case FR_SUBMSG_ID_INFO_DEST:      fr_message_rx_dst(r, m);           break;
+    case 0x0f:                        fr_message_rx_reply(r, m);         break;
+    case 0x12:                        fr_message_rx_nack_frag(r, m);     break;
+    case FR_SUBMSG_ID_HEARTBEAT_FRAG: fr_message_rx_heartbeat_frag(r,m); break;
+    case FR_SUBMSG_ID_DATA:           fr_message_rx_data(r, m);          break;
+    case FR_SUBMSG_ID_DATA_FRAG:      fr_message_rx_data_frag(r, m);     break;
+    default:                         
+      FREERTPS_INFO("rx unknown submsg ID 0x%02x len %d\n",
+          (unsigned)m->header.id, m->header.len);
+      break;
   }
 }
 
@@ -93,14 +98,16 @@ static void fr_message_rx_acknack(RX_MSG_ARGS)
 #endif
 }
 
+#define VERBOSE_HEARTBEAT
 static void fr_message_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
 #ifdef VERBOSE_HEARTBEAT
-  const bool f = submsg->header.flags & 0x02;
+  //const bool f = submsg->header.flags & 0x02;
   //const bool l = submsg->header.flags & 0x04; // liveliness flag?
-  fr_submsg_heartbeat_t *hb = (fr_submsg_heartbeat_t *)submsg;
-  fr_guid_t writer_guid;
+  struct fr_submessage_heartbeat *hb = 
+      (struct fr_submessage_heartbeat *)submsg;
+  struct fr_guid writer_guid;
   fr_guid_stuff(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
   printf("  HEARTBEAT   ");
   fr_guid_print(&writer_guid);
@@ -383,6 +390,8 @@ static void fr_message_rx_data(RX_MSG_ARGS)
       num_matches_found++;
       if (reader->data_rx_cb)
         reader->data_rx_cb(rcvr, submsg, scheme, data);
+      if (reader->msg_rx_cb)
+        reader->msg_rx_cb(data);
       /*
       if (match->msg_cb)
          match->msg_cb(data);
@@ -436,6 +445,7 @@ static void fr_message_rx_data_frag(RX_MSG_ARGS)
   // todo
 }
 
+#if CURRENTLY_UNUSED_BUT_WILL_NEED_FOR_RELIABLE_READERS_SOMEDAY
 static uint32_t g_fr_udp_tx_buf_wpos;
 static uint8_t g_fr_udp_tx_buf[1536]; //FR_DISCOVERY_TX_BUFLEN];
 
@@ -490,3 +500,4 @@ static void fr_message_tx_acknack(const struct fr_guid_prefix *guid_prefix,
            (const uint8_t *)msg, payload_len);
 #endif
 }
+#endif
