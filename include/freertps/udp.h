@@ -24,7 +24,8 @@ fr_rc_t fr_add_mcast_rx(const uint32_t group, const uint16_t port,
     struct fr_container *c);
 
 // todo: elicit desired interface from the user in a sane way
-fr_rc_t fr_add_ucast_rx(const uint16_t port, struct fr_container *c);
+fr_rc_t fr_add_ucast_rx(const uint32_t addr, const uint16_t port,
+    struct fr_container *c);
 
 bool fr_listen(const uint32_t max_usec);
 

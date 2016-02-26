@@ -541,6 +541,12 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   fr_container_append(pub_w->matched_readers,
       &pub_reader_proxy, sizeof(struct fr_reader_proxy), FR_CFLAGS_NONE);
 
+  // now, bring these new reader proxies up to speed
+  // TODO: follow 8.4.2.3.4 and pre-emptively send ACKNACKs to the remote
+  // writers to get them to send us their SEDP messages...
+  // TODO: add flag for each reader_proxy to keep track of if this ACKNACK
+  // has been sent
+
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   fr_stuff_guid(&pub_reader.writer_guid,
                    &part->guid_prefix,

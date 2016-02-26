@@ -30,7 +30,7 @@ struct fr_writer *fr_writer_create(
   // not sure what to use for the default reader-proxy buffers
   if (type == FR_WRITER_TYPE_BEST_EFFORT)
   {
-    printf("fr_writer_create(reliable, topic=%s, type=%s)\n",
+    printf("fr_writer_create(best-effort, topic=%s, type=%s)\n",
         topic_name ? topic_name : "(null)",
         type_name ? type_name : "(null)");
     w->reader_locators = 
@@ -39,7 +39,7 @@ struct fr_writer *fr_writer_create(
   }
   else
   {
-    printf("fr_writer_create(best-effort, topic=%s, type=%s)\n",
+    printf("fr_writer_create(reliable, topic=%s, type=%s)\n",
         topic_name ? topic_name : "(null)",
         type_name ? type_name : "(null)");
     w->reader_locators = NULL;
@@ -141,15 +141,35 @@ void fr_writer_send_changes(struct fr_writer *w)
 {
   fr_sequence_number_t max_sn = fr_history_cache_max(&w->writer_cache);
   //printf("fr_writer_send_changes() where max_sn = %d\n", (int)max_sn);
-  for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
-       it.data; fr_iterator_next(&it))
+  if (!w->endpoint.reliable)
   {
-    struct fr_reader_locator *rl = it.data;
-    while (rl->highest_seq_num_sent < max_sn)
+    for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
+         it.data; fr_iterator_next(&it))
     {
-      rl->highest_seq_num_sent++;
-      fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
-      //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+      struct fr_reader_locator *rl = it.data;
+      while (rl->highest_seq_num_sent < max_sn)
+      {
+        rl->highest_seq_num_sent++;
+        fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
+        //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+      }
+    }
+  }
+  else
+  {
+    //printf("sending changes to a reliable reader!\n");
+    for (struct fr_iterator it = fr_iterator_begin(w->matched_readers);
+         it.data; fr_iterator_next(&it))
+    {
+      struct fr_reader_proxy *rp = it.data;
+      /*
+      while (rl->highest_seq_num_sent < max_sn)
+      {
+        rl->highest_seq_num_sent++;
+        //fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
+        //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+      }
+      */
     }
   }
 }

@@ -105,6 +105,15 @@ bool fr_system_udp_init()
     FREERTPS_FATAL("couldn't enable outbound tx multicast loopback\n");
     return false;
   }
+
+  // for RTI compatibility, we need to always listen on the loopback address,
+  // but we shouldn't add that to our list of locators to announce
+  if (FR_RC_OK !=
+      fr_add_ucast_rx(0x0100007f, fr_participant_ucast_builtin_port(), NULL))
+  {
+    FREERTPS_FATAL("couldn't listen on localhost!\n");
+    return false;
+  }
   
   //if (!fr_init_participant_id())
   //  return false;
@@ -119,18 +128,20 @@ bool fr_system_udp_init()
   uint32_t pid = freertps_htonl((uint32_t)getpid()); // on linux, this will be 4 bytes
   memcpy(&g_fr_participant.guid_prefix.prefix[8], &pid, 4);
 
+
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
   {
     // see if we can open the port; if so, let's say we have a unique PID
     g_fr_participant.participant_id = pid;
     const uint16_t port = fr_participant_ucast_builtin_port();
     if (fr_add_ucast_rx(
-        port, g_fr_participant.builtin_unicast_locators) == FR_RC_OK)
+        0, port, g_fr_participant.builtin_unicast_locators) == FR_RC_OK)
     {
       FREERTPS_INFO("  using RTPS/DDS PID %d\n", pid);
       return true;
     }
   }
+
   return false; // couldn't find an available PID
 }
 
@@ -158,7 +169,8 @@ static int fr_create_sock()
   return s;
 }
 
-fr_rc_t fr_add_ucast_rx(const uint16_t port, struct fr_container *c)
+fr_rc_t fr_add_ucast_rx
+    (const uint32_t addr, const uint16_t port, struct fr_container *c)
 {
   //FREERTPS_INFO("add ucast rx port %d\n", port);
   // we may have already added this when searching for our participant ID
@@ -175,7 +187,7 @@ fr_rc_t fr_add_ucast_rx(const uint16_t port, struct fr_container *c)
   struct sockaddr_in rx_bind_addr;
   memset(&rx_bind_addr, 0, sizeof(rx_bind_addr));
   rx_bind_addr.sin_family = AF_INET;
-  rx_bind_addr.sin_addr.s_addr = g_fr_tx_addr.sin_addr.s_addr;
+  rx_bind_addr.sin_addr.s_addr = addr ? addr : g_fr_tx_addr.sin_addr.s_addr;
   rx_bind_addr.sin_port = htons(port);
   int result = bind(s, (struct sockaddr *)&rx_bind_addr, sizeof(rx_bind_addr));
   if (result < 0)
@@ -187,11 +199,14 @@ fr_rc_t fr_add_ucast_rx(const uint16_t port, struct fr_container *c)
   fr_rx_sock_t *rxs = &g_fr_rx_socks[g_fr_rx_socks_used];
   rxs->sock = s;
   rxs->port = port;
-  rxs->addr = rx_bind_addr.sin_addr.s_addr;
+  rxs->addr = addr ? addr : rx_bind_addr.sin_addr.s_addr;
   //FREERTPS_INFO("  added in rx sock slot %d\n", g_fr_rx_socks_used);
   g_fr_rx_socks_used++;
 
-  return fr_locator_container_append(g_fr_system_unicast_addr, port, c);
+  if (c)
+    return fr_locator_container_append(g_fr_system_unicast_addr, port, c);
+  else
+    return FR_RC_OK;
   /*
   // now, add this locator to the participant's locator list
   struct fr_locator loc;
@@ -279,6 +294,12 @@ fr_rc_t fr_add_mcast_rx(in_addr_t group, uint16_t port, struct fr_container *c)
       &loc, sizeof(struct fr_locator), FR_CFLAGS_NONE);
   */
 }
+/*
+  struct fr_locator loopback_locator;
+  fr_locator_set_udp4(&loopback_locator, 0x7e000001, );
+  fr_add_ucast_rx(fr_participant_ucast_builtin_port(), loopback_locator);
+  fr_add_ucast_rx(fr_participant_ucast_user_port(), loopback_locator);
+*/
 
 int fr_system_listen_at_most(uint32_t microseconds)
 {
@@ -335,7 +356,7 @@ bool fr_udp_tx(const in_addr_t dst_addr,
   g_fr_tx_addr.sin_port = htons(dst_port);
   g_fr_tx_addr.sin_addr.s_addr = dst_addr;
   // todo: be smarter
-  if (tx_len == sendto(g_fr_rx_socks[3].sock, tx_data, tx_len, 0,
+  if (tx_len == sendto(g_fr_rx_socks[4].sock, tx_data, tx_len, 0,
                        (struct sockaddr *)(&g_fr_tx_addr),
                        sizeof(g_fr_tx_addr)))
     return true;

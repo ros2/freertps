@@ -286,6 +286,7 @@ static void fr_message_rx_data(RX_MSG_ARGS)
   const bool q = submsg->header.flags & 0x02;
   //const bool d = submsg->header.flags & 0x04; // no idea what this is
   const bool k = submsg->header.flags & 0x08;
+  const bool little_endian = submsg->header.flags & 0x01;
   if (k)
   {
     FREERTPS_ERROR("ahhhh i don't know how to handle keyed data yet\n");
@@ -321,6 +322,10 @@ static void fr_message_rx_data(RX_MSG_ARGS)
 #ifdef VERBOSE_DATA
   printf("  DATA ");
   fr_guid_print(&writer_guid);
+  if (little_endian)
+    printf(" (LE) ");
+  else
+    printf(" (BE) ");
   printf(" => 0x%08x  : %d\r\n",
          (unsigned)freertps_htonl(data_submsg->reader_id.u),
          (int)data_submsg->writer_sn.low);

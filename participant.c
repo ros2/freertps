@@ -137,10 +137,10 @@ bool fr_participant_add_default_locators()
       fr_participant_mcast_user_port(),
       g_fr_participant.user_multicast_locators);
 
-  fr_add_ucast_rx(fr_participant_ucast_builtin_port(),
+  fr_add_ucast_rx(0, fr_participant_ucast_builtin_port(),
       g_fr_participant.builtin_unicast_locators);
 
-  fr_add_ucast_rx(fr_participant_ucast_user_port(),
+  fr_add_ucast_rx(0, fr_participant_ucast_user_port(),
       g_fr_participant.user_unicast_locators);
 
   return true;
