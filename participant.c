@@ -13,25 +13,6 @@ struct fr_participant g_fr_participant;
 
 static bool g_fr_participant_init_complete = false;
 
-fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix)
-{
-#ifdef HORRIBLY_BROKEN
-  for (int i = 0; i < g_fr_discovery_num_participants; i++)
-  {
-    fr_participant_t *p = &g_fr_discovery_participants[i]; // shorter
-    bool match = true;
-    for (int j = 0; match && j < FR_GUID_PREFIX_LEN; j++)
-    {
-      if (guid_prefix->prefix[j] != p->guid_prefix.prefix[j])
-        match = false;
-    }
-    if (match)
-      return p;
-  }
-#endif
-  return NULL; // couldn't find it. sorry.
-}
-
 uint16_t fr_participant_mcast_builtin_port()
 {
   return FR_PORT_PB +

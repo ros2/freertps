@@ -127,7 +127,7 @@ fr_rc_t fr_writer_add_reader_locator(struct fr_writer *w,
 
 void fr_writer_unsent_changes_reset(struct fr_writer *w)
 {
-  printf("unsent changes reset\n");
+  //printf("unsent changes reset\n");
   for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
        it.data; fr_iterator_next(&it))
   {
@@ -151,7 +151,7 @@ void fr_writer_send_changes(struct fr_writer *w)
       {
         rl->highest_seq_num_sent++;
         fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
-        printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+        //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
       }
     }
   }
@@ -198,7 +198,8 @@ void fr_writer_send_change(struct fr_writer *writer,
 {
   if (!cc)
     return;
-  printf("sending SN #%d length %d to ",
+  printf("sending EID 0x%08x SN #%d length %d to ",
+      (unsigned)freertps_htonl(writer->endpoint.entity_id.u),
       (int)cc->sequence_number, (int)cc->data_len);
   fr_locator_print(loc);
 
@@ -250,7 +251,7 @@ void fr_writer_send_change(struct fr_writer *writer,
   data_submsg->header.len =
       (uint16_t)(wpos - (uint8_t *)&data_submsg->extraflags);
   uint32_t payload_len = (uint32_t)(wpos - (uint8_t *)msg);
-  printf("udp payload: %d bytes\n", (int)payload_len);
+  //printf("udp payload: %d bytes\n", (int)payload_len);
   fr_udp_tx(loc->addr.udp4.addr, loc->port,
       (const uint8_t *)msg, payload_len);
   if (writer->endpoint.reliable)

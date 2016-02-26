@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "freertps/container.h"
+#include "freertps/guid.h"
 #include "freertps/locator.h"
 #include "freertps/protocol_version.h"
 #include "freertps/vendor_id.h"
@@ -24,4 +25,8 @@ typedef struct fr_participant_proxy
   struct fr_duration lease_duration;
 } fr_participant_proxy_t;
 
+struct fr_participant_proxy *
+    fr_participant_proxy_find(const fr_guid_prefix_t *guid_prefix);
+
 #endif
+

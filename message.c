@@ -6,6 +6,7 @@
 #include "freertps/participant.h"
 #include "freertps/spdp.h"
 #include "freertps/writer_proxy.h"
+#include "freertps/participant_proxy.h"
 
 #define RX_MSG_ARGS struct fr_receiver *rcvr, const struct fr_submessage *submsg
 static void fr_message_rx_acknack       (RX_MSG_ARGS);
@@ -20,13 +21,10 @@ static void fr_message_rx_nack_frag     (RX_MSG_ARGS);
 static void fr_message_rx_heartbeat_frag(RX_MSG_ARGS);
 static void fr_message_rx_data          (RX_MSG_ARGS);
 static void fr_message_rx_data_frag     (RX_MSG_ARGS);
-/*
-// currently unused but will need it again someday for reliable readers
 static void fr_message_tx_acknack(const struct fr_guid_prefix *guid_prefix,
     const fr_entity_id_t *reader_entity_id,
     const struct fr_guid *writer_guid,
     const struct fr_sequence_number_set *set);
-*/
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -102,8 +100,8 @@ static void fr_message_rx_acknack(RX_MSG_ARGS)
 static void fr_message_rx_heartbeat(RX_MSG_ARGS)
 {
   // todo: care about endianness
+  const bool final = submsg->header.flags & 0x02; // final flag
 #ifdef VERBOSE_HEARTBEAT
-  //const bool f = submsg->header.flags & 0x02;
   //const bool l = submsg->header.flags & 0x04; // liveliness flag?
   struct fr_submessage_heartbeat *hb = 
       (struct fr_submessage_heartbeat *)submsg;
@@ -116,52 +114,76 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
          (unsigned)hb->first_sn.low,
          (unsigned)hb->last_sn.low);
 #endif
-  //fr_print_readers();
-
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  //printf("%d matched readers\n", (int)g_fr_num_readers);
-  fr_reader_t *match = NULL;
-  // spin through subscriptions and see if we've already matched a reader
-  for (unsigned i = 0; !match && i < g_fr_num_readers; i++)
+  struct fr_writer_proxy *matched_writer_proxy = NULL;
+  struct fr_reader *matched_reader = NULL;
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.readers);
+       it.data; fr_iterator_next(&it))
   {
-    fr_reader_t *r = &g_fr_readers[i];
-    if (fr_guid_identical(&writer_guid, &r->writer_guid) &&
-        (hb->reader_id.u == r->reader_entity_id.u ||
-         hb->reader_id.u == 0))
-      match = r;
-  }
-  // else, if we have a subscription for this, initialize a reader
-  if (!match)
-  {
-    for (unsigned i = 0; !match && i < g_fr_num_subs; i++)
+    struct fr_reader *reader = it.data;
+    // previously, we also allowed hb->reader_id.u to be equal to zero.
+    // is that correct?
+    if (reader->endpoint.entity_id.u != hb->reader_id.u)
+      continue;
+    for (struct fr_iterator mw_it = fr_iterator_begin(reader->matched_writers);
+        !matched_writer_proxy && mw_it.data; fr_iterator_next(&mw_it))
     {
-      fr_sub_t *sub = &g_fr_subs[i];
-      if (sub->reader_entity_id.u == hb->reader_id.u)
+      struct fr_writer_proxy *writer_proxy = mw_it.data;
+      if (fr_guid_identical(&writer_proxy->remote_writer_guid, &writer_guid))
       {
-        fr_reader_t r;
-        memcpy(&r.writer_guid, &writer_guid, sizeof(fr_guid_t));
-        r.reliable = sub->reliable;
-        r.reader_entity_id = hb->reader_id;
-        r.max_rx_sn.high = 0;
-        r.max_rx_sn.low = 0;
-        r.data_cb = sub->data_cb;
-        r.msg_cb = sub->msg_cb;
-        match = &r;
-        printf("adding reader due to heartbeat RX\n");
-        fr_add_reader(&r);
+        matched_writer_proxy = writer_proxy;
+        matched_reader = reader;
       }
     }
   }
+  if (!final && matched_writer_proxy && matched_reader->endpoint.reliable)
+  {
+    // we have to send an ACKNACK now
+    printf("acknack requested in heartbeat\n");
+    /*
+    const fr_sequence_number_t hb_first_sn =
+        (fr_sequence_number_t)hb->first_sn.low |
+        (((fr_sequence_number_t)hb->first_sn.high) << 32);
+    */
 
+    const fr_sequence_number_t hb_last_sn =
+        (fr_sequence_number_t)hb->last_sn.low |
+        (((fr_sequence_number_t)hb->last_sn.high) << 32);
+
+    struct fr_sequence_number_set_32bits set;
+    if (matched_writer_proxy->highest_sequence_number >= hb_last_sn)
+    {
+      // we're up to date
+      printf("             up to date\n");
+      fr_sequence_number_t one_past_last = hb_last_sn + 1;
+      set.bitmap_base.low = one_past_last & 0xffffffff; //hb->first_sn.low + 1;
+      set.bitmap_base.high = (one_past_last >> 32) & 0xffffffff;
+      set.num_bits = 0;
+      set.bitmap = 0xffffffff;
+    }
+    else
+    {
+      printf("             NOT up to date: %d < %d\n",
+          (int)matched_writer_proxy->highest_sequence_number,
+          (int)hb_last_sn);
+      const fr_sequence_number_t rx_sn =
+          matched_writer_proxy->highest_sequence_number; // save typing
+      set.bitmap_base.low = (rx_sn+1) & 0xffffffff;
+      set.bitmap_base.high = ((rx_sn+1) >> 32) & 0xffffffff;
+      set.num_bits = hb_last_sn - rx_sn - 1;
+      set.bitmap = 0xffffffff;
+    }
+    fr_message_tx_acknack(&rcvr->src_guid_prefix,
+                          &matched_reader->endpoint.entity_id,
+                          &writer_guid, //matched_writer_proxy->writer_guid,
+                  (struct fr_sequence_number_set *)&set);
+  }
+
+#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   if (match)
   {
     //g_fr_subs[i].heartbeat_cb(rcvr, hb);
     if (match->reliable && !f)
     {
-      //printf("acknack requested in heartbeat\n");
-      // we have to send an ACKNACK now
-      fr_seq_num_set_32bits_t set;
-      // todo: handle 64-bit sequence numbers
       set.bitmap_base.high = 0;
       if (match->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
       {
@@ -460,32 +482,33 @@ static void fr_message_rx_data_frag(RX_MSG_ARGS)
   // todo
 }
 
-#if CURRENTLY_UNUSED_BUT_WILL_NEED_FOR_RELIABLE_READERS_SOMEDAY
+//#if CURRENTLY_UNUSED_BUT_WILL_NEED_FOR_RELIABLE_READERS_SOMEDAY
 static uint32_t g_fr_udp_tx_buf_wpos;
 static uint8_t g_fr_udp_tx_buf[1536]; //FR_DISCOVERY_TX_BUFLEN];
 
-static void fr_message_tx_acknack(const struct fr_guid_prefix *guid_prefix,
+#define VERBOSE_TX_ACKNACK
+
+static void fr_message_tx_acknack(
+    const struct fr_guid_prefix *guid_prefix,
     const fr_entity_id_t         *reader_id,
     const struct fr_guid        *writer_guid,
     const struct fr_sequence_number_set *set)
 {
-#ifdef HORRIBLY_BROKEN
   #ifdef VERBOSE_TX_ACKNACK
         printf("    TX ACKNACK %d:%d\n",
                (int)set->bitmap_base.low,
                (int)(set->bitmap_base.low + set->num_bits));
   #endif
-  static int s_acknack_count = 1;
+  static int s_acknack_count = 1; // count with each reader?
   // find the participant we are trying to talk to
-  fr_participant_t *part = fr_participant_find(guid_prefix);
+  struct fr_participant_proxy *part = fr_participant_proxy_find(guid_prefix);
   if (!part)
   {
     FREERTPS_ERROR("tried to acknack an unknown participant\n");
     return; // woah.
   }
   struct fr_message *msg = (struct fr_message *)g_fr_udp_tx_buf;
-  fr_init_msg(msg);
-  //printf("    about to tx acknack\n");
+  fr_message_init(msg);
   struct fr_submessage *dst_submsg = 
       (struct fr_submessage *)&msg->submessages[0];
   dst_submsg->header.id = FR_SUBMSG_ID_INFO_DEST;
@@ -493,26 +516,21 @@ static void fr_message_tx_acknack(const struct fr_guid_prefix *guid_prefix,
                              FR_FLAGS_ACKNACK_FINAL;
   dst_submsg->header.len = 12;
   memcpy(dst_submsg->contents, guid_prefix, FR_GUID_PREFIX_LEN);
-  struct fr_submessage *acknack_submsg =
-      (struct fr_submessage *)(&msg->submessages[16]);
+  struct fr_submessage_acknack *acknack_submsg =
+      (struct fr_submessage_acknack *)(&msg->submessages[16]);
   acknack_submsg->header.id = FR_SUBMSG_ID_ACKNACK;
   acknack_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
-  acknack_submsg->header.len = 24 + (set->num_bits + 31)/32 * 4;
-  struct fr_acknack_submessage *acknack =
-      (struct fr_acknack_submessage *)acknack_submsg->contents;
-  acknack->reader_id = *reader_id;
-  acknack->writer_id = writer_guid->entity_id;
-  int sn_set_len = (set->num_bits + 31) / 32 * 4 + 12;
-  memcpy(&acknack->reader_sn_state, set, sn_set_len);
-  uint32_t *p_count = (uint32_t *)&acknack->reader_sn_state + sn_set_len / 4;
+  const int sn_set_len = 12 + (set->num_bits + 31)/32 * 4;
+  acknack_submsg->header.len = 12 + sn_set_len;
+  acknack_submsg->reader_id = *reader_id;
+  acknack_submsg->writer_id = writer_guid->entity_id;
+  memcpy(&acknack_submsg->reader_sn_state, set, sn_set_len);
+  uint32_t *p_count =
+    (uint32_t *)&acknack_submsg->reader_sn_state + sn_set_len / 4;
   *p_count = s_acknack_count++;
   uint8_t *p_next_submsg = (uint8_t *)p_count + 4;
   int payload_len = p_next_submsg - (uint8_t *)msg;
-#endif
-#ifdef HORRIBLY_BROKEN
-  fr_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
-           part->metatraffic_unicast_locator.port,
-           (const uint8_t *)msg, payload_len);
-#endif
+  fr_udp_tx(part->metatraffic_unicast_locator.addr.udp4.addr,
+      part->metatraffic_unicast_locator.port,
+      (const uint8_t *)msg, payload_len);
 }
-#endif

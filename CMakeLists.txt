@@ -68,6 +68,7 @@ add_library(freertps cdr_string.c
                      message.c
                      parameter.c
                      participant.c 
+                     participant_proxy.c 
                      reader.c
                      reader_locator.c
                      sedp.c 

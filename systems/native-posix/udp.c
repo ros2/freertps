@@ -364,13 +364,15 @@ bool fr_udp_tx(const in_addr_t dst_addr,
   g_fr_tx_addr.sin_port = htons(dst_port);
   g_fr_tx_addr.sin_addr.s_addr = dst_addr;
   // todo: be smarter
+  /*
   printf("native_posix TX %d bytes to %d.%d.%d.%d:%d\n",
       (int)tx_len,
-      (int)(dst_addr >> 24) & 0xff,
-      (int)(dst_addr >> 16) & 0xff,
-      (int)(dst_addr >>  8) & 0xff,
       (int)(dst_addr      ) & 0xff,
+      (int)(dst_addr >>  8) & 0xff,
+      (int)(dst_addr >> 16) & 0xff,
+      (int)(dst_addr >> 24) & 0xff,
       (int)dst_port);
+  */
   if (tx_len == sendto(g_fr_rx_socks[3].sock, tx_data, tx_len, 0,
                        (struct sockaddr *)(&g_fr_tx_addr),
                        sizeof(g_fr_tx_addr)))

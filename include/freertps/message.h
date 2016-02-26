@@ -97,6 +97,7 @@ typedef struct fr_gap_submessage
 
 struct fr_submessage_acknack
 {
+  struct fr_submessage_header header;
   union fr_entity_id reader_id;
   union fr_entity_id writer_id;
   struct fr_sequence_number_set reader_sn_state;

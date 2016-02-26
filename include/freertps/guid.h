@@ -51,5 +51,6 @@ void fr_guid_print(const fr_guid_t *guid);
 fr_entity_id_t fr_create_user_id(const uint8_t entity_kind);
 
 void fr_guid_set_zero(struct fr_guid *guid);
+void fr_guid_copy(const struct fr_guid * const source, struct fr_guid *dest);
 
 #endif

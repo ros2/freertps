@@ -23,7 +23,6 @@ typedef struct fr_participant
   struct fr_container *readers;
 } fr_participant_t;
 
-fr_participant_t *fr_participant_find(const fr_guid_prefix_t *guid_prefix);
 bool fr_participant_init();
 void fr_participant_fini();
 

@@ -105,24 +105,38 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
            (reader->type_name  ? reader->type_name  : "(no type)"));
     if (!reader->topic_name || !reader->type_name)
       continue; // sanity check. some built-ins don't have names.
-    // TODO: keep hacking here, copying stuff from the ifdef block below...
+
+    // look to see if we are subscribed to this topic
+    if (strcmp(reader->topic_name, info->topic_name) ||
+        strcmp(reader->type_name, info->type_name))
+      continue; // didn't match topic name or didn't match type name
+
+    printf("    hooray! found a topic we care about: [%s]\n",
+        reader->topic_name);
+
+    // see if we already have a matched reader for this writer
+    bool found = false;
+    for (struct fr_iterator mw_it = fr_iterator_begin(reader->matched_writers);
+        mw_it.data; fr_iterator_next(&mw_it))
+    {
+      struct fr_writer_proxy *writer_proxy = mw_it.data;
+      if (fr_guid_identical(&writer_proxy->remote_writer_guid, &info->guid))
+      {
+        printf("    already have this writer proxy!\n");
+        found = true;
+      }
+    }
+    if (found)
+      continue;
+    printf("adding this remote writer to our list...\n");
+    struct fr_writer_proxy wp;
+    fr_guid_copy(&info->guid, &wp.remote_writer_guid);
+    wp.highest_sequence_number = 0;
+    fr_container_append(reader->matched_writers,
+        &wp, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);
   }
 
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  // look to see if we are subscribed to this topic
-    if (!strcmp(sub->topic_name, info->topic_name) &&
-        !strcmp(sub->type_name, info->type_name))
-    {
-      printf("    hooray! found a topic we care about: [%s]\n",
-          sub->topic_name);
-      // see if we already have a matched reader for this writer
-      bool found = false;
-      for (unsigned j = 0; !found && j < g_fr_num_readers; j++)
-      {
-        fr_reader_t *match = &g_fr_readers[j];
-        if (fr_guid_identical(&match->writer_guid, &info->guid))
-          found = true;
-      }
       if (!found)
       {
         fr_reader_t r;

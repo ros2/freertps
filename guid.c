@@ -80,3 +80,10 @@ void fr_guid_set_zero(struct fr_guid *guid)
     guid->prefix.prefix[i] = 0;
   guid->entity_id.u = 0;
 }
+
+void fr_guid_copy(const struct fr_guid * const source, struct fr_guid *dest)
+{
+  memcpy(dest->prefix.prefix, source->prefix.prefix, FR_GUID_PREFIX_LEN);
+  dest->entity_id.u = source->entity_id.u;
+}
+
