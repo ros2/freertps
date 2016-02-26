@@ -176,7 +176,8 @@ fr_rc_t fr_add_ucast_rx
   // we may have already added this when searching for our participant ID
   // so, let's spin through and see if it's already there
   for (int i = 0; i < g_fr_rx_socks_used; i++)
-    if (g_fr_rx_socks[i].port == port)
+    if (g_fr_rx_socks[i].port == port &&
+        g_fr_rx_socks[i].addr == addr)
     {
       //FREERTPS_INFO("  found port match in slot %d\n", i);
       return FR_RC_OK; // it's already here
@@ -202,6 +203,13 @@ fr_rc_t fr_add_ucast_rx
   rxs->addr = addr ? addr : rx_bind_addr.sin_addr.s_addr;
   //FREERTPS_INFO("  added in rx sock slot %d\n", g_fr_rx_socks_used);
   g_fr_rx_socks_used++;
+
+  printf("native_posix fr_add_ucast_rx(%d.%d.%d.%d:%d)\n",
+      (int)(rxs->addr      ) & 0xff,
+      (int)(rxs->addr >>  8) & 0xff,
+      (int)(rxs->addr >> 16) & 0xff,
+      (int)(rxs->addr >> 24) & 0xff,
+      (int)port);
 
   if (c)
     return fr_locator_container_append(g_fr_system_unicast_addr, port, c);
@@ -356,7 +364,14 @@ bool fr_udp_tx(const in_addr_t dst_addr,
   g_fr_tx_addr.sin_port = htons(dst_port);
   g_fr_tx_addr.sin_addr.s_addr = dst_addr;
   // todo: be smarter
-  if (tx_len == sendto(g_fr_rx_socks[4].sock, tx_data, tx_len, 0,
+  printf("native_posix TX %d bytes to %d.%d.%d.%d:%d\n",
+      (int)tx_len,
+      (int)(dst_addr >> 24) & 0xff,
+      (int)(dst_addr >> 16) & 0xff,
+      (int)(dst_addr >>  8) & 0xff,
+      (int)(dst_addr      ) & 0xff,
+      (int)dst_port);
+  if (tx_len == sendto(g_fr_rx_socks[3].sock, tx_data, tx_len, 0,
                        (struct sockaddr *)(&g_fr_tx_addr),
                        sizeof(g_fr_tx_addr)))
     return true;

@@ -58,8 +58,12 @@ bool fr_udp_rx(const uint32_t src_addr, const uint16_t src_port,
   if (our_guid)
     return true; // don't process our own messages
 
+  // hmm... p.35 says we should be initializing src_guid_prefix to UNKNOWN...
   memcpy(rcvr.src_guid_prefix.prefix,
          msg->header.guid_prefix.prefix,
+         FR_GUID_PREFIX_LEN);
+  memcpy(rcvr.dst_guid_prefix.prefix,
+         g_fr_participant.guid_prefix.prefix,
          FR_GUID_PREFIX_LEN);
   rcvr.have_timestamp = false;
   // process all the submessages

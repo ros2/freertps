@@ -96,7 +96,7 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
   printf("sedp pub: [%s / %s]\n",
       info->topic_name ? info->topic_name : "",
       info->type_name ? info->type_name : "");
-  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.writers);
+  for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.readers);
        it.data; fr_iterator_next(&it))
   {
     struct fr_reader *reader = it.data;
@@ -510,6 +510,7 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   struct fr_writer_proxy pub_writer_proxy;
   fr_guid_stuff(&pub_writer_proxy.remote_writer_guid, prefix, 
       &g_fr_sedp_pub_writer_id);
+  pub_writer_proxy.highest_sequence_number = 0;
   struct fr_reader *pub_r = fr_participant_get_reader(g_fr_sedp_pub_reader_id);
   fr_container_append(pub_r->matched_writers,
       &pub_writer_proxy, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);
@@ -517,6 +518,7 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   struct fr_writer_proxy sub_writer_proxy;
   fr_guid_stuff(&sub_writer_proxy.remote_writer_guid, prefix, 
       &g_fr_sedp_sub_writer_id);
+  sub_writer_proxy.highest_sequence_number = 0;
   struct fr_reader *sub_r = fr_participant_get_reader(g_fr_sedp_sub_reader_id);
   fr_container_append(sub_r->matched_writers,
       &sub_writer_proxy, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);

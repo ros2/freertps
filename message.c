@@ -242,16 +242,19 @@ static void fr_message_rx_info_ts(RX_MSG_ARGS)
 
 static void fr_message_rx_info_src(RX_MSG_ARGS)
 {
+  printf("  INFO_SRC\n");
 }
 
 static void fr_message_rx_info_reply_ip4(RX_MSG_ARGS)
 {
 }
 
+#define VERBOSE_INFO_DEST
 static void fr_message_rx_dst(RX_MSG_ARGS)
 {
 #ifdef VERBOSE_INFO_DEST
-  fr_submsg_info_dest_t *d = (fr_submsg_info_dest_t *)submsg->contents;
+  struct fr_submessage_info_dest *d =
+      (struct fr_submessage_info_dest *)submsg->contents;
   uint8_t *p = d->guid_prefix.prefix;
   printf("  INFO_DEST guid = %02x%02x%02x%02x:"
                             "%02x%02x%02x%02x:"
@@ -378,6 +381,13 @@ static void fr_message_rx_data(RX_MSG_ARGS)
       // check if the data message's destination is our GUID
       bool entity_id_match =
           (reader->endpoint.entity_id.u == data_submsg->reader_id.u);
+      /*
+      printf("rcvr dst guid prefix: ");
+      fr_guid_print_prefix(&rcvr->dst_guid_prefix);
+      printf("  participant dst guid prefix: ");
+      fr_guid_print_prefix(&g_fr_participant.guid_prefix);
+      printf("\n");
+      */
       bool dst_prefix_match =
           fr_guid_prefix_identical(&rcvr->dst_guid_prefix,
               &g_fr_participant.guid_prefix);

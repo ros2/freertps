@@ -103,10 +103,10 @@ struct fr_submessage_acknack
   // the "count" field that goes here is impossible to declare in legal C
 } __attribute__((packed));
 
-typedef struct fr_info_dest_submessage
+struct fr_submessage_info_dest
 {
   struct fr_guid_prefix guid_prefix;
-} __attribute__((packed)) fr_info_dest_submessage_t;
+} __attribute__((packed));
 
 //////////////////////////////////////////////////////////////////////////
 struct fr_message *fr_message_init(struct fr_message *buf);

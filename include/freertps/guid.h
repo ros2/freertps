@@ -26,7 +26,7 @@ extern const fr_entity_id_t g_fr_entity_id_unknown;
 typedef struct fr_guid_prefix
 {
   uint8_t prefix[FR_GUID_PREFIX_LEN];
-} fr_guid_prefix_t;
+} __attribute__((packed)) fr_guid_prefix_t;
 
 typedef struct fr_guid
 {

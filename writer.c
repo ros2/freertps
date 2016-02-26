@@ -127,7 +127,7 @@ fr_rc_t fr_writer_add_reader_locator(struct fr_writer *w,
 
 void fr_writer_unsent_changes_reset(struct fr_writer *w)
 {
-  //printf("unsent changes reset\n");
+  printf("unsent changes reset\n");
   for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
        it.data; fr_iterator_next(&it))
   {
@@ -151,7 +151,7 @@ void fr_writer_send_changes(struct fr_writer *w)
       {
         rl->highest_seq_num_sent++;
         fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
-        //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+        printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
       }
     }
   }
