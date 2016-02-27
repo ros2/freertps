@@ -5,8 +5,9 @@
 #include "freertps/iterator.h"
 #include "freertps/mem.h"
 #include "freertps/message.h"
-#include "freertps/writer.h"
+#include "freertps/participant_proxy.h"
 #include "freertps/udp.h"
+#include "freertps/writer.h"
 
 static void fr_writer_send(struct fr_writer *writer,
     fr_sequence_number_t seq_num, struct fr_locator *loc);
@@ -140,7 +141,8 @@ void fr_writer_unsent_changes_reset(struct fr_writer *w)
 void fr_writer_send_changes(struct fr_writer *w)
 {
   fr_sequence_number_t max_sn = fr_history_cache_max(&w->writer_cache);
-  //printf("fr_writer_send_changes() where max_sn = %d\n", (int)max_sn);
+  printf("fr_writer_send_changes(eid=0x%08x) where max_sn = %d\n",
+      (unsigned)freertps_htonl(w->endpoint.entity_id.u), (int)max_sn);
   if (!w->endpoint.reliable)
   {
     for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
@@ -162,14 +164,28 @@ void fr_writer_send_changes(struct fr_writer *w)
          it.data; fr_iterator_next(&it))
     {
       struct fr_reader_proxy *rp = it.data;
-      /*
-      while (rl->highest_seq_num_sent < max_sn)
+      struct fr_participant_proxy *pp =
+          fr_participant_proxy_find(&rp->remote_reader_guid.prefix);
+      if (!pp)
       {
-        rl->highest_seq_num_sent++;
-        //fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
-        //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
+        printf("woah! couldn't find remote reader prefix ");
+        fr_guid_print_prefix(&rp->remote_reader_guid.prefix);
+        printf(" in participant-proxy list.\n");
+        continue;
       }
-      */
+      // todo: could be smarter about combining updates into multicast?
+      struct fr_locator *loc = NULL;
+      if (!w->topic_name)
+        loc = &pp->metatraffic_unicast_locator;
+      else
+        loc = &pp->default_unicast_locator;
+      while (rp->highest_seq_num_sent < max_sn)
+      {
+        rp->highest_seq_num_sent++;
+        // look up the locator for this remote reader
+        fr_writer_send(w, rp->highest_seq_num_sent, loc);
+        printf("sending change %d...\n", (int)rp->highest_seq_num_sent);
+      }
     }
   }
 }
@@ -220,7 +236,7 @@ void fr_writer_send_change(struct fr_writer *writer,
   data_submsg->extraflags = 0;
   data_submsg->octets_to_inline_qos = 16; // ?
   data_submsg->reader_id = g_fr_entity_id_unknown;
-  data_submsg->writer_id = writer->endpoint.entity_id;   //g_spdp_writer_id;
+  data_submsg->writer_id = writer->endpoint.entity_id;
   data_submsg->writer_sn.high = (int32_t)(cc->sequence_number >> 32);
   data_submsg->writer_sn.low = (uint32_t)(cc->sequence_number & 0xffffffff);
   uint8_t *wpos = (uint8_t *)data_submsg->data;
@@ -242,7 +258,7 @@ void fr_writer_send_change(struct fr_writer *writer,
   {
     // assume all non-NULL type names mean that we are doing CDR serialization
     fr_encapsulation_scheme_t *scheme = (fr_encapsulation_scheme_t *)wpos;
-    scheme->scheme = freertps_htons(FR_SCHEME_PL_CDR_LE);
+    scheme->scheme = freertps_htons(FR_SCHEME_CDR_LE);
     scheme->options = 0;
     wpos += 4;
   }

@@ -7,6 +7,10 @@ int main(int argc, char **argv)
   freertps_init();
   fr_writer_t *w = fr_writer_create("chatter", "std_msgs::msg::dds_::String_",
       FR_WRITER_TYPE_BEST_EFFORT);
+  w->endpoint.entity_id.s.kind = 0x3;
+  w->endpoint.entity_id.s.key[0] = 0;
+  w->endpoint.entity_id.s.key[1] = 1;
+  w->endpoint.entity_id.s.key[2] = 2;
   fr_participant_add_writer(w);
   int pub_count = 0;
   char msg[64] = {0};

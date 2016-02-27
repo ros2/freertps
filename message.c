@@ -44,8 +44,10 @@ struct fr_message *fr_message_init(struct fr_message *msg)
 void fr_message_rx(struct fr_receiver *r,
     const struct fr_submessage *m)
 {
+  /*
   FREERTPS_INFO("rx submsg ID 0x%02x len %d\n",
       (unsigned)m->header.id, m->header.len);
+  */
   // dispatch to message handlers; otherwise have to indent like crazy
   switch (m->header.id)
   {
@@ -169,7 +171,7 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
           matched_writer_proxy->highest_sequence_number; // save typing
       set.bitmap_base.low = (rx_sn+1) & 0xffffffff;
       set.bitmap_base.high = ((rx_sn+1) >> 32) & 0xffffffff;
-      set.num_bits = hb_last_sn - rx_sn - 1;
+      set.num_bits = hb_last_sn - rx_sn; // - 1;
       set.bitmap = 0xffffffff;
     }
     fr_message_tx_acknack(&rcvr->src_guid_prefix,
@@ -512,14 +514,15 @@ static void fr_message_tx_acknack(
   struct fr_submessage *dst_submsg = 
       (struct fr_submessage *)&msg->submessages[0];
   dst_submsg->header.id = FR_SUBMSG_ID_INFO_DEST;
-  dst_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |
-                             FR_FLAGS_ACKNACK_FINAL;
+  dst_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN; // |
+                             //FR_FLAGS_ACKNACK_FINAL;
   dst_submsg->header.len = 12;
   memcpy(dst_submsg->contents, guid_prefix, FR_GUID_PREFIX_LEN);
   struct fr_submessage_acknack *acknack_submsg =
       (struct fr_submessage_acknack *)(&msg->submessages[16]);
   acknack_submsg->header.id = FR_SUBMSG_ID_ACKNACK;
-  acknack_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN;
+  acknack_submsg->header.flags = FR_FLAGS_LITTLE_ENDIAN |
+                                 FR_FLAGS_ACKNACK_FINAL;
   const int sn_set_len = 12 + (set->num_bits + 31)/32 * 4;
   acknack_submsg->header.len = 12 + sn_set_len;
   acknack_submsg->reader_id = *reader_id;

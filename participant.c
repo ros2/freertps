@@ -97,6 +97,7 @@ bool fr_participant_add_writer(struct fr_writer *writer)
   printf("fr_participant_add_writer()\r\n");
   fr_container_append(g_fr_participant.writers, writer, sizeof(writer),
       FR_CFLAGS_TAKE_OWNERSHIP);
+  // TODO: craft SEDP message and add it to the SEDP publication writer
   return false;
 }
 
@@ -105,11 +106,13 @@ bool fr_participant_add_reader(struct fr_reader *reader)
   printf("fr_participant_add_reader()\r\n");
   fr_container_append(g_fr_participant.readers, reader, sizeof(reader),
       FR_CFLAGS_TAKE_OWNERSHIP);
+  // TODO: craft SEDP message and add it to the SEDP subscription writer
   return false;
 }
 
 bool fr_participant_add_default_locators()
 {
+  printf("fr_participant_add_default_locators()\n");
   fr_add_mcast_rx(FR_DEFAULT_MCAST_GROUP,
       fr_participant_mcast_builtin_port(),
       g_fr_participant.builtin_multicast_locators);

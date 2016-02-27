@@ -76,8 +76,10 @@ static fr_rc_t fr_container_append_array_block(
 fr_rc_t fr_container_append(struct fr_container *c, void *data, size_t len,
     uint32_t flags)
 {
+  /*
   printf("fr_container_append(type=%d, size=%d, flags=%d)\n",
       (int)c->type, (int)len, (int)flags);
+  */
   if (c->type == FR_CT_ARRAY_LIST)
   {
     struct fr_container_array_list *ca = (struct fr_container_array_list *)c;

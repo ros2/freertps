@@ -42,6 +42,8 @@ static int g_fr_tx_sock;
 
 static uint32_t g_fr_system_unicast_addr;
 
+static bool set_sock_reuse(int s);
+
 #define FU_RX_BUFSIZE 4096
 
 bool fr_system_udp_init()
@@ -106,15 +108,7 @@ bool fr_system_udp_init()
     return false;
   }
 
-  // for RTI compatibility, we need to always listen on the loopback address,
-  // but we shouldn't add that to our list of locators to announce
-  if (FR_RC_OK !=
-      fr_add_ucast_rx(0x0100007f, fr_participant_ucast_builtin_port(), NULL))
-  {
-    FREERTPS_FATAL("couldn't listen on localhost!\n");
-    return false;
-  }
-  
+ 
   //if (!fr_init_participant_id())
   //  return false;
   // some of the following stuff has been moved to fr_part_create()
@@ -129,20 +123,37 @@ bool fr_system_udp_init()
   memcpy(&g_fr_participant.guid_prefix.prefix[8], &pid, 4);
 
 
-  for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
+  int id = 0;
+  const int MAX_PID = 100; // todo: hard upper bound is bad
+  for (; id < MAX_PID; id++) 
   {
     // see if we can open the port; if so, let's say we have a unique PID
-    g_fr_participant.participant_id = pid;
+    g_fr_participant.participant_id = id;
     const uint16_t port = fr_participant_ucast_builtin_port();
     if (fr_add_ucast_rx(
         0, port, g_fr_participant.builtin_unicast_locators) == FR_RC_OK)
     {
-      FREERTPS_INFO("  using RTPS/DDS PID %d\n", pid);
-      return true;
+      FREERTPS_INFO("  using RTPS/DDS PID %d\n", id);
+      break;
     }
   }
+  if (id >= MAX_PID)
+  {
+    printf("couldn't find an available user port after going through PID=%d\n",
+        (int)MAX_PID);
+    return false;
+  }
 
-  return false; // couldn't find an available PID
+  // for RTI compatibility, we need to always listen on the loopback address,
+  // but we shouldn't add that to our list of locators to announce
+  if (FR_RC_OK !=
+      fr_add_ucast_rx(0x0100007f, fr_participant_ucast_builtin_port(), NULL))
+  {
+    FREERTPS_FATAL("couldn't listen on localhost!\n");
+    return false;
+  }
+
+  return true;
 }
 
 void fr_system_udp_fini()
@@ -172,24 +183,42 @@ static int fr_create_sock()
 fr_rc_t fr_add_ucast_rx
     (const uint32_t addr, const uint16_t port, struct fr_container *c)
 {
-  //FREERTPS_INFO("add ucast rx port %d\n", port);
   // we may have already added this when searching for our participant ID
   // so, let's spin through and see if it's already there
+  //printf("fr_add_ucast_rx(addr=%d, port=%d)\n", (int)addr, (int)port);
   for (int i = 0; i < g_fr_rx_socks_used; i++)
     if (g_fr_rx_socks[i].port == port &&
-        g_fr_rx_socks[i].addr == addr)
+        (!addr || g_fr_rx_socks[i].addr == addr))
     {
-      //FREERTPS_INFO("  found port match in slot %d\n", i);
+      FREERTPS_INFO("  found port match (%d) in slot %d\n", (int)port, i);
       return FR_RC_OK; // it's already here
     }
   int s = fr_create_sock();
   if (s < 0)
     return FR_RC_NETWORK_ERROR;
+  // special-case loopback (for RTI compatibility)
+  if (addr == 0x0100007f)
+  {
+    printf("setting SO_REUSEPORT on loopback port %d...\n", (int)port);
+    if (!set_sock_reuse(s))
+      return FR_RC_NETWORK_ERROR;
+  }
+
+  const uint32_t autodetect_addr = addr ? addr : g_fr_tx_addr.sin_addr.s_addr;
+
   struct sockaddr_in rx_bind_addr;
   memset(&rx_bind_addr, 0, sizeof(rx_bind_addr));
   rx_bind_addr.sin_family = AF_INET;
-  rx_bind_addr.sin_addr.s_addr = addr ? addr : g_fr_tx_addr.sin_addr.s_addr;
+  rx_bind_addr.sin_addr.s_addr = autodetect_addr;
   rx_bind_addr.sin_port = htons(port);
+
+  printf("native_posix fr_add_ucast_rx(%d.%d.%d.%d:%d)\n",
+      (int)(autodetect_addr      ) & 0xff,
+      (int)(autodetect_addr >>  8) & 0xff,
+      (int)(autodetect_addr >> 16) & 0xff,
+      (int)(autodetect_addr >> 24) & 0xff,
+      (int)port);
+
   int result = bind(s, (struct sockaddr *)&rx_bind_addr, sizeof(rx_bind_addr));
   if (result < 0)
   {
@@ -200,16 +229,9 @@ fr_rc_t fr_add_ucast_rx
   fr_rx_sock_t *rxs = &g_fr_rx_socks[g_fr_rx_socks_used];
   rxs->sock = s;
   rxs->port = port;
-  rxs->addr = addr ? addr : rx_bind_addr.sin_addr.s_addr;
+  rxs->addr = autodetect_addr;
   //FREERTPS_INFO("  added in rx sock slot %d\n", g_fr_rx_socks_used);
   g_fr_rx_socks_used++;
-
-  printf("native_posix fr_add_ucast_rx(%d.%d.%d.%d:%d)\n",
-      (int)(rxs->addr      ) & 0xff,
-      (int)(rxs->addr >>  8) & 0xff,
-      (int)(rxs->addr >> 16) & 0xff,
-      (int)(rxs->addr >> 24) & 0xff,
-      (int)port);
 
   if (c)
     return fr_locator_container_append(g_fr_system_unicast_addr, port, c);
@@ -231,6 +253,7 @@ static bool set_sock_reuse(int s)
 {
   int one = 1;
 
+  // it looks like these branches are identical. why?
 #if defined(SO_REUSEPORT) && !defined(__linux__)
   if (setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one)) < 0)
   {
