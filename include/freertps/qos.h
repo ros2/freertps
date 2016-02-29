@@ -7,11 +7,11 @@
 #define FR_QOS_RELIABILITY_KIND_BEST_EFFORT 1
 #define FR_QOS_RELIABILITY_KIND_RELIABLE    2
 
-typedef struct
+struct fr_qos_reliability
 {
   uint32_t kind;
   struct fr_duration max_blocking_time;
-} __attribute__((packed)) fr_qos_reliability_t;
+} __attribute__((packed));
 
 ///////////////////////////////////////////////////////////////
 #define FR_QOS_HISTORY_KIND_KEEP_LAST 0

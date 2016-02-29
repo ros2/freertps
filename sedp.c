@@ -304,7 +304,7 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
     }
     else if (pid == FR_PID_RELIABILITY)
     {
-      fr_qos_reliability_t *qos = (fr_qos_reliability_t *)pval;
+      struct fr_qos_reliability *qos = (struct fr_qos_reliability *)pval;
       if (qos->kind == FR_QOS_RELIABILITY_KIND_BEST_EFFORT)
       {
 #ifdef SEDP_VERBOSE

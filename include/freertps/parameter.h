@@ -20,6 +20,8 @@ typedef struct fr_parameter_list
 void fr_parameter_list_init(struct fr_parameter_list *s);
 void fr_parameter_list_append(struct fr_parameter_list *s,
     fr_parameter_id_t pid, void *value, uint16_t len);
+void fr_parameter_list_append_string(struct fr_parameter_list *s,
+    fr_parameter_id_t pid, const char *str);
 
 #define FR_PID_PAD                           0x0000
 #define FR_PID_SENTINEL                      0x0001

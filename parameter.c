@@ -26,3 +26,16 @@ void fr_parameter_list_append(
   s->serialized_len += 4 + len;
 }
 
+void fr_parameter_list_append_string(
+    struct fr_parameter_list *s, fr_parameter_id_t pid, const char *str)
+{
+  struct fr_parameter_list_item *item =
+      (struct fr_parameter_list_item *)&s->serialization[s->serialized_len];
+  item->pid = pid;
+  uint32_t *param_len = (uint32_t *)item->value;
+  *param_len = strlen(str) + 1; // RTPS length includes the null char
+  memcpy(((uint8_t *)item->value)+4, str, *param_len); // copy null char too
+  item->len = (4 + *param_len + 3) & ~0x3; // round up to nearest 32-bit align
+  s->serialized_len += 4 + item->len;
+}
+

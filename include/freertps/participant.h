@@ -21,6 +21,7 @@ typedef struct fr_participant
   struct fr_container *matched_participants;
   struct fr_container *writers;
   struct fr_container *readers;
+  struct fr_writer *pub_pub, *sub_pub;
 } fr_participant_t;
 
 bool fr_participant_init();
