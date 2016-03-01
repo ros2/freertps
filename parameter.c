@@ -35,7 +35,12 @@ void fr_parameter_list_append_string(
   uint32_t *param_len = (uint32_t *)item->value;
   *param_len = strlen(str) + 1; // RTPS length includes the null char
   memcpy(((uint8_t *)item->value)+4, str, *param_len); // copy null char too
-  item->len = (4 + *param_len + 3) & ~0x3; // round up to nearest 32-bit align
-  s->serialized_len += 4 + item->len;
+  // zero-pad up to 32-bit alignment
+  uint32_t len_padded = (4 + *param_len + 3) & ~0x3; // round to 32-bit align
+  for (uint32_t zero_pad_align = 4+*param_len; zero_pad_align < len_padded;
+      zero_pad_align++)
+    item->value[zero_pad_align] = 0;
+  item->len = len_padded;
+  s->serialized_len += 4 + len_padded;
 }
 

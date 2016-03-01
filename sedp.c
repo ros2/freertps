@@ -45,22 +45,26 @@ void fr_sedp_init()
   struct fr_writer *pub_writer = fr_writer_create(
       NULL, NULL, FR_WRITER_TYPE_RELIABLE);
   pub_writer->endpoint.entity_id.u = FR_EID_WRITER_WRITER;
+  pub_writer->endpoint.with_key = true;
   fr_participant_add_writer(pub_writer);
 
   struct fr_writer *sub_writer = fr_writer_create(
       NULL, NULL, FR_WRITER_TYPE_RELIABLE);
   sub_writer->endpoint.entity_id.u = FR_EID_READER_WRITER;
+  sub_writer->endpoint.with_key = true;
   fr_participant_add_writer(sub_writer);
 
   struct fr_reader *pub_reader = fr_reader_create(
       NULL, NULL, FR_READER_TYPE_RELIABLE);
   pub_reader->endpoint.entity_id.u = FR_EID_WRITER_READER;
+  pub_reader->endpoint.with_key = true;
   pub_reader->data_rx_cb = fr_sedp_rx_pub_data;
   fr_participant_add_reader(pub_reader);
 
   struct fr_reader *sub_reader = fr_reader_create(
       NULL, NULL, FR_READER_TYPE_RELIABLE);
   sub_reader->endpoint.entity_id.u = FR_EID_READER_READER;
+  sub_reader->endpoint.with_key = true;
   sub_reader->data_rx_cb = fr_sedp_rx_sub_data;
   fr_participant_add_reader(sub_reader);
 }
@@ -315,15 +319,15 @@ static void fr_sedp_rx_pubsub_data(struct fr_receiver *rcvr,
       struct fr_qos_reliability *qos = (struct fr_qos_reliability *)pval;
       if (qos->kind == FR_QOS_RELIABILITY_KIND_BEST_EFFORT)
       {
-#ifdef SEDP_VERBOSE
+//#ifdef SEDP_VERBOSE
         printf("    reliability QoS: [best-effort]\r\n");
-#endif
+//#endif
       }
       else if (qos->kind == FR_QOS_RELIABILITY_KIND_RELIABLE)
       {
-#ifdef SEDP_VERBOSE
+//#ifdef SEDP_VERBOSE
         printf("    reliability QoS: [reliable]\r\n");
-#endif
+//#endif
       }
       else
         FREERTPS_ERROR("unhandled reliability kind: %d\r\n", (int)qos->kind);

@@ -37,7 +37,6 @@ struct fr_message *fr_message_init(struct fr_message *msg)
   memcpy(msg->header.guid_prefix.prefix,
          g_fr_participant.guid_prefix.prefix,
          FR_GUID_PREFIX_LEN);
-  //g_fr_udp_tx_buf_wpos = 0;
   return msg;
 }
 
@@ -126,7 +125,8 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
     struct fr_reader *reader = it.data;
     // previously, we also allowed hb->reader_id.u to be equal to zero.
     // is that correct?
-    if (reader->endpoint.entity_id.u != hb->reader_id.u)
+    if (hb->reader_id.u != 0 &&
+        reader->endpoint.entity_id.u != hb->reader_id.u)
       continue;
     for (struct fr_iterator mw_it = fr_iterator_begin(reader->matched_writers);
         !matched_writer_proxy && mw_it.data; fr_iterator_next(&mw_it))
@@ -142,7 +142,7 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
   if (!final && matched_writer_proxy && matched_reader->endpoint.reliable)
   {
     // we have to send an ACKNACK now
-    printf("acknack requested in heartbeat\n");
+    printf("             acknack requested in heartbeat\n");
     /*
     const fr_sequence_number_t hb_first_sn =
         (fr_sequence_number_t)hb->first_sn.low |
@@ -158,11 +158,11 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
     {
       // we're up to date
       printf("             up to date\n");
-      fr_sequence_number_t one_past_last = hb_last_sn + 1;
-      set.bitmap_base.low = one_past_last & 0xffffffff; //hb->first_sn.low + 1;
-      set.bitmap_base.high = (one_past_last >> 32) & 0xffffffff;
-      set.num_bits = 0;
-      set.bitmap = 0xffffffff;
+      fr_sequence_number_t last = hb_last_sn + 1;
+      set.bitmap_base.low = last & 0xffffffff; //hb->first_sn.low + 1;
+      set.bitmap_base.high = (last >> 32) & 0xffffffff;
+      set.num_bits = 1;
+      set.bitmap = 0;
     }
     else
     {
@@ -173,7 +173,7 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
           matched_writer_proxy->highest_sequence_number; // save typing
       set.bitmap_base.low = (rx_sn+1) & 0xffffffff;
       set.bitmap_base.high = ((rx_sn+1) >> 32) & 0xffffffff;
-      set.num_bits = hb_last_sn - rx_sn; // - 1;
+      set.num_bits = hb_last_sn - rx_sn - 1;
       set.bitmap = 0xffffffff;
     }
     fr_message_tx_acknack(&rcvr->src_guid_prefix,
@@ -359,6 +359,9 @@ static void fr_message_rx_data(RX_MSG_ARGS)
          (unsigned)freertps_htonl(data_submsg->reader_id.u),
          (int)data_submsg->writer_sn.low);
 #endif
+  fr_sequence_number_t msg_sn =
+      ((int64_t)data_submsg->writer_sn.high << 32) | data_submsg->writer_sn.low;
+
   // special-case SEDP, since some SEDP broadcasts (e.g., from opensplice
   // sometimes (?)) seem to come with reader_id set to 0
   //fr_entity_id_t reader_id = data_submsg->reader_id;
@@ -368,6 +371,7 @@ static void fr_message_rx_data(RX_MSG_ARGS)
   // todo: this has become an abomination crying out for refactoring
 
   int num_matches_found = 0;
+  bool duplicate = false;
   // spin through the readers to see if we care about this data message
   for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.readers);
        it.data; fr_iterator_next(&it))
@@ -394,12 +398,13 @@ static void fr_message_rx_data(RX_MSG_ARGS)
             matched_writer->remote_writer_guid.entity_id.u ==
             writer_guid.entity_id.u)
         {
-          match_found = true;
-          fr_sequence_number_t msg_sn =
-              ((int64_t)data_submsg->writer_sn.high << 32) |
-              data_submsg->writer_sn.low;
           if (msg_sn > matched_writer->highest_sequence_number)
+          {
             matched_writer->highest_sequence_number = msg_sn;
+            match_found = true;
+          }
+          else
+            duplicate = true;
         }
       }
     }
@@ -448,7 +453,15 @@ static void fr_message_rx_data(RX_MSG_ARGS)
               &matched_writer->remote_writer_guid.prefix) &&
               matched_writer->remote_writer_guid.entity_id.u ==
               writer_guid.entity_id.u)
-            src_match = true;
+          {
+            if (msg_sn > matched_writer->highest_sequence_number)
+            {
+              matched_writer->highest_sequence_number = msg_sn;
+              src_match = true;
+            }
+            else
+              duplicate = true;
+          }
         }
       }
 
@@ -485,7 +498,7 @@ static void fr_message_rx_data(RX_MSG_ARGS)
     }
   }
   
-  if (!num_matches_found)
+  if (!num_matches_found && !duplicate)
   {
     /*
     printf("  DATA ");
@@ -532,7 +545,6 @@ static void fr_message_rx_data_frag(RX_MSG_ARGS)
 }
 
 //#if CURRENTLY_UNUSED_BUT_WILL_NEED_FOR_RELIABLE_READERS_SOMEDAY
-static uint32_t g_fr_udp_tx_buf_wpos;
 static uint8_t g_fr_udp_tx_buf[1536]; //FR_DISCOVERY_TX_BUFLEN];
 
 #define VERBOSE_TX_ACKNACK

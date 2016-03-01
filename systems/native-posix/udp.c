@@ -121,7 +121,6 @@ bool fr_system_udp_init()
   uint32_t pid = freertps_htonl((uint32_t)getpid()); // on linux, this will be 4 bytes
   memcpy(&g_fr_participant.guid_prefix.prefix[8], &pid, 4);
 
-
   int id = 0;
   const int MAX_PID = 100; // todo: hard upper bound is bad
   for (; id < MAX_PID; id++) 

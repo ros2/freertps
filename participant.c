@@ -123,11 +123,11 @@ bool fr_participant_add_writer(struct fr_writer *writer)
   fr_parameter_list_append(sedp_data, FR_PID_PROTOCOL_VERSION, &pver, 4);
   uint32_t vid = FREERTPS_VENDOR_ID;
   fr_parameter_list_append(sedp_data, FR_PID_VENDOR_ID, &vid, 4);
-  struct fr_guid ep_guid;
-  memcpy(ep_guid.prefix.prefix, &g_fr_participant.guid_prefix.prefix,
+  struct fr_guid *ep_guid = fr_malloc(16);
+  memcpy(ep_guid->prefix.prefix, &g_fr_participant.guid_prefix.prefix,
       FR_GUID_PREFIX_LEN);
-  ep_guid.entity_id.u = writer->endpoint.entity_id.u;
-  fr_parameter_list_append(sedp_data, FR_PID_ENDPOINT_GUID, &ep_guid, 16);
+  ep_guid->entity_id.u = writer->endpoint.entity_id.u;
+  fr_parameter_list_append(sedp_data, FR_PID_ENDPOINT_GUID, ep_guid, 16);
   fr_parameter_list_append_string(sedp_data, FR_PID_TOPIC_NAME,
       writer->topic_name);
   fr_parameter_list_append_string(sedp_data, FR_PID_TYPE_NAME,
@@ -140,7 +140,7 @@ bool fr_participant_add_writer(struct fr_writer *writer)
   fr_parameter_list_append(sedp_data, FR_PID_RELIABILITY, &reliability, 12);
   fr_parameter_list_append(sedp_data, FR_PID_SENTINEL, NULL, 0);
   fr_writer_new_change(writer_writer,
-      sedp_data->serialization, sedp_data->serialized_len, NULL, 0);
+      sedp_data->serialization, sedp_data->serialized_len, ep_guid, 16);
 
   return true;
 }
@@ -172,11 +172,11 @@ bool fr_participant_add_reader(struct fr_reader *reader)
   fr_parameter_list_append(sedp_data, FR_PID_PROTOCOL_VERSION, &pver, 4);
   uint32_t vid = FREERTPS_VENDOR_ID;
   fr_parameter_list_append(sedp_data, FR_PID_VENDOR_ID, &vid, 4);
-  struct fr_guid ep_guid;
-  memcpy(ep_guid.prefix.prefix, &g_fr_participant.guid_prefix.prefix,
+  struct fr_guid *ep_guid = fr_malloc(16);
+  memcpy(ep_guid->prefix.prefix, &g_fr_participant.guid_prefix.prefix,
       FR_GUID_PREFIX_LEN);
-  ep_guid.entity_id.u = reader->endpoint.entity_id.u;
-  fr_parameter_list_append(sedp_data, FR_PID_ENDPOINT_GUID, &ep_guid, 16);
+  ep_guid->entity_id.u = reader->endpoint.entity_id.u;
+  fr_parameter_list_append(sedp_data, FR_PID_ENDPOINT_GUID, ep_guid, 16);
   fr_parameter_list_append_string(sedp_data, FR_PID_TOPIC_NAME,
       reader->topic_name);
   fr_parameter_list_append_string(sedp_data, FR_PID_TYPE_NAME,
@@ -189,7 +189,7 @@ bool fr_participant_add_reader(struct fr_reader *reader)
   fr_parameter_list_append(sedp_data, FR_PID_RELIABILITY, &reliability, 12);
   fr_parameter_list_append(sedp_data, FR_PID_SENTINEL, NULL, 0);
   fr_writer_new_change(reader_writer,
-      sedp_data->serialization, sedp_data->serialized_len, NULL, 0);
+      sedp_data->serialization, sedp_data->serialized_len, ep_guid, 16);
   return true;
 }
 

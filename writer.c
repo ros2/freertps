@@ -201,7 +201,7 @@ void fr_writer_send_changes(struct fr_writer *w)
 // stream into this buffer. In the future, as we deal with large messages
 // again, we'll have a way to spill over into a 64K buffer (max udp packet)
 #define FR_SMALL_MSG_BUF_LEN 1024
-static uint8_t fr_writer_small_msg_buf[FR_SMALL_MSG_BUF_LEN];
+static uint8_t fr_writer_small_msg_buf[FR_SMALL_MSG_BUF_LEN] = {0};
 
 static void fr_writer_send(struct fr_writer *writer,
     fr_sequence_number_t seq_num, struct fr_locator *loc,
@@ -291,7 +291,7 @@ void fr_writer_send_change(struct fr_writer *writer,
     hb_submsg->last_sn = data_submsg->writer_sn;
     static int hb_count = 0; // TODO: not this
     hb_submsg->count = hb_count++;
-    wpos += 4 + hb_submsg->header.len; // why the extra 4
+    wpos += 4 + hb_submsg->header.len;
   }
 
   uint32_t payload_len = (uint32_t)(wpos - (uint8_t *)msg);
