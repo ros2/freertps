@@ -4,10 +4,10 @@
 #include "freertps/freertps.h"
 #include "freertps/iterator.h"
 #include "freertps/mem.h"
+#include "freertps/participant.h"
 #include "freertps/udp.h"
 #include "freertps/timer.h"
 #include "freertps/system.h"
-//#include "freertps/sub.h"
 
 struct fr_timer
 {
@@ -77,7 +77,7 @@ void freertps_init()
   fr_guid_print_prefix(&g_fr_participant.guid_prefix);
   printf("\n");
   fr_participant_print_locators();
-  fr_discovery_init();
+  fr_participant_discovery_init();
 }
 
 bool freertps_ok()

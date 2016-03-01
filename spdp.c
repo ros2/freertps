@@ -13,6 +13,22 @@
 #include "freertps/sedp.h"
 #include "freertps/udp.h"
 
+#define FR_BUILTIN_EP_PARTICIPANT_ANNOUNCER           0x00000001
+#define FR_BUILTIN_EP_PARTICIPANT_DETECTOR            0x00000002
+#define FR_BUILTIN_EP_PUBLICATION_ANNOUNCER           0x00000004
+#define FR_BUILTIN_EP_PUBLICATION_DETECTOR            0x00000008
+#define FR_BUILTIN_EP_SUBSCRIPTION_ANNOUNCER          0x00000010
+#define FR_BUILTIN_EP_SUBSCRIPTION_DETECTOR           0x00000020
+#define FR_BUILTIN_EP_PARTICIPANT_PROXY_ANNOUNCER     0x00000040
+#define FR_BUILTIN_EP_PARTICIPANT_PROXY_DETECTOR      0x00000080
+#define FR_BUILTIN_EP_PARTICIPANT_STATE_ANNOUNCER     0x00000100
+#define FR_BUILTIN_EP_PARTICIPANT_STATE_DETECTOR      0x00000200
+#define FR_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_WRITER 0x00000400
+#define FR_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_READER 0x00000800
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////
 // local constants
 //static fr_participant_t g_fr_spdp_rx_part; // just for rx buffer
@@ -217,6 +233,11 @@ static void fr_spdp_rx_data(struct fr_receiver *rcvr,
     fr_container_append(g_fr_participant.matched_participants,
         part, sizeof(struct fr_participant_proxy), FR_CFLAGS_NONE);
     fr_sedp_add_builtin_endpoints(&part->guid_prefix);
+    // blast an SPDP announcement back
+    //const union fr_entity_id spdp_eid = { .u = FR_EID_PARTICIPANT_WRITER };
+    struct fr_writer *spdp_writer = fr_participant_get_writer(g_spdp_writer_id); //spdp_eid);
+    fr_writer_unsent_changes_reset(spdp_writer);
+    fr_writer_send_changes(spdp_writer);
   }
 }
 
@@ -235,9 +256,8 @@ void fr_spdp_init()
 
   // craft the outbound SPDP message
   struct fr_guid *guid = fr_malloc(sizeof(struct fr_guid));
-  memcpy(guid->prefix.prefix, g_fr_participant.guid_prefix.prefix,
-      FR_GUID_PREFIX_LEN);
-  guid->entity_id.u = FR_ENTITY_ID_PARTICIPANT;
+  fr_guid_stuff(guid,
+      &g_fr_participant.guid_prefix, FR_EID_PARTICIPANT);
 
   struct fr_parameter_list *spdp_data = fr_malloc(350); // some will leak...
   fr_parameter_list_init(spdp_data);

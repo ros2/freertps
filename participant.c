@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "freertps/config.h"
-#include "freertps/discovery.h"
 #include "freertps/freertps.h"
 #include "freertps/iterator.h"
 #include "freertps/locator.h"
@@ -10,6 +9,8 @@
 #include "freertps/participant.h"
 #include "freertps/participant_proxy.h"
 #include "freertps/qos.h"
+#include "freertps/sedp.h"
+#include "freertps/spdp.h"
 #include "freertps/udp.h"
 
 struct fr_participant g_fr_participant;
@@ -73,7 +74,6 @@ bool fr_participant_init()
   g_fr_participant.user_multicast_locators =
       fr_container_create(sizeof(struct fr_locator), 2);
   g_fr_participant_init_complete = true;
-  g_fr_participant.pub_pub = g_fr_participant.sub_pub = NULL;
   return true;
 }
 
@@ -107,14 +107,15 @@ bool fr_participant_add_writer(struct fr_writer *writer)
         freertps_htonl(writer->endpoint.entity_id.u));
     return true; // no need
   }
-  if (!g_fr_participant.pub_pub)
+  union fr_entity_id ww_eid = { .u = FR_EID_WRITER_WRITER };
+  struct fr_writer *writer_writer = fr_participant_get_writer(ww_eid);
+  if (!writer_writer)
   {
-    printf("woah. probably participant is not correctly initialized!\n");
+    printf("BOGUS! probably participant is not correctly initialized!\n");
     return false;
   }
-  // TODO: craft SEDP message and add it to the SEDP publication writer
-  const int topic_len = writer->topic_name ? strlen(writer->topic_name) : 0;
-  const int type_len = writer->type_name ? strlen(writer->type_name) : 0;
+  const int topic_len = strlen(writer->topic_name);
+  const int type_len = strlen(writer->type_name);
   // todo: figure out how long this allocation should be
   struct fr_parameter_list *sedp_data = fr_malloc(topic_len + type_len + 300);
   fr_parameter_list_init(sedp_data);
@@ -138,10 +139,10 @@ bool fr_participant_add_writer(struct fr_writer *writer)
   reliability.max_blocking_time.fraction = 0x19999999;
   fr_parameter_list_append(sedp_data, FR_PID_RELIABILITY, &reliability, 12);
   fr_parameter_list_append(sedp_data, FR_PID_SENTINEL, NULL, 0);
-  //fr_writer_new_change(g_participant.pub_pub
+  fr_writer_new_change(writer_writer,
+      sedp_data->serialization, sedp_data->serialized_len, NULL, 0);
 
-
-  return false;
+  return true;
 }
 
 bool fr_participant_add_reader(struct fr_reader *reader)
@@ -149,8 +150,47 @@ bool fr_participant_add_reader(struct fr_reader *reader)
   printf("fr_participant_add_reader()\r\n");
   fr_container_append(g_fr_participant.readers, reader, sizeof(reader),
       FR_CFLAGS_TAKE_OWNERSHIP);
-  // TODO: craft SEDP message and add it to the SEDP subscription writer
-  return false;
+  if (!reader->topic_name || !reader->type_name)
+  {
+    printf("  not sending SEDP message for entity ID 0x%08x\n",
+        freertps_htonl(reader->endpoint.entity_id.u));
+    return true; // no need
+  }
+  union fr_entity_id rw_eid = { .u = FR_EID_READER_WRITER };
+  struct fr_writer *reader_writer = fr_participant_get_writer(rw_eid);
+  if (!reader_writer)
+  {
+    printf("BOGUS! probably participant is not correctly initialized!\n");
+    return false;
+  }
+  const int topic_len = strlen(reader->topic_name);
+  const int type_len = strlen(reader->type_name);
+  // todo: figure out how long this allocation should be
+  struct fr_parameter_list *sedp_data = fr_malloc(topic_len + type_len + 300);
+  fr_parameter_list_init(sedp_data);
+  uint32_t pver = FR_PROTOCOL_VERSION_MAJOR | (FR_PROTOCOL_VERSION_MINOR << 8);
+  fr_parameter_list_append(sedp_data, FR_PID_PROTOCOL_VERSION, &pver, 4);
+  uint32_t vid = FREERTPS_VENDOR_ID;
+  fr_parameter_list_append(sedp_data, FR_PID_VENDOR_ID, &vid, 4);
+  struct fr_guid ep_guid;
+  memcpy(ep_guid.prefix.prefix, &g_fr_participant.guid_prefix.prefix,
+      FR_GUID_PREFIX_LEN);
+  ep_guid.entity_id.u = reader->endpoint.entity_id.u;
+  fr_parameter_list_append(sedp_data, FR_PID_ENDPOINT_GUID, &ep_guid, 16);
+  fr_parameter_list_append_string(sedp_data, FR_PID_TOPIC_NAME,
+      reader->topic_name);
+  fr_parameter_list_append_string(sedp_data, FR_PID_TYPE_NAME,
+      reader->type_name);
+  // TODO: branch based on reliability type
+  struct fr_qos_reliability reliability;
+  reliability.kind = FR_QOS_RELIABILITY_KIND_BEST_EFFORT;
+  reliability.max_blocking_time.seconds = 0;
+  reliability.max_blocking_time.fraction = 0x19999999;
+  fr_parameter_list_append(sedp_data, FR_PID_RELIABILITY, &reliability, 12);
+  fr_parameter_list_append(sedp_data, FR_PID_SENTINEL, NULL, 0);
+  fr_writer_new_change(reader_writer,
+      sedp_data->serialization, sedp_data->serialized_len, NULL, 0);
+  return true;
 }
 
 bool fr_participant_add_default_locators()
@@ -228,5 +268,17 @@ struct fr_reader *fr_participant_get_reader(const union fr_entity_id entity_id)
       return r;
   }
   return NULL;
+}
+
+void fr_participant_discovery_init()
+{
+  fr_spdp_init();
+  fr_sedp_init();
+}
+
+void fr_participant_discovery_fini()
+{
+  fr_spdp_fini();
+  fr_sedp_fini();
 }
 

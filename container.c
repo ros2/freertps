@@ -58,6 +58,8 @@ static fr_rc_t fr_container_append_array_block(
     struct fr_container_array_node *parent,
     uint32_t block_len)
 {
+  printf("************** fr_container_append_array_block(%d)\n",
+      (int)block_len);
   // add an extra byte to each element so we can have a state field for
   // each element (in a separate array, at the end of the block)
   struct fr_container_array_node *a = 
@@ -121,8 +123,6 @@ fr_rc_t fr_container_append(struct fr_container *c, void *data, size_t len,
         //n->data = fr_malloc(n->length * c->element_size);
         memcpy(n->data, data, ca->element_size); // stuff first element
         n->state[0] = FR_CANS_VALID;
-        n->next = NULL;
-        a->next = n;
         return FR_RC_OK;
       }
     }

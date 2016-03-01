@@ -45,9 +45,15 @@ bool fr_iterator_next(struct fr_iterator *it)
       }
       // if we get here, we made it to the end of the current array
       // without finding the next valid element. Try to chain to the
-      // next array block...
+      // next array block and look there...
       it->array_idx = 0;
       it->u.a = it->u.a->next;
+      if (it->u.a && it->u.a->state[0] == FR_CANS_VALID)
+      {
+        it->data = (void *)(((uint8_t *)it->u.a->data));
+        it->data_len = ca->element_size;
+        return true;
+      }
     } while (it->u.a);
     it->data = NULL;
     it->data_len = 0;

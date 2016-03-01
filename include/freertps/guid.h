@@ -14,11 +14,16 @@ typedef union fr_entity_id
   uint32_t u;
 } __attribute__((packed)) fr_entity_id_t;
 
-#define FR_ENTITY_ID_PARTICIPANT 0xc1010000
 #define FR_ENTITY_KIND_USER_WRITER_WITH_KEY 0x02
 #define FR_ENTITY_KIND_USER_WRITER_NO_KEY   0x03
 #define FR_ENTITY_KIND_USER_READER_NO_KEY   0x04
 #define FR_ENTITY_KIND_USER_READER_WITH_KEY 0x07
+
+#define FR_EID_PARTICIPANT          0xc1010000
+#define FR_EID_WRITER_WRITER        0xc2030000
+#define FR_EID_WRITER_READER        0xc7030000
+#define FR_EID_READER_WRITER        0xc2040000
+#define FR_EID_READER_READER        0xc7040000
 
 extern const fr_entity_id_t g_fr_entity_id_unknown;
 
@@ -43,7 +48,7 @@ bool fr_guid_identical(const fr_guid_t * const a,
 
 void fr_guid_stuff(struct fr_guid *guid,
                    const struct fr_guid_prefix *prefix,
-                   const fr_entity_id_t *id);
+                   const uint32_t entity_id);
 
 void fr_guid_print_prefix(const fr_guid_prefix_t *guid_prefix);
 void fr_guid_print(const fr_guid_t *guid);

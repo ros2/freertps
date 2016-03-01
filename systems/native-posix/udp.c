@@ -10,7 +10,6 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <math.h>
-#include "freertps/discovery.h"
 #include "freertps/freertps.h"
 #include "freertps/participant.h"
 #include "freertps/rc.h"
@@ -158,7 +157,7 @@ bool fr_system_udp_init()
 
 void fr_system_udp_fini()
 {
-  fr_discovery_fini();
+  fr_participant_discovery_fini();
   FREERTPS_INFO("fr_system_udp_fini\n");
   for (int i = 0; i < g_fr_rx_socks_used; i++)
   {

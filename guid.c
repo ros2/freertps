@@ -51,10 +51,10 @@ void fr_guid_print_prefix(const fr_guid_prefix_t *p)
 
 void fr_guid_stuff(struct fr_guid *guid,
                    const struct fr_guid_prefix *prefix,
-                   const fr_entity_id_t *id)
+                   const uint32_t entity_id)
 {
   memcpy(&guid->prefix, prefix, sizeof(fr_guid_prefix_t));
-  guid->entity_id = *id;
+  guid->entity_id.u = entity_id;
 }
 
 void fr_guid_print(const fr_guid_t *guid)

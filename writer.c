@@ -10,9 +10,11 @@
 #include "freertps/writer.h"
 
 static void fr_writer_send(struct fr_writer *writer,
-    fr_sequence_number_t seq_num, struct fr_locator *loc);
+    fr_sequence_number_t seq_num, struct fr_locator *loc,
+    const union fr_entity_id eid);
 static void fr_writer_send_change(struct fr_writer *writer,
-    struct fr_cache_change *cc, struct fr_locator *loc);
+    struct fr_cache_change *cc, struct fr_locator *loc,
+    const union fr_entity_id eid);
 
 struct fr_writer *fr_writer_create(
     const char *topic_name,
@@ -21,7 +23,6 @@ struct fr_writer *fr_writer_create(
 {
   struct fr_writer *w = fr_malloc(sizeof(struct fr_writer));
   fr_endpoint_init(&w->endpoint);
-  w->endpoint.reliable = (type == FR_WRITER_TYPE_RELIABLE);
   w->push_mode = false;
   w->heartbeat_period = g_fr_duration_zero;
   w->nack_response_delay = g_fr_duration_zero;
@@ -34,6 +35,7 @@ struct fr_writer *fr_writer_create(
     printf("fr_writer_create(best-effort, topic=%s, type=%s)\n",
         topic_name ? topic_name : "(null)",
         type_name ? type_name : "(null)");
+    w->endpoint.reliable = false;
     w->reader_locators = 
         fr_container_create(sizeof(struct fr_reader_locator), 5);
     w->matched_readers = NULL;
@@ -43,6 +45,7 @@ struct fr_writer *fr_writer_create(
     printf("fr_writer_create(reliable, topic=%s, type=%s)\n",
         topic_name ? topic_name : "(null)",
         type_name ? type_name : "(null)");
+    w->endpoint.reliable = true;
     w->reader_locators = NULL;
     w->matched_readers =
         fr_container_create(sizeof(struct fr_reader_proxy), 5);
@@ -108,7 +111,7 @@ void fr_writer_blocking_write(struct fr_writer *w, void *data, size_t data_len,
   {
     struct fr_reader_locator *rl = it.data;
     rl->highest_seq_num_sent = cc.sequence_number;
-    fr_writer_send_change(w, &cc, &rl->locator);
+    fr_writer_send_change(w, &cc, &rl->locator, g_fr_entity_id_unknown);
   }
 }
 
@@ -141,8 +144,6 @@ void fr_writer_unsent_changes_reset(struct fr_writer *w)
 void fr_writer_send_changes(struct fr_writer *w)
 {
   fr_sequence_number_t max_sn = fr_history_cache_max(&w->writer_cache);
-  printf("fr_writer_send_changes(eid=0x%08x) where max_sn = %d\n",
-      (unsigned)freertps_htonl(w->endpoint.entity_id.u), (int)max_sn);
   if (!w->endpoint.reliable)
   {
     for (struct fr_iterator it = fr_iterator_begin(w->reader_locators);
@@ -152,7 +153,8 @@ void fr_writer_send_changes(struct fr_writer *w)
       while (rl->highest_seq_num_sent < max_sn)
       {
         rl->highest_seq_num_sent++;
-        fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator);
+        fr_writer_send(w, rl->highest_seq_num_sent, &rl->locator,
+            g_fr_entity_id_unknown);
         //printf("sending change %d...\n", (int)rl->highest_seq_num_sent);
       }
     }
@@ -160,6 +162,8 @@ void fr_writer_send_changes(struct fr_writer *w)
   else
   {
     //printf("sending changes to a reliable reader!\n");
+    //printf("fr_writer_send_changes(eid=0x%08x) where HC max_sn = %d\n",
+    //    (unsigned)freertps_htonl(w->endpoint.entity_id.u), (int)max_sn);
     for (struct fr_iterator it = fr_iterator_begin(w->matched_readers);
          it.data; fr_iterator_next(&it))
     {
@@ -183,8 +187,11 @@ void fr_writer_send_changes(struct fr_writer *w)
       {
         rp->highest_seq_num_sent++;
         // look up the locator for this remote reader
-        fr_writer_send(w, rp->highest_seq_num_sent, loc);
-        printf("sending change %d...\n", (int)rp->highest_seq_num_sent);
+        fr_writer_send(w, rp->highest_seq_num_sent, loc,
+            rp->remote_reader_guid.entity_id);
+        printf("sending change #%d to ", (int)rp->highest_seq_num_sent);
+        fr_guid_print(&rp->remote_reader_guid);
+        printf("\n");
       }
     }
   }
@@ -197,7 +204,8 @@ void fr_writer_send_changes(struct fr_writer *w)
 static uint8_t fr_writer_small_msg_buf[FR_SMALL_MSG_BUF_LEN];
 
 static void fr_writer_send(struct fr_writer *writer,
-    fr_sequence_number_t seq_num, struct fr_locator *loc)
+    fr_sequence_number_t seq_num, struct fr_locator *loc,
+    const union fr_entity_id eid)
 {
   struct fr_cache_change *cc = fr_history_cache_get_change(
       &writer->writer_cache, seq_num);
@@ -206,11 +214,12 @@ static void fr_writer_send(struct fr_writer *writer,
     printf("woah! couldn't find cache change SN #%d\n", (int)seq_num);
     return;
   }
-  fr_writer_send_change(writer, cc, loc);
+  fr_writer_send_change(writer, cc, loc, eid);
 }
 
 void fr_writer_send_change(struct fr_writer *writer,
-    struct fr_cache_change *cc, struct fr_locator *loc)
+    struct fr_cache_change *cc, struct fr_locator *loc,
+    const union fr_entity_id eid)
 {
   if (!cc)
     return;
@@ -235,7 +244,7 @@ void fr_writer_send_change(struct fr_writer *writer,
   //data_submsg->header.len = 16 + cc->data_len; // 336;
   data_submsg->extraflags = 0;
   data_submsg->octets_to_inline_qos = 16; // ?
-  data_submsg->reader_id = g_fr_entity_id_unknown;
+  data_submsg->reader_id = eid; //g_fr_entity_id_unknown;
   data_submsg->writer_id = writer->endpoint.entity_id;
   data_submsg->writer_sn.high = (int32_t)(cc->sequence_number >> 32);
   data_submsg->writer_sn.low = (uint32_t)(cc->sequence_number & 0xffffffff);
@@ -266,13 +275,28 @@ void fr_writer_send_change(struct fr_writer *writer,
   wpos += cc->data_len;
   data_submsg->header.len =
       (uint16_t)(wpos - (uint8_t *)&data_submsg->extraflags);
+  // TODO: round up to nearest 32-bit alignment
+  if (writer->endpoint.reliable)
+  {
+    // send heartbeats
+    struct fr_submessage_heartbeat *hb_submsg =
+        (struct fr_submessage_heartbeat *)wpos;
+    hb_submsg->header.id = FR_SUBMSG_ID_HEARTBEAT;
+    hb_submsg->header.flags = 0x3; // wtf
+    hb_submsg->header.len = 28; // wut
+    hb_submsg->reader_id = data_submsg->reader_id;
+    hb_submsg->writer_id = data_submsg->writer_id;
+    hb_submsg->first_sn.low = 1; // todo: not necessarily true...
+    hb_submsg->first_sn.high = 0; // ditto
+    hb_submsg->last_sn = data_submsg->writer_sn;
+    static int hb_count = 0; // TODO: not this
+    hb_submsg->count = hb_count++;
+    wpos += 4 + hb_submsg->header.len; // why the extra 4
+  }
+
   uint32_t payload_len = (uint32_t)(wpos - (uint8_t *)msg);
   //printf("udp payload: %d bytes\n", (int)payload_len);
   fr_udp_tx(loc->addr.udp4.addr, loc->port,
       (const uint8_t *)msg, payload_len);
-  if (writer->endpoint.reliable)
-  {
-    // send heartbeats
-  }
 }
 

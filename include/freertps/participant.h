@@ -21,7 +21,6 @@ typedef struct fr_participant
   struct fr_container *matched_participants;
   struct fr_container *writers;
   struct fr_container *readers;
-  struct fr_writer *pub_pub, *sub_pub;
 } fr_participant_t;
 
 bool fr_participant_init();
@@ -43,5 +42,8 @@ bool fr_participant_add_default_locators();
 
 void fr_participant_print_locators();
 void fr_participant_send_changes();
+
+void fr_participant_discovery_init();
+void fr_participant_discovery_fini();
 
 #endif

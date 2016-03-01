@@ -2,16 +2,12 @@
 #include <string.h>
 #include <stdio.h>
 #include "freertps/bswap.h"
-#include "freertps/discovery.h"
 #include "freertps/freertps.h"
 #include "freertps/receiver.h"
 #include "freertps/udp.h"
 #include "freertps/spdp.h"
 #include "freertps/participant.h"
 
-////////////////////////////////////////////////////////////////////////////
-// global constants
-fr_config_t g_fr_config;
 ////////////////////////////////////////////////////////////////////////////
 // local functions
 //////////////////////////////////////////////////////////////////////////

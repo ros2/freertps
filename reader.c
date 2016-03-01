@@ -15,7 +15,7 @@ struct fr_reader *fr_reader_create(
   r->heartbeat_response_delay = g_fr_duration_zero;
   r->heartbeat_suppression_duration = g_fr_duration_zero;
   fr_history_cache_init(&r->reader_cache);
-  r->matched_writers = fr_container_create(sizeof(struct fr_writer_proxy), 1);
+  r->matched_writers = fr_container_create(sizeof(struct fr_writer_proxy), 5);
   r->data_rx_cb = NULL;
   r->msg_rx_cb = NULL;
   if (topic_name)

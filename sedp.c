@@ -12,10 +12,14 @@
 
 ////////////////////////////////////////////////////////////////////////////
 // local constants
+/*
 static const fr_entity_id_t g_fr_sedp_pub_writer_id = { .u = 0xc2030000 };
 static const fr_entity_id_t g_fr_sedp_pub_reader_id = { .u = 0xc7030000 };
 static const fr_entity_id_t g_fr_sedp_sub_writer_id = { .u = 0xc2040000 };
 static const fr_entity_id_t g_fr_sedp_sub_reader_id = { .u = 0xc7040000 };
+*/
+#define FR_MAX_TOPIC_NAME_LEN 128
+#define FR_MAX_TYPE_NAME_LEN  128
 
 ////////////////////////////////////////////////////////////////////////////
 // local functions
@@ -40,23 +44,23 @@ void fr_sedp_init()
 
   struct fr_writer *pub_writer = fr_writer_create(
       NULL, NULL, FR_WRITER_TYPE_RELIABLE);
-  pub_writer->endpoint.entity_id = g_fr_sedp_pub_writer_id;
+  pub_writer->endpoint.entity_id.u = FR_EID_WRITER_WRITER;
   fr_participant_add_writer(pub_writer);
 
   struct fr_writer *sub_writer = fr_writer_create(
       NULL, NULL, FR_WRITER_TYPE_RELIABLE);
-  sub_writer->endpoint.entity_id = g_fr_sedp_sub_writer_id;
+  sub_writer->endpoint.entity_id.u = FR_EID_READER_WRITER;
   fr_participant_add_writer(sub_writer);
 
   struct fr_reader *pub_reader = fr_reader_create(
       NULL, NULL, FR_READER_TYPE_RELIABLE);
-  pub_reader->endpoint.entity_id = g_fr_sedp_pub_reader_id;
+  pub_reader->endpoint.entity_id.u = FR_EID_WRITER_READER;
   pub_reader->data_rx_cb = fr_sedp_rx_pub_data;
   fr_participant_add_reader(pub_reader);
 
   struct fr_reader *sub_reader = fr_reader_create(
       NULL, NULL, FR_READER_TYPE_RELIABLE);
-  sub_reader->endpoint.entity_id = g_fr_sedp_sub_reader_id;
+  sub_reader->endpoint.entity_id.u = FR_EID_READER_READER;
   sub_reader->data_rx_cb = fr_sedp_rx_sub_data;
   fr_participant_add_reader(sub_reader);
 }
@@ -100,9 +104,11 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
        it.data; fr_iterator_next(&it))
   {
     struct fr_reader *reader = it.data;
+    /*
     printf("comparing incoming SEDP pub to our subscriber %s of type %s\r\n",
            (reader->topic_name ? reader->topic_name : "(no name)"),
            (reader->type_name  ? reader->type_name  : "(no type)"));
+    */
     if (!reader->topic_name || !reader->type_name)
       continue; // sanity check. some built-ins don't have names.
 
@@ -128,7 +134,9 @@ static void fr_sedp_rx_pub_info(const sedp_topic_info_t *info)
     }
     if (found)
       continue;
-    printf("adding this remote writer to our list...\n");
+    printf("adding this remote writer ");
+    fr_guid_print(&info->guid);
+    printf(" to our reader\n");
     struct fr_writer_proxy wp;
     fr_guid_copy(&info->guid, &wp.remote_writer_guid);
     wp.highest_sequence_number = 0;
@@ -167,11 +175,11 @@ static void fr_sedp_rx_sub_info(const sedp_topic_info_t *info)
        it.data; fr_iterator_next(&it))
   {
     struct fr_writer *writer = it.data;
-//#ifdef SEDP_VERBOSE
+#ifdef SEDP_VERBOSE
     printf("comparing incoming SEDP sub to our publisher %s of type %s\r\n",
            (writer->topic_name ? writer->topic_name : "(no name)"),
            (writer->type_name  ? writer->type_name  : "(no type)"));
-//#endif
+#endif
     if (!writer->topic_name || !writer->type_name)
       continue; // sanity check. some built-ins don't have names.
     if (strcmp(writer->topic_name, info->topic_name))
@@ -522,18 +530,20 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   // stuff matched_writer object now since we know prefix, etc.
 */
   struct fr_writer_proxy pub_writer_proxy;
-  fr_guid_stuff(&pub_writer_proxy.remote_writer_guid, prefix, 
-      &g_fr_sedp_pub_writer_id);
+  fr_guid_stuff(&pub_writer_proxy.remote_writer_guid, prefix,
+      FR_EID_WRITER_WRITER);
   pub_writer_proxy.highest_sequence_number = 0;
-  struct fr_reader *pub_r = fr_participant_get_reader(g_fr_sedp_pub_reader_id);
+  const union fr_entity_id wr_eid = { .u = FR_EID_WRITER_READER };
+  struct fr_reader *pub_r = fr_participant_get_reader(wr_eid);
   fr_container_append(pub_r->matched_writers,
       &pub_writer_proxy, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);
 
   struct fr_writer_proxy sub_writer_proxy;
   fr_guid_stuff(&sub_writer_proxy.remote_writer_guid, prefix, 
-      &g_fr_sedp_sub_writer_id);
+      FR_EID_READER_WRITER);
   sub_writer_proxy.highest_sequence_number = 0;
-  struct fr_reader *sub_r = fr_participant_get_reader(g_fr_sedp_sub_reader_id);
+  const union fr_entity_id rr_eid = { .u = FR_EID_READER_READER };
+  struct fr_reader *sub_r = fr_participant_get_reader(rr_eid);
   fr_container_append(sub_r->matched_writers,
       &sub_writer_proxy, sizeof(struct fr_writer_proxy), FR_CFLAGS_NONE);
 
@@ -542,8 +552,9 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   sub_reader_proxy.highest_seq_num_sent = 0;
   sub_reader_proxy.lowest_requested_change = 0;
   fr_guid_stuff(&sub_reader_proxy.remote_reader_guid, prefix, 
-      &g_fr_sedp_sub_reader_id);
-  struct fr_writer *sub_w = fr_participant_get_writer(g_fr_sedp_sub_writer_id);
+      FR_EID_READER_READER);
+  const union fr_entity_id rw_eid = { .u = FR_EID_READER_WRITER };
+  struct fr_writer *sub_w = fr_participant_get_writer(rw_eid);
   fr_container_append(sub_w->matched_readers,
       &sub_reader_proxy, sizeof(struct fr_reader_proxy), FR_CFLAGS_NONE);
 
@@ -552,8 +563,9 @@ void fr_sedp_add_builtin_endpoints(struct fr_guid_prefix *prefix)
   pub_reader_proxy.highest_seq_num_sent = 0;
   pub_reader_proxy.lowest_requested_change = 0;
   fr_guid_stuff(&pub_reader_proxy.remote_reader_guid, prefix, 
-      &g_fr_sedp_pub_reader_id);
-  struct fr_writer *pub_w = fr_participant_get_writer(g_fr_sedp_pub_writer_id);
+      FR_EID_WRITER_READER);
+  const union fr_entity_id ww_eid = { .u = FR_EID_WRITER_WRITER };
+  struct fr_writer *pub_w = fr_participant_get_writer(ww_eid);
   fr_container_append(pub_w->matched_readers,
       &pub_reader_proxy, sizeof(struct fr_reader_proxy), FR_CFLAGS_NONE);
 

@@ -79,13 +79,15 @@ static void fr_message_rx_acknack(RX_MSG_ARGS)
       (struct fr_submessage_acknack *)submsg->contents;
   printf("  ACKNACK   0x%08x => ", (unsigned)freertps_htonl(m->writer_id.u));
   struct fr_guid reader_guid;
-  fr_guid_stuff(&reader_guid, &rcvr->src_guid_prefix, &m->reader_id);
+  fr_guid_stuff(&reader_guid, &rcvr->src_guid_prefix, m->reader_id.u);
   fr_guid_print(&reader_guid);
   printf("   %d -> %d\n",
          (int)m->reader_sn_state.bitmap_base.low,
          (int)(m->reader_sn_state.bitmap_base.low +
                m->reader_sn_state.num_bits));
 #endif
+  // TODO: implement here!
+  //fr_writer_t *writer = fr_participant_get_writer(m->
 #if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
   fr_pub_t *pub = fr_pub_from_writer_id(m->writer_id);
   if (!pub)
@@ -108,7 +110,7 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
   struct fr_submessage_heartbeat *hb = 
       (struct fr_submessage_heartbeat *)submsg;
   struct fr_guid writer_guid;
-  fr_guid_stuff(&writer_guid, &rcvr->src_guid_prefix, &hb->writer_id);
+  fr_guid_stuff(&writer_guid, &rcvr->src_guid_prefix, hb->writer_id.u);
   printf("  HEARTBEAT   ");
   fr_guid_print(&writer_guid);
   printf(" => 0x%08x  %d -> %d\n",
@@ -345,7 +347,7 @@ static void fr_message_rx_data(RX_MSG_ARGS)
   //printf("rx scheme = 0x%04x\n", scheme);
   uint8_t *data = data_start + 4;
   fr_guid_t writer_guid;
-  fr_guid_stuff(&writer_guid, &rcvr->src_guid_prefix, &data_submsg->writer_id);
+  fr_guid_stuff(&writer_guid, &rcvr->src_guid_prefix, data_submsg->writer_id.u);
 #ifdef VERBOSE_DATA
   printf("  DATA ");
   fr_guid_print(&writer_guid);
@@ -363,6 +365,8 @@ static void fr_message_rx_data(RX_MSG_ARGS)
   //if (data_submsg->writer_id.u == 0xc2030000)
   //  reader_id.u = 0xc7030000;
 
+  // todo: this has become an abomination crying out for refactoring
+
   int num_matches_found = 0;
   // spin through the readers to see if we care about this data message
   for (struct fr_iterator it = fr_iterator_begin(g_fr_participant.readers);
@@ -375,16 +379,20 @@ static void fr_message_rx_data(RX_MSG_ARGS)
     if (reader->endpoint.reliable)
     {
       for (struct fr_iterator matched_writer_it =
-               fr_iterator_begin(reader->matched_writers);
-           matched_writer_it.data; fr_iterator_next(&matched_writer_it))
+          fr_iterator_begin(reader->matched_writers);
+          matched_writer_it.data; fr_iterator_next(&matched_writer_it))
       {
         struct fr_writer_proxy *matched_writer = matched_writer_it.data;
-        // todo: something smart
+        /*
+        printf("    testing against reader for ");
+        fr_guid_print(&matched_writer->remote_writer_guid);
+        printf("\n");
+        */
         // check if the writer GUID is equal to the matched-writer GUID
-        if (fr_guid_prefix_identical(&rcvr->src_guid_prefix, 
+        if (fr_guid_prefix_identical(&writer_guid.prefix,
             &matched_writer->remote_writer_guid.prefix) &&
             matched_writer->remote_writer_guid.entity_id.u ==
-            data_submsg->writer_id.u)
+            writer_guid.entity_id.u)
         {
           match_found = true;
           fr_sequence_number_t msg_sn =
@@ -400,11 +408,50 @@ static void fr_message_rx_data(RX_MSG_ARGS)
       // have to special-case the SPDP entity ID's, since they come in
       // with any GUID prefix and with either an unknown reader entity ID
       // or the unknown-reader entity ID
+      /*
+      if (writer_guid.entity_id.u != FR_EID_PARTICIPANT)
+      {
+        printf("trying to do unreliable match for ");
+        fr_guid_print(&writer_guid);
+        printf("\n");
+      }
+      */
       bool spdp_match = (data_submsg->writer_id.u == g_spdp_writer_id.u) &&
           (reader->endpoint.entity_id.u == g_spdp_reader_id.u);
-      // check if the data message's destination is our GUID
+      //if (fr_guid_prefix_identical(&rcvr->src_guid_prefix,
+      //    &matched_writer
+      // check if the data message's destination EID matches
       bool entity_id_match =
           (reader->endpoint.entity_id.u == data_submsg->reader_id.u);
+      bool src_match = false;
+      if (data_submsg->reader_id.u == g_fr_entity_id_unknown.u)
+      {
+        /*
+        if (writer_guid.entity_id.u != FR_EID_PARTICIPANT)
+          printf("  matched readers:\n");
+        */
+        // have to spin through our writers to see if we're listening to this
+        for (struct fr_iterator matched_writer_it =
+            fr_iterator_begin(reader->matched_writers);
+            matched_writer_it.data; fr_iterator_next(&matched_writer_it))
+        {
+          struct fr_writer_proxy *matched_writer = matched_writer_it.data;
+          /*
+          printf("    ");
+          fr_guid_print(&matched_writer->remote_writer_guid);
+          printf("\n");
+          */
+          //fr_guid_print_prefix(&rcvr->src_guid_prefix);
+          //printf(":%08x", (unsigned)data_submsg->);
+          //printf(
+          if (fr_guid_prefix_identical(&writer_guid.prefix,
+              &matched_writer->remote_writer_guid.prefix) &&
+              matched_writer->remote_writer_guid.entity_id.u ==
+              writer_guid.entity_id.u)
+            src_match = true;
+        }
+      }
+
       /*
       printf("rcvr dst guid prefix: ");
       fr_guid_print_prefix(&rcvr->dst_guid_prefix);
@@ -412,16 +459,16 @@ static void fr_message_rx_data(RX_MSG_ARGS)
       fr_guid_print_prefix(&g_fr_participant.guid_prefix);
       printf("\n");
       */
-      bool dst_prefix_match =
-          fr_guid_prefix_identical(&rcvr->dst_guid_prefix,
-              &g_fr_participant.guid_prefix);
+      //bool dst_prefix_match =
+      //    fr_guid_prefix_identical(&rcvr->dst_guid_prefix,
+      //        &g_fr_participant.guid_prefix);
       //reader->endpoint.entity_id.u == g_fr_entity_id_unknown.u);
       /*
       printf("EID match = %d     DST_PREFIX_MATCH = %d\n",
           entity_id_match ? 1 : 0,
           dst_prefix_match ? 1 : 0);
       */
-      if (spdp_match || (entity_id_match && dst_prefix_match))
+      if (spdp_match || entity_id_match || src_match) //(entity_id_match && dst_prefix_match))
         match_found = true;
     }
     if (match_found)
