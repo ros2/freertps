@@ -161,70 +161,36 @@ static void fr_message_rx_heartbeat(RX_MSG_ARGS)
       fr_sequence_number_t last = hb_last_sn + 1;
       set.bitmap_base.low = last & 0xffffffff; //hb->first_sn.low + 1;
       set.bitmap_base.high = (last >> 32) & 0xffffffff;
-      set.num_bits = 1;
+      set.num_bits = 0;
       set.bitmap = 0;
     }
     else
     {
-      printf("             NOT up to date: %d < %d\n",
-          (int)matched_writer_proxy->highest_sequence_number,
-          (int)hb_last_sn);
       const fr_sequence_number_t rx_sn =
           matched_writer_proxy->highest_sequence_number; // save typing
       set.bitmap_base.low = (rx_sn+1) & 0xffffffff;
       set.bitmap_base.high = ((rx_sn+1) >> 32) & 0xffffffff;
       set.num_bits = hb_last_sn - rx_sn - 1;
       set.bitmap = 0xffffffff;
+      printf("             NOT up to date: %d < %d (base=%d num_bits=%d)\n",
+          (int)matched_writer_proxy->highest_sequence_number,
+          (int)hb_last_sn,
+          (int)set.bitmap_base.low,
+          (int)set.num_bits);
+
     }
     fr_message_tx_acknack(&rcvr->src_guid_prefix,
                           &matched_reader->endpoint.entity_id,
                           &writer_guid, //matched_writer_proxy->writer_guid,
                   (struct fr_sequence_number_set *)&set);
   }
-
-#if HORRIBLY_BROKEN_DURING_HISTORYCACHE_REWRITE
-  if (match)
-  {
-    //g_fr_subs[i].heartbeat_cb(rcvr, hb);
-    if (match->reliable && !f)
-    {
-      set.bitmap_base.high = 0;
-      if (match->max_rx_sn.low >= hb->last_sn.low) // we're up-to-date
-      {
-        //printf("hb up to date\n");
-        set.bitmap_base.low = hb->first_sn.low + 1;
-        set.num_bits = 0;
-        set.bitmap = 0xffffffff;
-      }
-      else
-      {
-        //printf("hb acknack'ing multiple samples\n");
-        set.bitmap_base.low = match->max_rx_sn.low + 1;
-        set.num_bits = hb->last_sn.low - match->max_rx_sn.low - 1;
-        if (set.num_bits > 31)
-          set.num_bits = 31;
-        set.bitmap = 0xffffffff;
-      }
-      fr_tx_acknack(&rcvr->src_guid_prefix,
-                    &match->reader_entity_id,
-                    &match->writer_guid,
-                    (fr_seq_num_set_t *)&set);
-    }
-    else
-    {
-#ifdef VERBOSE_HEARTBEAT
-      printf("    FINAL flag not set in heartbeat; not going to tx acknack\n");
-#endif
-    }
-  }
   else
   {
     printf("      couldn't find match for inbound heartbeat:\n");
     printf("         ");
-    fr_print_guid(&writer_guid);
+    fr_guid_print(&writer_guid);
     printf(" => %08x\n", (unsigned)freertps_htonl(hb->reader_id.u));
   }
-#endif
 }
 
 static void fr_message_rx_gap(RX_MSG_ARGS)

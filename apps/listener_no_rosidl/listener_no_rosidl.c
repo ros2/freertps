@@ -15,7 +15,7 @@ int main(int argc, char **argv)
   freertps_init();
   fr_reader_t *r = fr_reader_create("chatter", "std_msgs::msg::dds_::String_",
       FR_READER_TYPE_BEST_EFFORT);
-  r->endpoint.entity_id.s.kind = 0x3;
+  r->endpoint.entity_id.s.kind = 0x4;
   r->endpoint.entity_id.s.key[0] = 1;
   r->endpoint.entity_id.s.key[1] = 2;
   r->endpoint.entity_id.s.key[2] = 3;
