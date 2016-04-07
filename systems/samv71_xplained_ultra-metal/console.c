@@ -14,7 +14,7 @@ static bool g_console_init_complete = false;
 #define TX_PIN PIO_PB4D_TXD1
 #define CONSOLE_USART USART1
 
-void console_init()
+void console_init(void)
 {
   PMC->PMC_PCER0 = (1 << ID_USART1) | (1 << ID_PIOB); // enable clock gates
   PIOB->PIO_OER = TX_PIN; // output enable

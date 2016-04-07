@@ -99,7 +99,7 @@ typedef struct usb_string_desc
 /////////////////////////
 
 // these functions are not portable and need to be implemented by chip libs
-void usb_init();
+void usb_init(void);
 void usb_tx(const unsigned ep, const void *buf, const unsigned len);
 void usb_set_addr(const uint8_t addr);
 

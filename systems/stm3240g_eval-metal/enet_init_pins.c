@@ -24,7 +24,7 @@
 
 #define AF_ENET 11
 
-void enet_mac_init_pins()
+void enet_mac_init_pins(void)
 {
   printf("enet_init_pins()\r\n");
 

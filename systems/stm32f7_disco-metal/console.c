@@ -13,7 +13,7 @@ USART_TypeDef *g_console_usart = USART6;
 
 static volatile bool g_console_init_complete = false;
 
-void console_init()
+void console_init(void)
 {
   RCC->APB2ENR |= RCC_APB2ENR_USART6EN;
   pin_set_alternate_function(GPIOC, PORTC_RX_PIN, 8);

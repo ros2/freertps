@@ -21,7 +21,7 @@ void signal_handler(int signum)
     g_done = true;
 }
 
-void usage()
+void usage(void)
 {
   printf("usage:  console DEVICE\n");
   exit(1);

@@ -16,7 +16,7 @@ static uint64_t frac_sec(uint64_t nsec)
   return frac_sec_lcm / 1953125;
 }
 
-fr_time_t fr_time_now()
+fr_time_t fr_time_now(void)
 {
   fr_time_t now;
 

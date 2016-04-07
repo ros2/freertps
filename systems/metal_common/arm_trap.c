@@ -1,7 +1,7 @@
 #include "metal/arm_trap.h"
 #include <stdio.h>
 
-void arm_trap_unhandled_vector()
+void arm_trap_unhandled_vector(void)
 {
   volatile int isr_number = (int)(__get_IPSR() & 0x1ff);
   printf("IT'S A TRAP!\r\n");

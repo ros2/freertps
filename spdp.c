@@ -216,7 +216,7 @@ static void frudp_spdp_rx_data(frudp_receiver_state_t *rcvr,
 
 static fr_time_t frudp_spdp_last_bcast;
 
-void frudp_spdp_init()
+void frudp_spdp_init(void)
 {
   FREERTPS_INFO("sdp init\r\n");
   frudp_spdp_last_bcast.seconds = 0;
@@ -238,12 +238,12 @@ void frudp_spdp_init()
   */
 }
 
-void frudp_spdp_start()
+void frudp_spdp_start(void)
 {
   frudp_spdp_tick();
 }
 
-void frudp_spdp_fini()
+void frudp_spdp_fini(void)
 {
   FREERTPS_INFO("sdp fini\n");
 }
@@ -271,7 +271,7 @@ uint16_t frudp_append_submsg(frudp_msg_t *msg, const uint16_t msg_wpos,
   //param_list = (frudp_parameter_list_item_t *)(((uint8_t *)param_list) + 4 + param_list->len);
 
 
-void frudp_spdp_bcast()
+void frudp_spdp_bcast(void)
 {
   //FREERTPS_INFO("spdp bcast\n");
   frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_disco_tx_buf);
@@ -431,7 +431,7 @@ void frudp_spdp_bcast()
     FREERTPS_ERROR("couldn't transmit SPDP broadcast message\r\n");
 }
 
-void frudp_spdp_tick()
+void frudp_spdp_tick(void)
 {
   const fr_time_t t = fr_time_now();
   if (fr_time_diff(&t, &frudp_spdp_last_bcast).seconds >= 1) // every second

@@ -6,7 +6,7 @@
 
 //static bool g_usb_waiting_for_addr_in_pkt;
 
-void usb_init()
+void usb_init(void)
 {
   printf("usb_init()\r\n");
   PMC->PMC_PCER1 |= 1 << (ID_USBHS - 32);
@@ -27,7 +27,7 @@ void usb_init()
   NVIC_EnableIRQ(USBHS_IRQn);
 }
 
-static void usb_reset_ep0()
+static void usb_reset_ep0(void)
 {
   //printf("ep0 status: 0x%08x\r\n", (unsigned)USBHS->USBHS_DEVEPTISR[0]);
   // configure EP0
@@ -41,7 +41,7 @@ static void usb_reset_ep0()
   USBHS->USBHS_DEVIER = USBHS_DEVIER_PEP_0; // enable interrupt for EP0
 }
 
-void usbhs_vector()
+void usbhs_vector(void)
 {
   //printf("usbhs_vector()\r\n");
   if (USBHS->USBHS_DEVISR & USBHS_DEVISR_EORST)

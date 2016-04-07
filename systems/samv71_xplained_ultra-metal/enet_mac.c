@@ -123,7 +123,7 @@ static volatile uint8_t __attribute__((aligned(8)))
                    g_enet_tx_buf[ENET_TX_BUFFERS * ENET_TX_UNITSIZE];
 
 #if 0
-void nonsense()
+void nonsense(void)
 {
   static uint8_t nonsense_cache_flush[16384];
   for (volatile uint32_t i = 0; i < 10000; i++)
@@ -131,17 +131,17 @@ void nonsense()
 }
 #endif
 
-void memory_sync()
+void memory_sync(void)
 {
   __DSB();
 }
 
-void memory_barrier()
+void memory_barrier(void)
 {
   __DMB();
 }
 
-int8_t enet_tx_avail();
+int8_t enet_tx_avail(void);
 
 void enet_write_phy_reg(const uint8_t reg_idx, const uint16_t reg_val)
 {
@@ -152,7 +152,7 @@ uint16_t enet_read_phy_reg(const uint8_t reg_idx)
   return 0;
 }
 
-void enet_mac_init()
+void enet_mac_init(void)
 {
   //SCB_EnableICache();
   //SCB_EnableDCache();
@@ -235,7 +235,7 @@ void enet_mac_init()
   memory_barrier();
 }
 
-void gmac_vector()
+void gmac_vector(void)
 {
   // read the flags to reset the interrupt 
   volatile uint32_t enet_isr = GMAC->GMAC_ISR;
@@ -371,7 +371,7 @@ void enet_mac_tx_raw(const uint8_t *pkt, uint16_t pkt_len)
 }
 
 // this could be useful someday (?)
-int8_t enet_tx_avail()
+int8_t enet_tx_avail(void)
 {
   return 1;
   //return (g_enet_tx_desc[0].status.bm.b_last_buffer != 0);

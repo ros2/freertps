@@ -69,7 +69,7 @@ bool enqueue_block(const uint8_t *block, const uint16_t block_len)
   return true;
 }
 
-bool send_last_partial_block()
+bool send_last_partial_block(void)
 {
   //printf("send_last_partial_block: %d\r\n", (int)tx_block_wpos);
   if (!tx_block_wpos)
@@ -92,7 +92,7 @@ bool send_last_partial_block()
 
 static uint8_t g_img_line[WIDTH*3];
 
-void cam_init_test_image()
+void cam_init_test_image(void)
 {
   for (int i = 0; i < WIDTH; i++)
   {
@@ -114,7 +114,7 @@ bool tx_row(const int row)
   //return enqueue_block(g_img_line, WIDTH * 3);
 }
 
-bool tx_header()
+bool tx_header(void)
 {
   static uint8_t __attribute__((aligned(4))) msg[1024] = {0};
   // prepend the CDR serialization scheme header
@@ -170,7 +170,7 @@ bool tx_header()
     }
 #endif
 
-void send_image()
+void send_image(void)
 {
   uint32_t t_start = systime_usecs();
   __DSB();
@@ -208,13 +208,13 @@ void send_image()
 }
 
 static volatile bool g_image_ready;
-void image_cb()
+void image_cb(void)
 {
   __DSB();
   g_image_ready = true;
 }
 
-int main()
+int main(void)
 {
   printf("cam main()\r\n");
   SCB_EnableICache();

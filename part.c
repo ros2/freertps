@@ -26,7 +26,7 @@ frudp_part_t *frudp_part_find(const frudp_guid_prefix_t *guid_prefix)
   return NULL; // couldn't find it. sorry.
 }
 
-bool frudp_part_create()
+bool frudp_part_create(void)
 {
   if (g_frudp_participant_init_complete)
   {

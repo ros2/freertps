@@ -2,7 +2,7 @@
 #include <time.h>
 #include "metal/systime.h"
 
-fr_time_t fr_time_now()
+fr_time_t fr_time_now(void)
 {
   fr_time_t now;
   uint32_t t = systime_usecs();

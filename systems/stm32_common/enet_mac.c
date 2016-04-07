@@ -63,7 +63,7 @@ void enet_write_phy_reg(const uint8_t reg_idx, const uint16_t reg_val)
   }
 }
 
-void enet_mac_init()
+void enet_mac_init(void)
 {
   printf("stm32 enet_mac_init()\r\n");
   enet_mac_init_pins();
@@ -170,7 +170,7 @@ void enet_mac_init()
 }
 
 // this *must* be named "eth_vector" to override the weak ISR symbol
-void eth_vector()
+void eth_vector(void)
 {
   volatile uint32_t dmasr = ETH->DMASR;
   ETH->DMASR = dmasr; // clear pending bits in the status register

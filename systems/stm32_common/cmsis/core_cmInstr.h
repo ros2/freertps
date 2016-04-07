@@ -89,7 +89,7 @@
     so that all instructions following the ISB are fetched from cache or
     memory, after the instruction has been completed.
  */
-#define __ISB()                           __isb(0xF)
+#define __ISB(void)                           __isb(0xF)
 
 
 /** \brief  Data Synchronization Barrier
@@ -97,7 +97,7 @@
     This function acts as a special kind of Data Memory Barrier.
     It completes when all explicit memory accesses before this instruction complete.
  */
-#define __DSB()                           __dsb(0xF)
+#define __DSB(void)                           __dsb(0xF)
 
 
 /** \brief  Data Memory Barrier
@@ -105,7 +105,7 @@
     This function ensures the apparent order of the explicit memory operations before
     and after the instruction, without ensuring their completion.
  */
-#define __DMB()                           __dmb(0xF)
+#define __DMB(void)                           __dmb(0xF)
 
 
 /** \brief  Reverse byte order (32 bit)

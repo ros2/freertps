@@ -10,7 +10,7 @@
 
 #define AF_USB_FS 10
 
-void usb_fs_init_pins(){
+void usb_fs_init_pins(void){
   pin_set_alternate_function(GPIOA, PORTA_USB_FS_DP, AF_USB_FS);
   pin_set_alternate_function(GPIOA, PORTA_USB_FS_DM, AF_USB_FS);
   pin_set_alternate_function(GPIOA, PORTA_USB_FS_ID, AF_USB_FS);

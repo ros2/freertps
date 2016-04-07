@@ -21,9 +21,9 @@
 
 // reset_vector has to exist, but we'll declare the rest as weak vectors 
 // and map them to the "unmapped_vector()" trap.
-extern void reset_vector(); 
+extern void reset_vector(void); 
 
-void unmapped_vector()
+void unmapped_vector(void)
 {
   while (1); // IT'S A TRAP!!! spin here to allow JTAG to capture it
 }
@@ -33,84 +33,84 @@ void unmapped_vector()
 // own interrupt tables)
 
 #define WEAK_VECTOR __attribute__((weak, alias("unmapped_vector")))
-void nmi_vector()                WEAK_VECTOR;
-void hard_fault_vector()         WEAK_VECTOR;
-void memory_management_vector()  WEAK_VECTOR;
-void bus_fault_vector()          WEAK_VECTOR;
-void usage_fault_vector()        WEAK_VECTOR;
-void svcall_vector()             WEAK_VECTOR;
-void pendsv_vector()             WEAK_VECTOR;
-void systick_vector()            WEAK_VECTOR;
-void supc_vector()               WEAK_VECTOR;
-void rstc_vector()               WEAK_VECTOR;
-void rtc_vector()                WEAK_VECTOR;
-void rtt_vector()                WEAK_VECTOR;
-void wdt_vector()                WEAK_VECTOR;
-void pmc_vector()                WEAK_VECTOR;
-void eefc0_vector()              WEAK_VECTOR;
-void eefc1_vector()              WEAK_VECTOR;
-void uart0_vector()              WEAK_VECTOR;
-void uart1_vector()              WEAK_VECTOR;
-void uart2_vector()              WEAK_VECTOR;
-void uart3_vector()              WEAK_VECTOR;
-void uart4_vector()              WEAK_VECTOR;
-void smc_vector()                WEAK_VECTOR;
-void pioa_vector()               WEAK_VECTOR;
-void piob_vector()               WEAK_VECTOR;
-void pioc_vector()               WEAK_VECTOR;
-void piod_vector()               WEAK_VECTOR;
-void pioe_vector()               WEAK_VECTOR;
-void usart0_vector()             WEAK_VECTOR;
-void usart1_vector()             WEAK_VECTOR;
-void usart2_vector()             WEAK_VECTOR;
-void hsmci_vector()              WEAK_VECTOR;
-void twi0_vector()               WEAK_VECTOR;
-void twi1_vector()               WEAK_VECTOR;
-void twihs2_vector()             WEAK_VECTOR;
-void spi0_vector()               WEAK_VECTOR;
-void spi1_vector()               WEAK_VECTOR;
-void qspi_vector()               WEAK_VECTOR;
-void ssc_vector()                WEAK_VECTOR;
-void tc0_vector()                WEAK_VECTOR;
-void tc1_vector()                WEAK_VECTOR;
-void tc2_vector()                WEAK_VECTOR;
-void tc3_vector()                WEAK_VECTOR;
-void tc4_vector()                WEAK_VECTOR;
-void tc5_vector()                WEAK_VECTOR;
-void tc6_vector()                WEAK_VECTOR;
-void tc7_vector()                WEAK_VECTOR;
-void tc8_vector()                WEAK_VECTOR;
-void tc9_vector()                WEAK_VECTOR;
-void tc10_vector()               WEAK_VECTOR;
-void tc11_vector()               WEAK_VECTOR;
-void afec0_vector()              WEAK_VECTOR;
-void afec1_vector()              WEAK_VECTOR;
-void dac_vector()                WEAK_VECTOR;
-void pwm0_vector()               WEAK_VECTOR;
-void pwm1_vector()               WEAK_VECTOR;
-void crccu_vector()              WEAK_VECTOR;
-void acc_vector()                WEAK_VECTOR;
-void usbhs_vector()              WEAK_VECTOR;
-void icm_vector()                WEAK_VECTOR;
-void mcan0_vector()              WEAK_VECTOR;
-void mcan0_line_vector()         WEAK_VECTOR;
-void mcan1_vector()              WEAK_VECTOR;
-void mcan1_line_vector()         WEAK_VECTOR;
-void gmac_vector()               WEAK_VECTOR;
-void mlb_vector()                WEAK_VECTOR;
-void aes_vector()                WEAK_VECTOR;
-void trng_vector()               WEAK_VECTOR;
-void xdmac_vector()              WEAK_VECTOR;
-void isi_vector()                WEAK_VECTOR;
-void sdramc_vector()             WEAK_VECTOR;
-void rswdt_vector()              WEAK_VECTOR;
+void nmi_vector(void)                WEAK_VECTOR;
+void hard_fault_vector(void)         WEAK_VECTOR;
+void memory_management_vector(void)  WEAK_VECTOR;
+void bus_fault_vector(void)          WEAK_VECTOR;
+void usage_fault_vector(void)        WEAK_VECTOR;
+void svcall_vector(void)             WEAK_VECTOR;
+void pendsv_vector(void)             WEAK_VECTOR;
+void systick_vector(void)            WEAK_VECTOR;
+void supc_vector(void)               WEAK_VECTOR;
+void rstc_vector(void)               WEAK_VECTOR;
+void rtc_vector(void)                WEAK_VECTOR;
+void rtt_vector(void)                WEAK_VECTOR;
+void wdt_vector(void)                WEAK_VECTOR;
+void pmc_vector(void)                WEAK_VECTOR;
+void eefc0_vector(void)              WEAK_VECTOR;
+void eefc1_vector(void)              WEAK_VECTOR;
+void uart0_vector(void)              WEAK_VECTOR;
+void uart1_vector(void)              WEAK_VECTOR;
+void uart2_vector(void)              WEAK_VECTOR;
+void uart3_vector(void)              WEAK_VECTOR;
+void uart4_vector(void)              WEAK_VECTOR;
+void smc_vector(void)                WEAK_VECTOR;
+void pioa_vector(void)               WEAK_VECTOR;
+void piob_vector(void)               WEAK_VECTOR;
+void pioc_vector(void)               WEAK_VECTOR;
+void piod_vector(void)               WEAK_VECTOR;
+void pioe_vector(void)               WEAK_VECTOR;
+void usart0_vector(void)             WEAK_VECTOR;
+void usart1_vector(void)             WEAK_VECTOR;
+void usart2_vector(void)             WEAK_VECTOR;
+void hsmci_vector(void)              WEAK_VECTOR;
+void twi0_vector(void)               WEAK_VECTOR;
+void twi1_vector(void)               WEAK_VECTOR;
+void twihs2_vector(void)             WEAK_VECTOR;
+void spi0_vector(void)               WEAK_VECTOR;
+void spi1_vector(void)               WEAK_VECTOR;
+void qspi_vector(void)               WEAK_VECTOR;
+void ssc_vector(void)                WEAK_VECTOR;
+void tc0_vector(void)                WEAK_VECTOR;
+void tc1_vector(void)                WEAK_VECTOR;
+void tc2_vector(void)                WEAK_VECTOR;
+void tc3_vector(void)                WEAK_VECTOR;
+void tc4_vector(void)                WEAK_VECTOR;
+void tc5_vector(void)                WEAK_VECTOR;
+void tc6_vector(void)                WEAK_VECTOR;
+void tc7_vector(void)                WEAK_VECTOR;
+void tc8_vector(void)                WEAK_VECTOR;
+void tc9_vector(void)                WEAK_VECTOR;
+void tc10_vector(void)               WEAK_VECTOR;
+void tc11_vector(void)               WEAK_VECTOR;
+void afec0_vector(void)              WEAK_VECTOR;
+void afec1_vector(void)              WEAK_VECTOR;
+void dac_vector(void)                WEAK_VECTOR;
+void pwm0_vector(void)               WEAK_VECTOR;
+void pwm1_vector(void)               WEAK_VECTOR;
+void crccu_vector(void)              WEAK_VECTOR;
+void acc_vector(void)                WEAK_VECTOR;
+void usbhs_vector(void)              WEAK_VECTOR;
+void icm_vector(void)                WEAK_VECTOR;
+void mcan0_vector(void)              WEAK_VECTOR;
+void mcan0_line_vector(void)         WEAK_VECTOR;
+void mcan1_vector(void)              WEAK_VECTOR;
+void mcan1_line_vector(void)         WEAK_VECTOR;
+void gmac_vector(void)               WEAK_VECTOR;
+void mlb_vector(void)                WEAK_VECTOR;
+void aes_vector(void)                WEAK_VECTOR;
+void trng_vector(void)               WEAK_VECTOR;
+void xdmac_vector(void)              WEAK_VECTOR;
+void isi_vector(void)                WEAK_VECTOR;
+void sdramc_vector(void)             WEAK_VECTOR;
+void rswdt_vector(void)              WEAK_VECTOR;
 
 
 // this is only used to ensure that this file is linked into the final
 // executable; we set the actual reset_vector below in g_vectors[]
-void placeholder_reset_vector() { }
+void placeholder_reset_vector(void) { }
 
-typedef void (*vector_func_t)();
+typedef void (*vector_func_t)(void);
 
 __attribute__((used,section(".vectors")))
 vector_func_t g_vectors[] = {

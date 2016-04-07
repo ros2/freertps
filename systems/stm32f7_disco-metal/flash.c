@@ -1,6 +1,6 @@
 #include "flash.h"
 
-void flash_init()
+void flash_init(void)
 {
   FLASH->ACR = 0; // ensure the caches are turned off, so we can reset them
   FLASH->ACR = FLASH_ACR_PRFTEN |  // enable flash prefetch

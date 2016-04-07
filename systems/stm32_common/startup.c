@@ -8,14 +8,14 @@
 //#include "watchdog.h"
 #include <stdio.h>
 
-void __libc_init_array(); // apparently this isn't defined in a newlib header?
+void __libc_init_array(void); // apparently this isn't defined in a newlib header?
 
 extern uint32_t _srelocate_flash, _srelocate, _erelocate, _ebss, _sbss;
-extern int main();
+extern int main(void);
 
-void startup_clock_init_fail() { while (1) { } }
+void startup_clock_init_fail(void) { while (1) { } }
 
-void reset_vector()
+void reset_vector(void)
 {
   //watchdog_reset_counter();
   g_stack[0] = 0; // need to put a reference in here to the stack array
@@ -30,7 +30,7 @@ void reset_vector()
   // set up bss segment
   for (pDest = &_sbss; pDest < &_ebss; )
     *pDest++ = 0;
-  __libc_init_array() ;
+  __libc_init_array();
   SCB->CPACR |= ((3UL << (10*2)) | (3UL << (11*2))); // activate the FPU
   //TODO used define provided if changes in future generations ? 
   // set up the clocking scheme
@@ -97,7 +97,7 @@ void reset_vector()
 //7) switch system to pll RCC->CR SW = 10 for pll then wait for SWS to return 10
 //8) enable all peripherals
 //
-//void enable_overdrive(){
+//void enable_overdrive(void){
 //  RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 //  //1
 //  RCC->CR |= RCC_CR_HSEON;                // turn on HSE if not already done
@@ -129,7 +129,7 @@ void reset_vector()
 //  while((RCC->CFGR & RCC_CFGR_SWS) | RCC_CFGR_SWS_PLL);// wait clock switch
 //}
 //
-//void disable_overdrive(){
+//void disable_overdrive(void){
 ////1) Select HSE as sys clock (in RCC_CR) => HSEON, HSERDY. RCC_CFGR-> SW = 01 
 ////   (select HSE) then wait for sys clock to be ready (rcc_cr->sws)
 ////2) store previous apb1 apb2 registers configurations

@@ -93,7 +93,7 @@ LightweightSerial::LightweightSerial(const char *port, int baud) :
   happy = true;
 }
 
-LightweightSerial::~LightweightSerial()
+LightweightSerial::~LightweightSerial(void)
 {
   if (fd > 0)
     close(fd);
