@@ -59,7 +59,7 @@ bool freertps_publish(frudp_pub_t *pub,
 
 extern bool g_freertps_init_complete;
 
-void freertps_start();
+void freertps_start(void);
 
 #ifdef __cplusplus
 }

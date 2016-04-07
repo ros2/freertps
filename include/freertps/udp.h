@@ -187,11 +187,11 @@ typedef struct
 // FUNCTIONS
 /////////////////////////////////////////////////////////////////////
 
-bool frudp_init();
-void frudp_fini();
+bool frudp_init(void);
+void frudp_fini(void);
 
-bool frudp_generic_init();
-bool frudp_init_participant_id();
+bool frudp_generic_init(void);
+bool frudp_init_participant_id(void);
 
 bool frudp_add_mcast_rx(const uint32_t group,
                         const uint16_t port); //,
@@ -214,11 +214,11 @@ bool frudp_tx(const uint32_t dst_addr,
               const uint8_t *tx_data,
               const uint16_t tx_len);
 
-uint16_t frudp_ucast_builtin_port();
-uint16_t frudp_mcast_builtin_port();
-uint16_t frudp_ucast_user_port();
-uint16_t frudp_mcast_user_port();
-uint16_t frudp_spdp_port();
+uint16_t frudp_ucast_builtin_port(void);
+uint16_t frudp_mcast_builtin_port(void);
+uint16_t frudp_ucast_user_port(void);
+uint16_t frudp_mcast_user_port(void);
+uint16_t frudp_spdp_port(void);
 
 const char *frudp_ip4_ntoa(const uint32_t addr);
 

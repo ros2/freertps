@@ -26,7 +26,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
                                       const uint16_t scheme,
                                       const uint8_t *data,
                                       const bool is_pub);
-static void frudp_sedp_bcast();
+static void frudp_sedp_bcast(void);
 ////////////////////////////////////////////////////////////////////////////
 // static globals
 static fr_time_t frudp_sedp_last_bcast;

@@ -45,11 +45,11 @@
 #define FRUDP_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_WRITER 0x00000400
 #define FRUDP_BUILTIN_EP_PARTICIPANT_MESSAGE_DATA_READER 0x00000800
 
-void frudp_disco_init();
-void frudp_disco_fini();
+void frudp_disco_init(void);
+void frudp_disco_fini(void);
 
-void frudp_disco_start(); /// must be called to kick off discovery
-void frudp_disco_tick();  /// must be called periodically to broadcast SPDP
+void frudp_disco_start(void); /// must be called to kick off discovery
+void frudp_disco_tick(void);  /// must be called periodically to broadcast SPDP
 
 #define FRUDP_DISCO_TX_BUFLEN 1536
 extern uint8_t g_frudp_disco_tx_buf[FRUDP_DISCO_TX_BUFLEN];
