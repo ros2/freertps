@@ -3,8 +3,8 @@
 
 #include "freertps/pub.h"
 
-typedef bool (*rtps_psm_init_func_t)();
-typedef void (*rtps_psm_disco_func_t)();
+typedef bool (*rtps_psm_init_func_t)(void);
+typedef void (*rtps_psm_disco_func_t)(void);
 typedef frudp_pub_t *(*rtps_psm_create_pub_func_t)(
     const char *topic_name, const char *type_name);
 typedef void (*rtps_psm_create_sub_func_t)(

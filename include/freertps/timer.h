@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef void (*freertps_timer_cb_t)();
+typedef void (*freertps_timer_cb_t)(void);
 void freertps_timer_set_freq(uint32_t freq, freertps_timer_cb_t cb);
 
 #endif

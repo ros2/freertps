@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-void freertps_system_init();
-bool freertps_system_ok();
+void freertps_system_init(void);
+bool freertps_system_ok(void);
 
 #endif
