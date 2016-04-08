@@ -39,7 +39,7 @@ caddr_t _sbrk(int incr)
 int _kill(__attribute__((unused)) int pid, 
           __attribute__((unused)) int sig) { return -1; }
 void _exit(__attribute__((unused)) int status) { while (1) {} } // spin...
-int _getpid() { return 1; }
+int _getpid(void) { return 1; }
 
 int _write(__attribute__((unused)) int fd, const void *buf, size_t count)
 {

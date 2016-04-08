@@ -1,7 +1,7 @@
 #include "freertps/periph/imu.h"
 #include <stdio.h>
 
-void imu_init()
+void imu_init(void)
 {
   printf("native-posix fake imu init\r\n");
 }

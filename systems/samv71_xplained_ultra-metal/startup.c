@@ -27,11 +27,11 @@
 extern uint32_t _sfixed, _efixed, _etext;
 extern uint32_t _srelocate, _erelocate, _szero, _ezero;
 
-extern int main();
-extern void __libc_init_array();
-//extern void _mainCRTStartup();
+extern int main(void);
+extern void __libc_init_array(void);
+//extern void _mainCRTStartup(void);
 
-void wdt_vector()
+void wdt_vector(void)
 {
   while (1);
 }
@@ -39,12 +39,12 @@ void wdt_vector()
 // from Atmel SAMV71 doc, section 3.2.1, "Enabling the FPU"
 #define ADDR_CPACR 0xe000ed88
 #define REG_CPACR (*((volatile uint32_t *)ADDR_CPACR))
-static void enable_fpu()
+static void enable_fpu(void)
 {
   REG_CPACR |= 0xfu << 20;
 }
 
-void reset_vector()
+void reset_vector(void)
 {
   g_stack[0] = 0; // need to put a reference in here to the stack array
                   // to make sure the linker brings it in. I'm sure there

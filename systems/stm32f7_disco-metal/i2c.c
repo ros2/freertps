@@ -109,7 +109,7 @@ void i2c_read(I2C_TypeDef *i2c, uint16_t DeviceAddr, uint16_t RegAddr, uint8_t R
 }
 
   //TODO call NVIC functions according to I2C_Typedef provided
-void I2C1_ev_vector(){
+void I2C1_ev_vector(void){
   printf("\r\nI2C1_ev_vector %X\r\n", (unsigned)I2C1->ISR);
   if(I2C1->ISR & I2C_ISR_RXNE){
     printf("received new data byte: %X\r\n", (unsigned)I2C1->RXDR);
@@ -127,7 +127,7 @@ void I2C1_ev_vector(){
   }
 }
 
-void I2C1_er_vector(){
+void I2C1_er_vector(void){
   printf("I2C1_er_vector\r\n");
   printf("ISR %X\r\n", (unsigned)I2C1->ISR);
 }

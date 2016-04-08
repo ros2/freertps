@@ -462,7 +462,7 @@ static bool frudp_rx_data_frag(RX_MSG_ARGS)
   return true;
 }
 
-bool frudp_generic_init()
+bool frudp_generic_init(void)
 {
   FREERTPS_INFO("frudp_generic_init()\r\n");
   frudp_part_create();
@@ -476,14 +476,14 @@ bool frudp_generic_init()
   return true;
 }
 
-uint16_t frudp_mcast_builtin_port()
+uint16_t frudp_mcast_builtin_port(void)
 {
   return FRUDP_PORT_PB +
          FRUDP_PORT_DG * g_frudp_config.domain_id +
          FRUDP_PORT_D0;
 }
 
-uint16_t frudp_ucast_builtin_port()
+uint16_t frudp_ucast_builtin_port(void)
 {
   return FRUDP_PORT_PB +
          FRUDP_PORT_DG * g_frudp_config.domain_id +
@@ -491,14 +491,14 @@ uint16_t frudp_ucast_builtin_port()
          FRUDP_PORT_PG * g_frudp_config.participant_id;
 }
 
-uint16_t frudp_mcast_user_port()
+uint16_t frudp_mcast_user_port(void)
 {
   return FRUDP_PORT_PB +
          FRUDP_PORT_DG * g_frudp_config.domain_id +
          FRUDP_PORT_D2;
 }
 
-uint16_t frudp_ucast_user_port()
+uint16_t frudp_ucast_user_port(void)
 {
   return FRUDP_PORT_PB +
          FRUDP_PORT_DG * g_frudp_config.domain_id +

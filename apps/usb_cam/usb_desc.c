@@ -17,4 +17,4 @@ const struct usb_device_desc g_usb_device_desc =
   METAL_USB_NO_SERIAL_STR
 };
 
-void f() { }
+void f(void) { }

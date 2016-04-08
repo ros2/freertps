@@ -7,7 +7,7 @@
 
 frudp_pub_t *g_pub = NULL;
 
-void timer_cb()
+void timer_cb(void)
 {
   if (!g_pub)
     return; // startup race condition. not ready yet. hold your horses. wait.

@@ -42,7 +42,7 @@ static void *freertps_malloc(size_t size, const void *caller)
   return mem;
 }
 
-void freertps_init_malloc_hook()
+void freertps_init_malloc_hook(void)
 {
   g_freertps_prev_malloc_hook = __malloc_hook;
   __malloc_hook = freertps_malloc;
@@ -50,7 +50,7 @@ void freertps_init_malloc_hook()
 void (*volatile __malloc_initialize_hook)(void) = freertps_init_malloc_hook;
 #endif
 
-void freertps_system_init()
+void freertps_system_init(void)
 {
   //__malloc_hook = freertps_malloc;
   /*
@@ -70,7 +70,7 @@ void freertps_system_init()
   g_freertps_init_complete = true;
 }
 
-bool freertps_system_ok()
+bool freertps_system_ok(void)
 {
   return true; //!g_done;
 }

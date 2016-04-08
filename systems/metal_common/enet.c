@@ -34,7 +34,7 @@ static bool enet_dispatch_udp(const uint8_t *data, const uint16_t len);
 static bool enet_dispatch_arp(const uint8_t *data, const uint16_t len);
 static bool enet_dispatch_icmp(uint8_t *data, const uint16_t len);
 
-void enet_init()
+void enet_init(void)
 {
   printf("enet_init()\r\n");
   // set up the RAM pool for reception
@@ -44,7 +44,7 @@ void enet_init()
   enet_mac_init();
 }
 
-enet_link_status_t enet_get_link_status()
+enet_link_status_t enet_get_link_status(void)
 {
   uint16_t status = enet_read_phy_reg(0x01);
   //printf("PHY status = 0x%02x\r\n", status);
@@ -112,7 +112,7 @@ void enet_send_udp_ucast(const uint8_t *dest_mac,
   */
 }
 
-uint_fast8_t enet_process_rx_ring()
+uint_fast8_t enet_process_rx_ring(void)
 {
   //printf("enet_process_rx_ring()\r\n");
   uint_fast8_t num_pkts_rx = 0;

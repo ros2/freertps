@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-void enet_mac_init_pins(); // must be provided in a board-specific file
+void enet_mac_init_pins(void); // must be provided in a board-specific file
 
 #endif
 

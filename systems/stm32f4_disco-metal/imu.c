@@ -25,7 +25,7 @@ static void accel_write_reg(const uint8_t reg, const uint8_t val);
 static uint8_t accel_read_reg(const uint8_t reg);
 #endif
 
-void imu_init()
+void imu_init(void)
 {
   printf("imu init\r\n");
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;

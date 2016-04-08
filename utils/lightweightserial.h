@@ -45,7 +45,7 @@ class LightweightSerial
     bool write_block(const uint8_t *block, uint32_t write_len);
     bool write_cstr(const char *cstr);
 
-    inline bool is_ok() { return happy; }
+    inline bool is_ok(void) { return happy; }
 
     // type-conversion wrappers so we can handle either signed or unsigned
     inline bool read(char *c) { return read((uint8_t *)c); }

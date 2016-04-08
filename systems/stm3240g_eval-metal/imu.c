@@ -5,7 +5,7 @@
 
 // stm3240g_eval doesn't have any IMU functions.
 
-void imu_init()
+void imu_init(void)
 {
   return;
 }

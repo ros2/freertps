@@ -20,7 +20,7 @@
 
 // PHY: LAN8720
 
-void enet_mac_init_pins()
+void enet_mac_init_pins(void)
 {
   printf("enet_mac_init_pins()\r\n");
 

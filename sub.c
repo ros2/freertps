@@ -71,7 +71,7 @@ void frudp_add_sub(const frudp_sub_t *s)
   //frudp_subscribe(s->entity_id, g_frudp_entity_id_unknown, NULL, s->msg_cb);
 }
 
-void frudp_print_readers()
+void frudp_print_readers(void)
 {
   for (unsigned i = 0; i < g_frudp_num_readers; i++)
   {

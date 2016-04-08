@@ -18,7 +18,7 @@ USART_TypeDef *g_console_usart = UART5;
 
 static volatile bool g_console_init_complete = false;
 
-void console_init()
+void console_init(void)
 {
   RCC->APB1ENR |= RCC_APB1ENR_UART5EN;
   pin_set_alternate_function(GPIOC, PORTC_TX_PIN, 8);

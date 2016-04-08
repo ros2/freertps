@@ -19,7 +19,7 @@ void freertps_timer_set_freq(uint32_t freq, freertps_timer_cb_t cb)
   g_freertps_timer_cb = cb;
 }
 
-void tim5_vector()
+void tim5_vector(void)
 {
   TIM5->SR &= ~TIM_SR_UIF; // clear the update flag
   if (g_freertps_timer_cb)

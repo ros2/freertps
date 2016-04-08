@@ -46,7 +46,7 @@ double fr_duration_double(const fr_duration_t *t)
     return t->seconds - t->fraction / (double)UINT_MAX;
 }
 
-double fr_time_now_double()
+double fr_time_now_double(void)
 {
   fr_time_t t = fr_time_now();
   return fr_duration_double(&t);

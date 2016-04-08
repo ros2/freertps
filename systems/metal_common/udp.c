@@ -9,7 +9,7 @@
 #include "metal/enet.h"
 #include "metal/systime.h"
 
-bool frudp_init()
+bool frudp_init(void)
 {
   enet_init();
   FREERTPS_INFO("metal udp init()\r\n");
@@ -32,7 +32,7 @@ bool frudp_init()
   return true;
 }
 
-void frudp_fini()
+void frudp_fini(void)
 {
   frudp_disco_fini();
   FREERTPS_INFO("metal udp fini\r\n");

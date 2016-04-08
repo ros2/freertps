@@ -4,7 +4,7 @@
 
 frudp_pub_t *g_pub = NULL;
 
-void tim5_vector()
+void tim5_vector(void)
 {
   TIM5->SR &= ~TIM_SR_UIF; // clear the update flag
   if (!g_pub)

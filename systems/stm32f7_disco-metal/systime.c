@@ -1,7 +1,7 @@
 #include "metal/systime.h"
 #include "metal/delay.h"
 
-void systime_init()
+void systime_init(void)
 {
   // todo; use TIM2 since it's a 32-bit counter. just have it count
   // microseconds since powerup or something.
@@ -13,7 +13,7 @@ void systime_init()
   TIM2->CR1 = TIM_CR1_CEN; // start counter
 }
 
-uint32_t systime_usecs()
+uint32_t systime_usecs(void)
 {
   return TIM2->CNT;
 }

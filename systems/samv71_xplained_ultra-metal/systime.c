@@ -1,7 +1,7 @@
 #include "metal/systime.h"
 #include <stdio.h>
 
-void systime_init()
+void systime_init(void)
 {
   // let's use TC0 for the system timer.
   // we'll use the first counter to divide down to microseconds,
@@ -59,7 +59,7 @@ void systime_init()
   TC0->TC_BCR = TC_BCR_SYNC;
 }
 
-uint32_t systime_usecs()
+uint32_t systime_usecs(void)
 {
   __disable_irq();
   uint32_t t1 = TC0->TC_CHANNEL[1].TC_CV;

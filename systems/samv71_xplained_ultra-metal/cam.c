@@ -75,7 +75,7 @@ struct isi_dma_desc_t
 static struct isi_dma_desc_t g_isi_dma_desc;
 volatile uint8_t g_cam_frame_buf[IMG_WIDTH*IMG_HEIGHT] __attribute__((aligned(4)));
 
-void cam_init()
+void cam_init(void)
 {
   printf("cam_init()\r\n");
   g_cam_frame_buffer = g_cam_frame_buf;
@@ -178,7 +178,7 @@ void cam_set_image_cb(cam_image_cb_t cb)
   g_cam_image_cb = cb;
 }
 
-void cam_start_image_capture()
+void cam_start_image_capture(void)
 {
   /*
   ISI->ISI_DMA_C_ADDR = (uint32_t)g_cam_frame_buf;
@@ -196,7 +196,7 @@ void cam_start_image_capture()
   //printf("%08d img cap\r\n", systime_usecs());
 }
 
-void isi_vector()
+void isi_vector(void)
 {
   /*
   printf("%08dus isi caddr = 0x%08x cscr = 0x%08x\r\n", 
@@ -227,7 +227,7 @@ void isi_vector()
     g_cam_image_cb();
 }
 
-bool cam_image_ready()
+bool cam_image_ready(void)
 {
   bool ready = g_isi_dma_desc.ctrl & ISI_DMA_C_CTRL_C_WB;
   if (ready)

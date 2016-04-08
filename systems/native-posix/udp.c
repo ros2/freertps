@@ -43,7 +43,7 @@ static int g_frudp_tx_sock;
 
 #define FU_RX_BUFSIZE 4096
 
-bool frudp_init()
+bool frudp_init(void)
 {
   FREERTPS_INFO("udp init()\n");
   for (int i = 0; i < FRUDP_MAX_RX_SOCKS; i++)
@@ -126,7 +126,7 @@ bool frudp_init()
   return true;
 }
 
-bool frudp_init_participant_id()
+bool frudp_init_participant_id(void)
 {
   FREERTPS_INFO("frudp_init_participant_id()\n");
   for (int pid = 0; pid < 100; pid++) // todo: hard upper bound is bad
@@ -144,7 +144,7 @@ bool frudp_init_participant_id()
   return false; // couldn't find an available PID
 }
 
-void frudp_fini()
+void frudp_fini(void)
 {
   frudp_disco_fini();
   FREERTPS_INFO("udp fini\n");
@@ -155,7 +155,7 @@ void frudp_fini()
   }
 }
 
-static int frudp_create_sock()
+static int frudp_create_sock(void)
 {
   if (g_frudp_rx_socks_used >= FRUDP_MAX_RX_SOCKS)
   {

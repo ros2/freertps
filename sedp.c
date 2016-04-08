@@ -44,7 +44,7 @@ static frudp_submsg_data_t *g_sedp_pub_writer_data_submsgs[FRUDP_MAX_PUBS];
 //sizeof [MAX_SUBS][SEDP_MSG_BUF_LEN];
 static uint8_t g_sedp_msg_buf[SEDP_MSG_BUF_LEN];
 
-void frudp_sedp_init()
+void frudp_sedp_init(void)
 {
   FREERTPS_INFO("sedp init\r\n");
   for (int i = 0; i < FRUDP_MAX_SUBS; i++)
@@ -94,7 +94,7 @@ void frudp_sedp_init()
   frudp_add_sub(&sedp_pub_sub);
 }
 
-void frudp_sedp_start()
+void frudp_sedp_start(void)
 {
   // go through and send SEDP messages for all of our subscriptions
   for (int i = 0; i < g_frudp_num_subs; i++)
@@ -118,12 +118,12 @@ void frudp_sedp_start()
   }
 }
 
-void frudp_sedp_fini()
+void frudp_sedp_fini(void)
 {
   FREERTPS_INFO("sedp fini\r\n");
 }
 
-void frudp_sedp_tick()
+void frudp_sedp_tick(void)
 {
   const fr_time_t t = fr_time_now();
   if (fr_time_diff(&t, &frudp_sedp_last_bcast).seconds >= 1)
@@ -379,7 +379,7 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
     frudp_sedp_rx_sub_info(&g_topic_info);
 }
 
-static void frudp_sedp_bcast()
+static void frudp_sedp_bcast(void)
 {
   //frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_discovery_tx_buf);
   //fr_time_t t = fr_time_now();

@@ -69,7 +69,7 @@ bool enqueue_block(const uint8_t *block, const uint16_t block_len)
   return true;
 }
 
-bool send_last_partial_block()
+bool send_last_partial_block(void)
 {
   //printf("send_last_partial_block: %d\r\n", (int)tx_block_wpos);
   if (!tx_block_wpos)
@@ -90,7 +90,7 @@ bool send_last_partial_block()
 #define HEIGHT 240
 static uint8_t g_img_line[WIDTH*3];
 
-void cam_init_test_image()
+void cam_init_test_image(void)
 {
   for (int i = 0; i < WIDTH; i++)
   {
@@ -105,7 +105,7 @@ bool tx_row(const int row)
   return enqueue_block(g_img_line, WIDTH * 3);
 }
 
-bool tx_header()
+bool tx_header(void)
 {
   uint8_t __attribute__((aligned(4))) msg[1024] = {0};
   // prepend the CDR serialization scheme header
@@ -162,7 +162,7 @@ bool tx_header()
     }
 #endif
 
-void timer_cb()
+void timer_cb(void)
 {
   if (!g_pub)
     return;
@@ -188,7 +188,7 @@ void timer_cb()
 }
 #endif
 
-int main()
+int main(void)
 {
   printf("cam main()\r\n");
   usb_init();
