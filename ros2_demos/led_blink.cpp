@@ -21,8 +21,8 @@ int main(int argc, char * argv[])
   rclcpp::init(argc, argv);
   auto node = rclcpp::node::Node::make_shared("led_blink");
   rmw_qos_profile_t qos;
-  qos.reliability = RMW_QOS_POLICY_BEST_EFFORT;
-  qos.history = RMW_QOS_POLICY_KEEP_LAST_HISTORY;
+  qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
+  qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
   qos.depth = 1;
   auto pub = node->create_publisher<std_msgs::msg::Bool>("led", qos);
   auto msg = std::make_shared<std_msgs::msg::Bool>();
