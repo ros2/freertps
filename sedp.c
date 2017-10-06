@@ -2,6 +2,7 @@
 #include "freertps/freertps.h"
 #include "freertps/qos.h"
 #include "freertps/spdp.h"
+#include "freertps/pub.h"
 #include <string.h>
 
 ////////////////////////////////////////////////////////////////////////////
@@ -126,7 +127,7 @@ void frudp_sedp_fini(void)
 void frudp_sedp_tick(void)
 {
   const fr_time_t t = fr_time_now();
-  if (fr_time_diff(&t, &frudp_sedp_last_bcast).seconds >= 1)
+  if (fr_time_diff(&t, &frudp_sedp_last_bcast).seconds >= 1) // every second
   {
     frudp_sedp_bcast();
     frudp_sedp_last_bcast = t;
@@ -381,8 +382,11 @@ static void frudp_sedp_rx_pubsub_data(frudp_receiver_state_t *rcvr,
 
 static void frudp_sedp_bcast(void)
 {
-  //frudp_msg_t *msg = frudp_init_msg((frudp_msg_t *)g_frudp_discovery_tx_buf);
-  //fr_time_t t = fr_time_now();
+  for (int i = 0; i< g_frudp_disco_num_parts; i++)
+  {
+    frudp_part_t *p = &g_frudp_disco_parts[i];
+    frudp_send_sedp_hb(p, false);
+  }
 }
 
 static void sedp_publish(const char *topic_name,
@@ -489,6 +493,19 @@ static void sedp_publish(const char *topic_name,
   */
   /////////////////////////////////////////////////////////////
   FRUDP_PLIST_ADVANCE(param);
+
+  /* PARTITION FIXME: The parition should be able to be modified by parameter. */
+  /*                  For now, the parition is fixed to "rt". */
+  {
+    param->pid = FRUDP_PID_PARTITION;
+    param->len = 12;
+    uint32_t *ptr_uint32;
+    ptr_uint32 = (uint32_t *)param->value;
+    *(ptr_uint32)     = 0x01UL;       /* Number of string */
+    *(ptr_uint32 + 1) = 0x03UL;       /* String length for "rt" */
+    *(ptr_uint32 + 2) = 0x00007472UL; /* ROS topic: "rt"  */
+    FRUDP_PLIST_ADVANCE(param);
+  }
   param->pid = FRUDP_PID_SENTINEL;
   param->len = 0;
   FRUDP_PLIST_ADVANCE(param);
@@ -561,7 +578,7 @@ void sedp_add_builtin_endpoints(frudp_part_t *part)
   frudp_add_reader(&sub_reader);
 
   // blast our SEDP data at this participant
-  frudp_send_sedp_msgs(part);
+  frudp_send_sedp_hb(part, true);
 }
 
 

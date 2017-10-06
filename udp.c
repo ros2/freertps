@@ -228,16 +228,15 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
         //printf("hb up to date\n");
         set.bitmap_base.low = hb->first_sn.low + 1;
         set.num_bits = 0;
-        set.bitmap = 0xffffffff;
       }
       else
       {
         //printf("hb acknack'ing multiple samples\n");
         set.bitmap_base.low = match->max_rx_sn.low + 1;
-        set.num_bits = hb->last_sn.low - match->max_rx_sn.low - 1;
-        if (set.num_bits > 31)
-          set.num_bits = 31;
-        set.bitmap = 0xffffffff;
+        set.num_bits = hb->last_sn.low - match->max_rx_sn.low;
+        if (set.num_bits > 32)
+          set.num_bits = 32;     /* FIXME: Currently, the bit width is limited to 32. */
+        set.bitmap = 0xffffffff; /* FIXME: This bitmap must express SequenceNumberSet. */
       }
       frudp_tx_acknack(&rcvr->src_guid_prefix,
                        &match->reader_eid,

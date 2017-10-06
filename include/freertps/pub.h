@@ -68,6 +68,6 @@ frudp_pub_t *frudp_create_user_pub(const char *topic_name,
 
 void frudp_add_writer(const frudp_writer_t *writer);
 
-void frudp_send_sedp_msgs(frudp_part_t *part);
+void frudp_send_sedp_hb(frudp_part_t *part, bool with_msgs);
 
 #endif
