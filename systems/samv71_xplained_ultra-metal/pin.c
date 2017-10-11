@@ -26,8 +26,8 @@ void pin_set_mux(Pio *pio, const unsigned pin_idx,
   pio->PIO_ABCDSR[0] &= ~pin_mask;
   pio->PIO_ABCDSR[1] &= ~pin_mask;
   // now , set the necessary bits
-  pio->PIO_ABCDSR[0] |= mux_idx & 0x1 ? pin_mask : 0;
-  pio->PIO_ABCDSR[1] |= mux_idx & 0x2 ? pin_mask : 0;
+  pio->PIO_ABCDSR[0] |= (mux_idx & 0x1) ? pin_mask : 0;
+  pio->PIO_ABCDSR[1] |= (mux_idx & 0x2) ? pin_mask : 0;
   // and disable GPIO control of pin (that is, let the peripheral mux have it)
   pio->PIO_PDR = pin_mask;
 }
