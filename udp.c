@@ -174,8 +174,8 @@ static bool frudp_rx_heartbeat(RX_MSG_ARGS)
   frudp_print_guid(&writer_guid);
   printf(" => 0x%08x  %d -> %d\n",
          (unsigned)freertps_htonl(hb->reader_id.u),
-         (unsigned)hb->first_sn.low,
-         (unsigned)hb->last_sn.low);
+         (int)hb->first_sn.low,
+         (int)hb->last_sn.low);
 #endif
   //frudp_print_readers();
 

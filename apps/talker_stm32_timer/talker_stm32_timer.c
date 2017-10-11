@@ -11,7 +11,7 @@ void tim5_vector(void)
     return;
   static char __attribute__((aligned(4))) msg[256] = {0};
   static int pub_count = 0;
-  snprintf(&msg[4], sizeof(msg), "Hello World: %d", pub_count++);
+  snprintf(&msg[4], (sizeof(msg) - 4), "Hello World: %d", pub_count++);
   uint32_t rtps_string_len = strlen(&msg[4]) + 1;
   *((uint32_t *)msg) = rtps_string_len;
   freertps_publish(g_pub, (uint8_t *)msg, rtps_string_len + 4);

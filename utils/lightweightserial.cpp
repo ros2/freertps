@@ -89,7 +89,7 @@ LightweightSerial::LightweightSerial(const char *port, int baud) :
 
 	// flush the buffer of the serial device
 	uint8_t b;
-	while (this->read(&b) > 0) { }
+	while (this->read(&b)) { }
   happy = true;
 }
 
