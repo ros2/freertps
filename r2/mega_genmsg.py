@@ -32,6 +32,22 @@ class PrimitiveType(object):
     f.write("  printf(\"deserialization of {0} not implemented!\");\n".format(self.name))
     f.write("  exit(1);\n")
 
+  def serialize_fixed_array(self, field_name, cur_alignment, array_size, f):
+    f.write("  printf(\"serialization fixed array of {0} not implemented!\");\n".format(self.name))
+    f.write("  exit(1);\n")
+
+  def deserialize_fixed_array(self, field_name, cur_alignment, array_size, f):
+    f.write("  printf(\"deserialization fixed array of {0} not implemented!\");\n".format(self.name))
+    f.write("  exit(1);\n")
+
+  def serialize_variable_array(self, field_name, cur_alignment, f):
+    f.write("  printf(\"serialization variable array of {0} not implemented!\");\n".format(self.name))
+    f.write("  exit(1);\n")
+
+  def deserialize_variable_array(self, field_name, cur_alignment, f):
+    f.write("  printf(\"deserialization variable array of {0} not implemented!\");\n".format(self.name))
+    f.write("  exit(1);\n")
+
 class BooleanType(PrimitiveType):
   def __init__(self):
     super(BooleanType, self).__init__('bool', 1)
@@ -140,7 +156,7 @@ primitive_types['string']  = StringType()
 def uncamelcase(camelcase):
   lower = ""
   upper_run_len = 0
-  for idx in xrange(0, len(camelcase)):
+  for idx in range(0, len(camelcase)):
     #print(camelcase[idx])
     if (camelcase[idx].isupper()):
       next_lower = idx < len(camelcase)-1 and camelcase[idx+1].islower()
