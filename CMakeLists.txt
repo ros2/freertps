@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5)
 #SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 #SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
